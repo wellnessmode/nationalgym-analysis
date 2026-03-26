@@ -6,252 +6,295 @@
 <title>NationalGym — NPT 체형분석</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#f4f3f0;--bg2:#fff;--bg3:#eeede9;--bg4:#e4e3df;
-  --brd:#e0deda;--brd2:#cac9c4;
-  --tx:#111;--tx2:#666;--tx3:#aaa;
-  --green:#1a9e74;--blue:#2e7dd4;--red:#d94040;--amber:#e89820;
-  --r:10px;--r2:16px;
+  --bg:#f6f5f2;--bg2:#fff;--bg3:#f0efe9;--bg4:#e8e7e0;
+  --brd:#e2e0d8;--brd2:#c8c6bc;
+  --tx:#111;--tx2:#555;--tx3:#999;
+  --green:#00a878;--green2:#007a56;--green3:#e6f7f2;
+  --blue:#1d6bd4;--blue3:#eaf0fc;
+  --red:#d42020;--red3:#fef0f0;
+  --amber:#c97b00;--amber3:#fff8e6;
+  --gold:#9d7c1a;
+  --r:10px;--r2:16px;--r3:24px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow2:0 4px 24px rgba(0,0,0,.12);
 }
-html,body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;min-height:100%}
+html,body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;min-height:100%;font-size:15px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
 
-/* ── HEADER ── */
-.hdr{position:sticky;top:0;z-index:300;background:rgba(244,243,240,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:.5px solid var(--brd);padding:12px 16px;display:flex;align-items:center;gap:10px}
-.logo{font-size:15px;font-weight:700}.logo em{color:var(--green);font-style:normal}
-.logo small{font-size:10px;font-weight:400;color:var(--tx3);margin-left:5px}
-.hdr-r{margin-left:auto;display:flex;gap:7px}
-.btn{padding:7px 14px;border-radius:20px;border:.5px solid var(--brd2);background:var(--bg2);color:var(--tx);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
-.btn:active{background:var(--bg3)}
-.btn.g{background:var(--green);color:#fff;border-color:var(--green)}
-.btn.b{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn.r{background:var(--red);color:#fff;border-color:var(--red)}
+/* ─ HEADER ─ */
+.hdr{position:sticky;top:0;z-index:300;background:#111;padding:0 18px;height:56px;display:flex;align-items:center;gap:12px}
+.logo{font-size:17px;font-weight:700;letter-spacing:.04em;color:#fff}
+.logo em{color:var(--green);font-style:normal}
+.logo sup{font-size:9px;font-weight:400;color:#888;letter-spacing:.06em;margin-left:5px;vertical-align:super}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.phase-pill{background:#1e3a2e;color:var(--green);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:.05em}
 
-/* ── SECTION TABS ── */
-.sec-tabs{display:flex;overflow-x:auto;gap:0;background:var(--bg2);border-bottom:.5px solid var(--brd);padding:0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.sec-tabs::-webkit-scrollbar{display:none}
-.sec-tab{flex-shrink:0;padding:12px 14px;font-size:12px;font-weight:500;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
-.sec-tab.on{color:var(--tx);border-bottom-color:var(--green)}
+/* ─ PHASE NAV ─ */
+.phase-nav{background:#fff;border-bottom:1px solid var(--brd);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.phase-nav::-webkit-scrollbar{display:none}
+.pnav{flex-shrink:0;padding:14px 18px;font-size:13px;font-weight:500;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px}
+.pnav.on{color:var(--tx);border-bottom-color:var(--green);font-weight:600}
+.pnav .pnum{width:20px;height:20px;border-radius:50%;background:var(--bg3);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.pnav.on .pnum{background:var(--green);color:#fff}
+.pnav .pcount{font-size:10px;background:var(--green);color:#fff;padding:1px 6px;border-radius:10px;margin-left:2px}
 
-/* ── MAIN WRAP ── */
-.wrap{padding:14px;max-width:720px;margin:0 auto;padding-bottom:60px}
+/* ─ MAIN ─ */
+.wrap{padding:18px;max-width:760px;margin:0 auto;padding-bottom:80px}
+.phase{display:none}.phase.on{display:block}
 
-/* ── META CARD ── */
-.meta{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
-.mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.f label{display:block;font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:.05em;text-transform:uppercase}
-.f input,.f select,.f textarea{width:100%;padding:8px 11px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:14px;appearance:none;-webkit-appearance:none;font-family:inherit}
-.f input::placeholder,.f textarea::placeholder{color:var(--tx3)}
-.f select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-.ts-val{padding:8px 11px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+/* ─ META ─ */
+.meta-card{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+.meta-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.meta-head h2{font-size:14px;font-weight:700;letter-spacing:.04em}
+.meta-status{margin-left:auto;font-size:11px;color:var(--tx3)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.f label{display:block;font-size:10px;font-weight:600;color:var(--tx3);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase}
+.f input,.f select{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:14px;appearance:none;-webkit-appearance:none;font-family:inherit;transition:border-color .15s}
+.f input:focus,.f select:focus{outline:none;border-color:var(--green)}
+.f input::placeholder{color:var(--tx3)}
+.f select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.ts-val{padding:9px 12px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
 
-/* ── SECTION PANEL ── */
-.sec-panel{display:none}.sec-panel.on{display:block}
-.sec-title{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.sec-title .badge{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--tx3);font-weight:400}
+/* ─ SECTION HEADERS ─ */
+.sec-hd{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--brd)}
+.sec-hd h3{font-size:15px;font-weight:700}
+.sec-hd .hint{font-size:12px;color:var(--tx3);margin-left:4px}
+.progress-ring{display:flex;gap:3px;margin-left:auto;align-items:center}
+.pr-dot{width:8px;height:8px;border-radius:50%;background:var(--brd2)}
+.pr-dot.done{background:var(--green)}
+.pr-dot.active{background:var(--amber)}
+.pr-label{font-size:11px;color:var(--tx3);margin-left:6px}
 
-/* ── TEST BLOCK ── */
-.test-block{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.test-head{padding:11px 14px;border-bottom:.5px solid var(--brd);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.test-title{font-size:13px;font-weight:600}
-.test-sub{font-size:11px;color:var(--tx3)}
-.test-badge{font-size:9px;padding:2px 7px;border-radius:8px;margin-left:auto}
-.test-badge.ok{background:#e6f5ee;color:var(--green)}
-.test-badge.warn{background:#fff3e0;color:var(--amber)}
+/* ─ TEST CARD ─ */
+.test-card{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)}
+.tc-head{padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--brd)}
+.tc-num{width:26px;height:26px;border-radius:50%;background:var(--bg3);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0}
+.tc-num.done{background:var(--green);color:#fff}
+.tc-info h4{font-size:13px;font-weight:700}
+.tc-info p{font-size:11px;color:var(--tx3);margin-top:1px}
+.tc-badge{margin-left:auto;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.tc-badge.none{background:var(--bg3);color:var(--tx3)}
+.tc-badge.done{background:var(--green3);color:var(--green2)}
+.tc-badge.partial{background:var(--amber3);color:var(--amber)}
 
-/* ── PHOTO PAIR ── */
-.photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
-.photo-slot{background:var(--bg3);border-radius:var(--r);overflow:hidden;border:.5px solid var(--brd)}
-.slot-head{padding:6px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:.5px solid var(--brd)}
-.slot-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
-.slot-lbl.B{color:var(--red)}.slot-lbl.A{color:var(--blue)}
-.slot-zone{position:relative;background:#e8e6e2;min-height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-canvas.sc{display:block;width:100%;height:auto;cursor:crosshair}
-.slot-add{display:flex;flex-direction:column;gap:7px;padding:12px 10px;width:100%}
-.sadd-btn{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r);border:.5px solid var(--brd);background:var(--bg2);cursor:pointer;font-size:11px;color:var(--tx2)}
-.sadd-btn:active{background:var(--bg4)}
-.sadd-btn.cam{border-color:#bdd9f5;background:#f0f7ff;color:var(--blue)}
+/* ─ PHOTO ZONE ─ */
+.photo-zone{position:relative;background:var(--bg3);min-height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo-zone.has-ref{min-height:180px}
+canvas.pc{display:block;width:100%;height:auto;cursor:crosshair}
+.photo-add{display:flex;flex-direction:column;gap:8px;padding:16px;width:100%;max-width:280px}
+.pa-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:var(--r);border:1px solid var(--brd);background:#fff;font-size:13px;color:var(--tx2);transition:all .15s}
+.pa-btn:active{background:var(--bg3)}
+.pa-btn.cam{border-color:#93c5fd;background:var(--blue3);color:var(--blue)}
+.ref-thumb{padding:8px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;background:var(--bg3)}
+.ref-thumb img{width:48px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--brd)}
+.ref-thumb span{font-size:11px;color:var(--tx3)}
 
-/* ── OVERLAP VIEW ── */
-.overlap-section{padding:10px;border-top:.5px solid var(--brd)}
-.overlap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.overlap-lbl{font-size:11px;font-weight:600;color:var(--tx2)}
-.overlap-canvas-wrap{background:#111;border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+/* ─ OVERLAP ZONE ─ */
+.overlap-zone{border-top:1px solid var(--brd)}
+.oz-head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
+.oz-head span{font-size:12px;font-weight:600;color:var(--tx2)}
+.oz-canvas-wrap{position:relative;background:#0a0a0a;overflow:hidden}
 canvas.oc{display:block;width:100%;height:auto}
-.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.ctrl-lbl{font-size:11px;color:var(--tx3);min-width:68px;white-space:nowrap}
-.ctrl-val{font-size:11px;color:var(--tx2);min-width:34px;text-align:right}
-input[type=range]{flex:1;accent-color:var(--green)}
-.ctrl-divider{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;padding:6px 0 4px;border-top:.5px solid var(--brd);margin-top:4px}
+.oz-ctrl{padding:12px 16px;background:var(--bg3);border-top:1px solid var(--brd)}
+.cr-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.cr-row{display:flex;align-items:center;gap:8px}
+.cr-lbl{font-size:10px;color:var(--tx3);min-width:52px;white-space:nowrap;letter-spacing:.02em}
+.cr-val{font-size:10px;color:var(--tx2);min-width:28px;text-align:right}
+input[type=range]{flex:1;accent-color:var(--green);height:4px}
+.ctrl-section-lbl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;grid-column:1/-1;margin-top:6px;padding-top:8px;border-top:1px solid var(--brd)}
 
-/* ── ANGLE DISPLAY ── */
-.angle-display{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.angle-chip{font-size:11px;padding:4px 10px;border-radius:8px;background:var(--bg3);color:var(--tx2)}
-.angle-chip.before{background:#fef0f0;color:var(--red)}
-.angle-chip.after{background:#e8f4fd;color:var(--blue)}
-.angle-chip.delta.better{background:#e6f5ee;color:var(--green)}
-.angle-chip.delta.worse{background:#fef0f0;color:var(--red)}
+/* ─ MODE BAR ─ */
+.mode-bar{padding:8px 12px;border-top:1px solid var(--brd);display:flex;gap:5px;flex-wrap:wrap;background:#fff}
+.mbt{padding:6px 11px;border:1px solid var(--brd);border-radius:20px;background:transparent;color:var(--tx2);font-size:11px;font-weight:500;transition:all .15s}
+.mbt.on{background:var(--tx);color:#fff;border-color:var(--tx)}
+.mhint{font-size:11px;color:var(--tx3);padding:2px 12px 8px}
 
-/* ── CLINICAL ANALYSIS ── */
-.analysis-box{padding:10px 14px;border-top:.5px solid var(--brd);background:var(--bg3)}
-.analysis-box .title{font-size:11px;font-weight:600;color:var(--tx3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
-.finding-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:.5px solid var(--brd)}
+/* ─ CLINICAL ANALYSIS ─ */
+.clinical-box{padding:14px 16px;border-top:1px solid var(--brd);background:#fff}
+.cb-title{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.cb-title::before{content:'';width:3px;height:12px;background:var(--green);border-radius:2px;display:block}
+.finding-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd)}
 .finding-row:last-child{border-bottom:none}
-.finding-name{font-size:12px;font-weight:500;flex:1}
-.finding-vals{display:flex;gap:5px;flex-wrap:wrap}
-.fv{font-size:10px;padding:2px 7px;border-radius:6px}
-.fv.B{background:#fef0f0;color:var(--red)}.fv.A{background:#e8f4fd;color:var(--blue)}
-.fv.imp{background:#e6f5ee;color:var(--green);font-weight:600}
-.fv.dec{background:#fef0f0;color:var(--red);font-weight:600}
+.finding-main{flex:1;min-width:0}
+.finding-name{font-size:13px;font-weight:600;color:var(--tx)}
+.finding-norm{font-size:11px;color:var(--tx3);margin-top:2px}
+.finding-norm.abnorm{color:var(--red);font-weight:600}
+.finding-vals{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.fv{font-size:12px;padding:4px 9px;border-radius:8px;font-weight:500;white-space:nowrap}
+.fv.B{background:#fde8e8;color:#991b1b}
+.fv.A{background:#e0edfd;color:#1e40af}
+.fv.delta-ok{background:var(--green3);color:var(--green2);font-weight:700}
+.fv.delta-bad{background:var(--red3);color:var(--red);font-weight:700}
+.fv.delta-same{background:var(--bg3);color:var(--tx3)}
+.fv.abnorm{background:var(--red3);color:var(--red);font-weight:700}
+.clinical-impression{background:#eef5fd;border:1px solid #93c5fd;border-radius:var(--r);padding:12px 14px;margin-top:10px}
+.ci-title{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+.ci-line{font-size:12px;color:#1e3a5f;margin-bottom:4px;line-height:1.5;display:flex;gap:6px}
+.ci-line::before{content:'→';color:var(--blue);flex-shrink:0}
 
-/* ── CHECKLIST SECTION ── */
-.chk-group{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
-.chk-group-head{padding:11px 14px;border-bottom:.5px solid var(--brd);background:var(--bg3)}
-.chk-group-title{font-size:13px;font-weight:600}
-.chk-group-sub{font-size:11px;color:var(--tx3);margin-top:2px}
-.chk-body{padding:12px 14px}
-.chk-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:.5px solid var(--brd)}
+/* ─ CHECKLIST ─ */
+.chk-group{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)}
+.chk-ghead{padding:13px 16px;border-bottom:1px solid var(--brd);background:var(--bg3)}
+.chk-gtitle{font-size:13px;font-weight:700}
+.chk-gsub{font-size:11px;color:var(--tx3);margin-top:2px}
+.chk-body{padding:8px 16px}
+.chk-item{padding:10px 0;border-bottom:1px solid var(--brd)}
 .chk-item:last-child{border-bottom:none}
-.chk-label{font-size:13px;flex:1}
-.chk-label small{display:block;font-size:10px;color:var(--tx3);margin-top:2px}
-.chk-ctrl{display:flex;gap:6px;flex-wrap:wrap}
-.radio-btn{padding:5px 11px;border-radius:16px;border:.5px solid var(--brd2);background:var(--bg3);font-size:12px;cursor:pointer;color:var(--tx2);white-space:nowrap}
-.radio-btn.on{background:var(--green);color:#fff;border-color:var(--green)}
-.radio-btn.warn.on{background:var(--amber);color:#fff;border-color:var(--amber)}
-.radio-btn.bad.on{background:var(--red);color:#fff;border-color:var(--red)}
-.side-btns{display:flex;gap:4px}
-.side-btn{padding:4px 10px;border-radius:12px;border:.5px solid var(--brd2);background:var(--bg3);font-size:11px;cursor:pointer;color:var(--tx2)}
-.side-btn.on{background:var(--red);color:#fff;border-color:var(--red)}
-.chk-note{width:100%;margin-top:6px;padding:6px 10px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);font-size:12px;color:var(--tx);font-family:inherit}
-.chk-note::placeholder{color:var(--tx3)}
-.score-row{display:flex;align-items:center;gap:8px;margin-top:6px}
-.score-lbl{font-size:11px;color:var(--tx3)}
-.score-btns{display:flex;gap:4px}
-.score-btn{width:28px;height:28px;border-radius:50%;border:.5px solid var(--brd2);background:var(--bg3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
-.score-btn.on{background:var(--green);color:#fff;border-color:var(--green)}
+.chk-lbl{font-size:13px;font-weight:600;margin-bottom:6px}
+.chk-sub{font-size:11px;color:var(--tx3);margin-bottom:8px}
+.side-section{margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.side-tag{font-size:11px;font-weight:600;color:var(--tx3);min-width:28px}
+.radio-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--brd2);background:var(--bg3);font-size:12px;cursor:pointer;color:var(--tx2);transition:all .15s;white-space:nowrap}
+.radio-pill:active{background:var(--bg4)}
+.radio-pill.on-ok{background:var(--green3);color:var(--green2);border-color:var(--green)}
+.radio-pill.on-warn{background:var(--amber3);color:var(--amber);border-color:var(--amber)}
+.radio-pill.on-bad{background:var(--red3);color:var(--red);border-color:var(--red)}
+.note-input{width:100%;padding:7px 11px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);font-size:12px;color:var(--tx);font-family:inherit;margin-top:6px;transition:border-color .15s}
+.note-input:focus{outline:none;border-color:var(--green)}
+.note-input::placeholder{color:var(--tx3)}
 
-/* ── ASSESSMENT SECTION ── */
-.assess-wrap{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
-.assess-title{font-size:13px;font-weight:600;margin-bottom:10px}
-.assess-textarea{width:100%;padding:10px 12px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);font-size:13px;color:var(--tx);font-family:inherit;resize:none;line-height:1.6}
-.assess-textarea::placeholder{color:var(--tx3)}
-.training-pos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.tp-btn{padding:9px 10px;border-radius:var(--r);border:.5px solid var(--brd);background:var(--bg3);font-size:12px;cursor:pointer;text-align:center;color:var(--tx2)}
+/* ─ ASSESS ─ */
+.assess-card{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.assess-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.assess-ta{width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);font-size:13px;color:var(--tx);font-family:inherit;resize:none;line-height:1.6;transition:border-color .15s}
+.assess-ta:focus{outline:none;border-color:var(--green)}
+.assess-ta::placeholder{color:var(--tx3)}
+.tp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.tp-btn{padding:9px 10px;border-radius:var(--r);border:1px solid var(--brd);background:var(--bg3);font-size:12px;cursor:pointer;text-align:center;color:var(--tx2);font-family:inherit;transition:all .15s}
 .tp-btn.on{background:var(--green);color:#fff;border-color:var(--green)}
 
-/* ── REPORT TAB ── */
-.report-summary{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
-.report-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--brd)}
+/* ─ REPORT ─ */
+.report-hero{background:linear-gradient(135deg,#0a2218,#0d3326);border-radius:var(--r2);padding:22px;margin-bottom:18px;color:#fff}
+.report-hero h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.report-hero p{font-size:13px;color:#9de8c8;margin-bottom:16px}
+.report-stats{display:flex;gap:12px}
+.rs{flex:1;background:rgba(255,255,255,.1);border-radius:var(--r);padding:12px;text-align:center}
+.rs .n{font-size:26px;font-weight:700;color:#fff}
+.rs .l{font-size:11px;color:#9de8c8;margin-top:2px}
+.report-section{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)}
+.rs-head{padding:13px 16px;border-bottom:1px solid var(--brd);background:var(--bg3);display:flex;align-items:center;gap:8px}
+.rs-head h4{font-size:13px;font-weight:700}
+.report-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--brd)}
 .report-row:last-child{border-bottom:none}
-.report-icon{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.report-name{font-size:13px;flex:1}
-.report-val{font-size:12px;color:var(--tx2)}
-.report-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ract{padding:13px;border-radius:var(--r2);border:.5px solid var(--brd);background:var(--bg2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:500}
-.ract:active{background:var(--bg3)}
-.ract.pdf{border-color:#c0e8d5;color:var(--green)}
-.ract.share{background:#FAE100;border-color:#dbd000;color:#2a1f00}
+.rr-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rr-name{font-size:13px;flex:1}
+.rr-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+.rr-status.done{background:var(--green3);color:var(--green2)}
+.rr-status.none{background:var(--bg3);color:var(--tx3)}
+.report-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ract{padding:15px;border-radius:var(--r2);border:1px solid var(--brd);background:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit;transition:all .15s;box-shadow:var(--shadow)}
+.ract:active{transform:scale(.97)}
+.ract.pdf{border-color:#a7f3d0;color:var(--green2)}
+.ract.share{background:#FAE100;border-color:#d4c100;color:#422000}
 
-/* ── FULLSCREEN ── */
-#fsView{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
-#fsView.show{display:flex}
-.fs-hd{background:rgba(0,0,0,.8);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.fs-hd span{color:#fff;font-size:14px;font-weight:600}
-.fs-body{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0a0a0a}
-canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
-.fs-ctrl{background:rgba(0,0,0,.85);padding:12px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
-.fs-ctrl label{color:#ccc;font-size:11px;white-space:nowrap}
+/* ─ COMPARE HEADER ─ */
+.compare-intro{background:var(--green);color:#fff;padding:14px 18px;border-radius:var(--r2);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.compare-intro svg{flex-shrink:0;opacity:.85}
+.compare-intro p{font-size:13px;line-height:1.5}
+.compare-intro strong{display:block;font-size:14px;font-weight:700;margin-bottom:2px}
 
-/* ── CAMERA ── */
+/* ─ CAMERA ─ */
 .cam-ov{display:none;position:fixed;inset:0;z-index:600;background:#000;flex-direction:column}
 .cam-ov.show{display:flex}
 .cam-body{flex:1;position:relative;overflow:hidden}
 #camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
-.gbox{position:absolute;border:2px solid rgba(26,158,116,.8);top:8%;bottom:5%;left:18%;right:18%;border-radius:5px}
-.gtip{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:rgba(26,158,116,.75);color:#fff;font-size:11px;padding:3px 12px;border-radius:10px;white-space:nowrap}
+.gbox{position:absolute;border:2px solid rgba(0,168,120,.85);top:6%;bottom:4%;left:16%;right:16%;border-radius:6px}
+.gtip{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,168,120,.85);color:#fff;font-size:12px;padding:4px 14px;border-radius:12px;white-space:nowrap;font-weight:600}
 .gcv{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25);transform:translateX(-50%)}
-.gch1{position:absolute;top:33%;left:0;right:0;height:1px;background:rgba(255,255,255,.2)}
-.gch2{position:absolute;top:66%;left:0;right:0;height:1px;background:rgba(255,255,255,.2)}
-.cam-bar{background:rgba(10,10,10,.92);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.cam-info{flex:1}
-.cam-test-name{color:#fff;font-size:13px;font-weight:600}
-.cam-test-sub{color:#aaa;font-size:11px;margin-top:2px}
-.shutter{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #999;cursor:pointer;flex-shrink:0}
+.gch{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.18)}
+.cam-bar{background:rgba(5,5,5,.92);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.08)}
+.cam-info .ct-name{color:#fff;font-size:14px;font-weight:700}
+.cam-info .ct-sub{color:#9de8c8;font-size:12px;margin-top:2px}
+.cam-info .ct-slot{color:var(--amber);font-size:11px;margin-top:2px;font-weight:600}
+.shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.3);cursor:pointer;flex-shrink:0}
 .shutter:active{transform:scale(.9)}
-.cclose{padding:8px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer;font-family:inherit}
+.cclose{padding:9px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#ccc;font-size:13px;cursor:pointer;font-family:inherit}
 
-/* ── POSE LOADER ── */
-.pload{position:absolute;inset:0;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:10}
-.pload p{font-size:12px;color:var(--tx2)}
-.spin{width:28px;height:28px;border:2.5px solid var(--brd2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
+/* ─ FULLSCREEN ─ */
+#fsView{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
+#fsView.show{display:flex}
+.fs-hd{background:#0d0d0d;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.08)}
+.fs-hd span{color:#fff;font-size:14px;font-weight:600}
+.fs-body{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#050505}
+canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
+.fs-ctrl{background:#0d0d0d;padding:12px 18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid rgba(255,255,255,.08)}
+.fs-ctrl label{color:#888;font-size:11px;white-space:nowrap}
+
+/* ─ LOADER ─ */
+.pload{position:absolute;inset:0;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10}
+.pload p{font-size:12px;color:var(--tx2);font-weight:500}
+.spin{width:30px;height:30px;border:2.5px solid var(--brd2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* ── MODE BAR ── */
-.mode-bar{display:none;padding:6px 10px;border-top:.5px solid var(--brd);background:var(--bg3);display:flex;gap:5px;flex-wrap:wrap}
-.mbt{padding:6px 10px;border:none;border-radius:var(--r);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;font-family:inherit}
-.mbt.on{background:var(--bg2);color:var(--tx);font-weight:600;box-shadow:inset 0 0 0 .5px var(--brd2)}
-.mhint{font-size:10px;color:var(--tx3);padding:0 10px 6px;border-top:none}
+/* ─ ACTION BTNS ─ */
+.abtn{padding:9px 18px;border-radius:20px;border:1px solid var(--brd2);background:#fff;color:var(--tx);font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s}
+.abtn:active{background:var(--bg3)}
+.abtn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.abtn.secondary{background:#111;color:#fff;border-color:#111}
+.abtn.danger{background:var(--red3);color:var(--red);border-color:var(--red)}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:90vw;text-align:center}
+/* ─ COMPARE CTA ─ */
+.compare-cta{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,168,120,.45);display:none;align-items:center;gap:10px;border:none;font-family:inherit;transition:all .2s;white-space:nowrap}
+.compare-cta.show{display:flex}
+.compare-cta:active{transform:translateX(-50%) scale(.95)}
+
+/* ─ TOAST ─ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:11px 22px;border-radius:24px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:1000;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 
-/* ── PROGRESS BAR ── */
-.progress{display:flex;gap:4px;padding:10px 16px;background:var(--bg2);border-bottom:.5px solid var(--brd)}
-.prog-dot{flex:1;height:3px;border-radius:2px;background:var(--brd2)}
-.prog-dot.done{background:var(--green)}
-.prog-dot.active{background:var(--blue)}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <small>NPT 체형분석</small></div>
+  <div class="logo"><em>National</em>Gym <sup>NPT ANALYSIS</sup></div>
   <div class="hdr-r">
-    <button class="btn" onclick="clearAll()">초기화</button>
-    <button class="btn g" onclick="showSection('report')">리포트</button>
+    <div class="phase-pill" id="phasePill">Before 촬영</div>
+    <button class="abtn" style="font-size:12px;padding:6px 14px;color:#fff;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08)" onclick="clearAll()">초기화</button>
   </div>
 </div>
 
-<!-- PROGRESS -->
-<div class="progress" id="progressBar"></div>
-
-<!-- SECTION TABS -->
-<div class="sec-tabs" id="secTabs"></div>
+<div class="phase-nav" id="phaseNav"></div>
 
 <div class="wrap" id="mainWrap">
-
-  <!-- META -->
-  <div class="meta" id="metaCard">
+  <!-- meta always visible -->
+  <div class="meta-card" id="metaCard">
+    <div class="meta-head"><h2>회원 정보</h2><span class="meta-status" id="tsDisp">—</span></div>
     <div class="mgrid">
-      <div class="f"><label>회원 이름</label><input id="cName" type="text" placeholder="이름"></div>
-      <div class="f"><label>트레이너</label>
-        <select id="cTrainer"><option value="">선택</option><option>최현승</option><option>정인재</option><option>이희성</option></select>
+      <div class="f"><label>회원 이름</label><input id="cName" type="text" placeholder="이름" oninput="autoSave()"></div>
+      <div class="f"><label>담당 트레이너</label>
+        <select id="cTrainer" onchange="autoSave()"><option value="">선택</option><option>최현승</option><option>정인재</option><option>이희성</option></select>
       </div>
-      <div class="f"><label>검사 일시</label><div class="ts-val" id="tsDisp">—</div></div>
+      <div class="f"><label>검사 일시</label><div class="ts-val" id="tsDispVal">—</div></div>
     </div>
   </div>
+  <div id="phasePanels"></div>
+</div>
 
-  <!-- SECTIONS RENDERED BY JS -->
-  <div id="sectionsContainer"></div>
-
-</div><!-- /wrap -->
+<!-- COMPARE CTA -->
+<button class="compare-cta" id="compareCta" onclick="goCompare()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+  전체 비교 분석 보기
+</button>
 
 <!-- FULLSCREEN -->
 <div id="fsView">
   <div class="fs-hd">
     <span id="fsTitle">오버랩 비교</span>
-    <button class="btn" style="font-size:12px;background:rgba(255,255,255,.12);border-color:#555;color:#fff" onclick="closeFS()">✕ 닫기</button>
+    <button class="abtn" style="font-size:12px;padding:6px 14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="closeFS()">✕ 닫기</button>
   </div>
   <div class="fs-body"><canvas id="fsCanvas"></canvas></div>
   <div class="fs-ctrl">
     <label>Before 투명도</label>
-    <input type="range" id="fsAlpha" min="10" max="70" value="35" oninput="syncAlpha(this.value)">
-    <label id="fsAlphaVal" style="color:#ccc;min-width:32px">35%</label>
+    <input type="range" id="fsAlpha" min="0" max="80" value="40" oninput="syncFS('alpha',this.value)" style="width:100px">
+    <label id="fsAlphaV" style="color:#ccc;min-width:28px">40%</label>
     <label style="margin-left:10px">크기</label>
-    <input type="range" id="fsScale" min="50" max="150" value="100" oninput="syncScale(this.value)">
-    <label id="fsScaleVal" style="color:#ccc;min-width:36px">100%</label>
+    <input type="range" id="fsScale" min="50" max="150" value="100" oninput="syncFS('scale',this.value)" style="width:100px">
+    <label id="fsScaleV" style="color:#ccc;min-width:36px">100%</label>
   </div>
 </div>
 
@@ -260,14 +303,18 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
   <div class="cam-body">
     <video id="camVid" autoplay playsinline muted></video>
     <div class="cam-guide">
-      <div class="gbox"></div><div class="gtip" id="camTip">전신을 박스 안에</div>
-      <div class="gcv"></div><div class="gch1"></div><div class="gch2"></div>
+      <div class="gbox"></div>
+      <div class="gtip" id="camTip">전신이 가이드 안에 들어오도록</div>
+      <div class="gcv"></div>
+      <div class="gch" style="top:33%"></div>
+      <div class="gch" style="top:66%"></div>
     </div>
   </div>
   <div class="cam-bar">
     <div class="cam-info">
-      <div class="cam-test-name" id="camTestName">촬영</div>
-      <div class="cam-test-sub" id="camTestSub"></div>
+      <div class="ct-name" id="ctName">촬영</div>
+      <div class="ct-sub" id="ctSub"></div>
+      <div class="ct-slot" id="ctSlot"></div>
     </div>
     <button class="shutter" onclick="snap()"></button>
     <button class="cclose" onclick="closeCam()">닫기</button>
@@ -280,337 +327,330 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script>
+
 // ═══════════════════════════════════════════════════════════
-// CONFIG — TEST DEFINITIONS
+// TESTS & CONFIG
 // ═══════════════════════════════════════════════════════════
-const SECTIONS = [
-  {
-    id:'static', label:'① 정적 자세',
-    tests:[
-      {id:'ant',   title:'전면 (Anterior)',   sub:'어깨·골반·무릎 좌우 정렬',  tip:'전신 정면, 발 어깨너비'},
-      {id:'post',  title:'후면 (Posterior)',  sub:'척추측만·견갑골·골반 고저', tip:'전신 후면, 발 어깨너비'},
-      {id:'lat',   title:'측면 (Lateral)',    sub:'거북목·흉추후만·요추전만',  tip:'측면, 발 엄지발가락 기준선'},
-    ]
-  },
-  {
-    id:'npt', label:'② NPT 동작검사',
-    tests:[
-      {id:'sh_flex', title:'Shoulder Flexion & Lateral', sub:'Serratus ant. / U.Trap / Lat / Biceps', tip:'정면, 팔 들어올리는 동작'},
-      {id:'trunk_b', title:'Trunk Flexion — 후면',       sub:'Scoliosis in motion · Muscle tone', tip:'후면, 상체 앞으로 숙이기'},
-      {id:'trunk_l', title:'Trunk Flexion — 측면',       sub:'굴곡 가동범위 · 흉/요추 분리',     tip:'측면, 상체 앞으로 숙이기'},
-      {id:'ohs_f',   title:'Overhead Squat — 전면',      sub:'Knee valgus/varus · Ankle inversion · Pelvic rotation', tip:'전면, 오버헤드 스쿼트 최저점'},
-      {id:'ohs_l',   title:'Overhead Squat — 측면',      sub:'상체 전경 · 흉추 가동성 · 골반 전방경사', tip:'측면, 오버헤드 스쿼트 최저점'},
-      {id:'sku',     title:'Standing Knee Up',           sub:'Glutes / Hip flexor / Ankle instability', tip:'전면, 무릎 최대 들어올리기'},
-      {id:'slr',     title:'S.L.R. Test (측면)',         sub:'Hamstring 단축 · 각도 자동 측정',   tip:'측면, 누운 자세에서 다리 올리기'},
-    ]
-  },
-  {
-    id:'checklist', label:'③ 체크리스트',
-    isChecklist: true
-  },
-  {
-    id:'report', label:'④ 리포트',
-    isReport: true
-  }
+const TESTS = [
+  {id:'ant',    sec:'static', n:1, title:'전면 (Anterior)',             sub:'어깨·골반·무릎 좌우 정렬 분석',      tip:'전신 정면, 발 어깨너비'},
+  {id:'post',   sec:'static', n:2, title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저 분석',     tip:'전신 후면, 발 어깨너비'},
+  {id:'lat',    sec:'static', n:3, title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만 분석',      tip:'좌측면, 발 옆면 기준'},
+  {id:'sh_flex',sec:'npt',    n:4, title:'Shoulder Flexion & Lateral',  sub:'Serratus ant. / U.Trap / Lat / Biceps 활성화 패턴',tip:'전면, 팔 최대 거상'},
+  {id:'trunk_b',sec:'npt',    n:5, title:'Trunk Flexion — 후면',        sub:'Scoliosis in motion · Muscle tone Lt/Rt', tip:'후면, 체간 전굴 최대범위'},
+  {id:'trunk_l',sec:'npt',    n:6, title:'Trunk Flexion — 측면',        sub:'굴곡 가동범위 · 흉/요추 분리 패턴', tip:'측면, 체간 전굴 최대범위'},
+  {id:'ohs_f',  sec:'npt',    n:7, title:'Overhead Squat — 전면',       sub:'Knee valgus/varus · Ankle inversion · Pelvic rotation', tip:'전면, OHS 최저점 유지'},
+  {id:'ohs_l',  sec:'npt',    n:8, title:'Overhead Squat — 측면',       sub:'상체 전경각 · 흉추 가동성 · 골반 전방경사', tip:'측면, OHS 최저점 유지'},
+  {id:'sku',    sec:'npt',    n:9, title:'Standing Knee Up',            sub:'고관절·골반 안정성 · 발목 안정성',   tip:'전면, 무릎 최대 거상 유지'},
+  {id:'slr',    sec:'npt',    n:10,title:'S.L.R. Test — 측면',          sub:'Hamstring 단축 · 다리 올림 각도 자동 측정', tip:'측면, 누운 자세 SLR'}
 ];
 
-const CHECKLIST_GROUPS = [
-  {
-    id:'prone', title:'Prone Position (복와위 검사)', sub:'침대 위 엎드린 자세',
-    items:[
-      {id:'quad',   label:'Quadriceps', sub:'Lt. / Rt.', type:'side_score', sides:['Lt','Rt'], options:['Short.','Weak.']},
-      {id:'hipext', label:'Hip Extension test', sub:'Lt. / Rt. — Ant.T / Post.T', type:'side_select', sides:['Lt','Rt'], options:['Ant.T','Post.T','Normal']},
-      {id:'ql',     label:'Quadratus Lumborum (Q.L.)', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-    ]
-  },
-  {
-    id:'supine', title:'Supine Position (앙와위 검사)', sub:'침대 위 바로 누운 자세',
-    items:[
-      {id:'slr_chk', label:'S.L.R. Test — Hamstring', sub:'Lt. / Rt. — Shortness / Over act.', type:'side_select', sides:['Lt','Rt'], options:['Shortness','Over act.','Normal']},
-      {id:'patrick', label:'Patrick Test (FABER)', sub:'Lt. / Rt. — Anterior / Posterior', type:'side_select', sides:['Lt','Rt'], options:['Anterior','Posterior','Normal']},
-    ]
-  },
-  {
-    id:'calf', title:'Calf Palpation', sub:'종아리 촉진',
-    items:[
-      {id:'bump',     label:'Bump Test', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-      {id:'achilles', label:'Achilles Tendon Palpation', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-      {id:'calf_pal', label:'Calf Palpation', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-    ]
-  },
-  {
-    id:'neck', title:'Neck Palpation', sub:'경부 촉진',
-    items:[
-      {id:'cerv_curve', label:'Cervical Curve', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-      {id:'scm',        label:'S.C.M (흉쇄유돌근)', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-      {id:'scalene',    label:'Scalene (사각근)', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-      {id:'utrap_neck', label:'U.Trap (상부승모근)', sub:'Lt. / Rt.', type:'side_toggle', sides:['Lt','Rt']},
-    ]
-  },
-  {
-    id:'assess', title:'Assessment & Training Position', sub:'종합 평가 및 훈련 처방',
-    isAssess: true
-  }
+const CHECKLIST = [
+  {id:'prone', title:'Prone Position 검사', sub:'복와위 — 침대 위 엎드린 자세',
+   items:[
+    {id:'quad',   label:'Quadriceps 단축 / 약화', sides:['Lt','Rt'], opts:['Short.','Weak.','Normal'], colors:['warn','warn','ok']},
+    {id:'hipext', label:'Hip Extension Test (Ant.T / Post.T)', sides:['Lt','Rt'], opts:['Ant.T 우세','Post.T 우세','정상'], colors:['warn','warn','ok']},
+    {id:'ql',     label:'Quadratus Lumborum (Q.L.) 단축', sides:['Lt','Rt'], opts:['양성','음성'], colors:['bad','ok']},
+   ]},
+  {id:'supine', title:'Supine Position 검사', sub:'앙와위 — 침대 위 바로 누운 자세',
+   items:[
+    {id:'slr_c',    label:'S.L.R. — Hamstring 상태', sides:['Lt','Rt'], opts:['Shortness','Over act.','Normal'], colors:['warn','warn','ok']},
+    {id:'patrick',  label:'Patrick Test (FABER)', sides:['Lt','Rt'], opts:['Anterior','Posterior','Normal'], colors:['warn','warn','ok']},
+   ]},
+  {id:'calf', title:'Calf Palpation', sub:'종아리 촉진',
+   items:[
+    {id:'bump',     label:'Bump Test', sides:['Lt','Rt'], opts:['양성','음성'], colors:['bad','ok']},
+    {id:'achilles', label:'Achilles Tendon Palpation', sides:['Lt','Rt'], opts:['압통','정상'], colors:['bad','ok']},
+    {id:'calfpal',  label:'Calf Palpation', sides:['Lt','Rt'], opts:['압통','정상'], colors:['bad','ok']},
+   ]},
+  {id:'neck', title:'Neck Palpation', sub:'경부 촉진',
+   items:[
+    {id:'cervcurve',label:'Cervical Curve', sides:['Lt','Rt'], opts:['감소','증가','정상'], colors:['warn','warn','ok']},
+    {id:'scm',      label:'SCM (흉쇄유돌근) 긴장', sides:['Lt','Rt'], opts:['긴장','정상'], colors:['bad','ok']},
+    {id:'scalene',  label:'Scalene (사각근) 긴장', sides:['Lt','Rt'], opts:['긴장','정상'], colors:['bad','ok']},
+    {id:'utrap',    label:'Upper Trap 긴장', sides:['Lt','Rt'], opts:['긴장','정상'], colors:['bad','ok']},
+   ]}
+];
+
+const NORMS = {
+  shoulderTilt:    {max:3, unit:'°', label:'정상 3° 이하', hb:false},
+  shoulderHDiff:   {max:15,unit:'px',label:'정상 15px 이하',hb:false},
+  hipTilt:         {max:3, unit:'°', label:'정상 3° 이하', hb:false},
+  hipHDiff:        {max:15,unit:'px',label:'정상 15px 이하',hb:false},
+  spineAngle:      {max:5, unit:'°', label:'정상 5° 이하', hb:false},
+  shoulderHipAlign:{max:3, unit:'%', label:'정상 3% 이하', hb:false},
+  kneeAlign:       {min:85,max:115,unit:'%',label:'정상 85~115%',hb:false},
+  slrAngle:        {min:70,max:90,unit:'°',label:'정상 70~90°',hb:true},
+  trunkFlexAngle:  {min:70,unit:'°',label:'정상 70° 이상',hb:true},
+};
+
+const PHASES = [
+  {id:'before',    label:'Before 촬영'},
+  {id:'after',     label:'After 촬영'},
+  {id:'compare',   label:'비교 분석'},
+  {id:'checklist', label:'NPT 체크리스트'},
+  {id:'report',    label:'최종 리포트'}
 ];
 
 // ═══════════════════════════════════════════════════════════
-// GLOBAL STATE
+// STATE
 // ═══════════════════════════════════════════════════════════
-const DATA = {}; // DATA[testId] = {B:{img,canvas,ctx,pose,markers,lines,guides}, A:{...}}
-const CHK = {};  // CHK[itemId] = {lt:..., rt:..., note:...}
-let ASSESS = {text:'', training:[]};
-let currentSection = 'static';
-let mode = 'mark', msStart=null, gsStart=null;
-let activeTest=null, activeSlot=null;
-let pendUp=null, camP='B', camStream=null;
+const SHOTS = {}; // SHOTS[tid][slot] = {img,canvas,ctx,pose,markers,lines,guides}
+const CHK = {};
+let ASSESS = {text:'',training:[]};
+let currentPhase = 'before';
+let activeMode = 'mark', msStart=null, gsStart=null;
+let camTid=null, camSlot=null, camStream=null;
+let pendUp=null;
 let fsTestId=null;
 let poseEng=null, poseOk=false;
-const CONN=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]];
+
+const CONN=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28],[27,29],[28,30]];
 const LBL={0:'코',11:'왼어깨',12:'오른어깨',23:'왼골반',24:'오른골반',25:'왼무릎',26:'오른무릎',27:'왼발목',28:'오른발목'};
 const KEY=[0,11,12,13,14,15,16,23,24,25,26,27,28];
 
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-function init(){
-  buildTabs();
-  buildSections();
-  buildProgress();
-  setInterval(tickTS,1000);tickTS();
-  if(typeof Pose!=='undefined'){
-    poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
+window.addEventListener('load', () => {
+  buildNav();
+  buildPanels();
+  showPhase('before');
+  setInterval(tickTS,1000); tickTS();
+  restoreFromStorage();
+  if (typeof Pose !== 'undefined') {
+    poseEng = new Pose({locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
     poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
     poseEng.onResults(()=>{});
     poseEng.initialize().then(()=>{poseOk=true}).catch(()=>{});
   }
+});
+
+function tickTS(){
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  const ts=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  const el=document.getElementById('tsDispVal'); if(el)el.textContent=ts;
+}
+function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2800)}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function buildNav(){
+  const nav=document.getElementById('phaseNav');
+  nav.innerHTML=PHASES.map((p,i)=>`<div class="pnav" id="pnav_${p.id}" onclick="showPhase('${p.id}')"><span class="pnum">${i+1}</span>${p.label}</div>`).join('');
 }
 
-function tickTS(){const n=new Date(),p=x=>String(x).padStart(2,'0');document.getElementById('tsDisp').textContent=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`}
-function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
-
-function buildTabs(){
-  const tabs=document.getElementById('secTabs');
-  tabs.innerHTML=SECTIONS.map(s=>`<div class="sec-tab${s.id===currentSection?' on':''}" onclick="showSection('${s.id}')">${s.label}</div>`).join('');
+function showPhase(id){
+  currentPhase=id;
+  document.querySelectorAll('.pnav').forEach(el=>el.classList.remove('on'));
+  const navEl=document.getElementById('pnav_'+id); if(navEl)navEl.classList.add('on');
+  document.querySelectorAll('.phase').forEach(el=>el.classList.remove('on'));
+  const panel=document.getElementById('phase_'+id); if(panel)panel.classList.add('on');
+  const pill=document.getElementById('phasePill'); if(pill)pill.textContent=PHASES.find(p=>p.id===id)?.label||'';
+  const meta=document.getElementById('metaCard'); if(meta)meta.style.display=id==='report'?'none':'block';
+  if(id==='compare')updateComparePanels();
+  if(id==='report')updateReport();
+  updateCompareCta();
 }
 
-function buildProgress(){
-  const bar=document.getElementById('progressBar');
-  const allTests=SECTIONS.filter(s=>!s.isChecklist&&!s.isReport).flatMap(s=>s.tests||[]);
-  bar.innerHTML=allTests.map(t=>`<div class="prog-dot" id="prog_${t.id}"></div>`).join('');
-}
-
-function updateProgress(){
-  const allTests=SECTIONS.filter(s=>!s.isChecklist&&!s.isReport).flatMap(s=>s.tests||[]);
-  allTests.forEach(t=>{
-    const d=DATA[t.id];
-    const dot=document.getElementById('prog_'+t.id);
-    if(!dot)return;
-    const hasBoth=d&&d.B&&d.B.img&&d.A&&d.A.img;
-    const hasOne=d&&((d.B&&d.B.img)||(d.A&&d.A.img));
-    dot.className='prog-dot'+(hasBoth?' done':hasOne?' active':'');
-  });
-}
-
-function showSection(id){
-  currentSection=id;
-  buildTabs();
-  document.querySelectorAll('.sec-panel').forEach(p=>p.classList.remove('on'));
-  const panel=document.getElementById('panel_'+id);
-  if(panel)panel.classList.add('on');
-  document.getElementById('metaCard').style.display=id==='report'?'none':'block';
-}
-
-function buildSections(){
-  const container=document.getElementById('sectionsContainer');
+// ═══════════════════════════════════════════════════════════
+// PANEL BUILDING
+// ═══════════════════════════════════════════════════════════
+function buildPanels(){
+  const c=document.getElementById('phasePanels');
   let html='';
-  SECTIONS.forEach(sec=>{
-    html+=`<div class="sec-panel${sec.id===currentSection?' on':''}" id="panel_${sec.id}">`;
-    if(sec.isChecklist){html+=buildChecklistHTML()}
-    else if(sec.isReport){html+=buildReportHTML()}
-    else{
-      html+=`<div class="sec-title">${sec.label}<span class="badge">${(sec.tests||[]).length}개 검사</span></div>`;
-      (sec.tests||[]).forEach(t=>{html+=buildTestBlockHTML(t)});
-    }
+  PHASES.forEach(p=>{
+    html+=`<div class="phase" id="phase_${p.id}">`;
+    if(p.id==='before') html+=buildBeforePhase();
+    else if(p.id==='after') html+=buildAfterPhase();
+    else if(p.id==='compare') html+=buildComparePhase();
+    else if(p.id==='checklist') html+=buildChecklistPhase();
+    else if(p.id==='report') html+=buildReportPhase();
     html+='</div>';
   });
-  container.innerHTML=html;
+  c.innerHTML=html;
 }
 
-// ═══════════════════════════════════════════════════════════
-// TEST BLOCK HTML
-// ═══════════════════════════════════════════════════════════
-function buildTestBlockHTML(t){
-  return `<div class="test-block" id="block_${t.id}">
-    <div class="test-head">
-      <div><div class="test-title">${t.title}</div><div class="test-sub">${t.sub}</div></div>
-      <span class="test-badge" id="badge_${t.id}">미촬영</span>
-    </div>
-    <div class="photo-pair">
-      ${buildSlotHTML(t.id,'B',t.tip)}
-      ${buildSlotHTML(t.id,'A',t.tip)}
-    </div>
-    <div id="mbar_${t.id}" style="display:none">
-      <div class="mode-bar" style="display:flex">
-        <button class="mbt on" id="mm_${t.id}_mark" onclick="setMode('mark','${t.id}')">● 마커</button>
-        <button class="mbt" id="mm_${t.id}_meas" onclick="setMode('meas','${t.id}')">↔ 측정선</button>
-        <button class="mbt" id="mm_${t.id}_guid" onclick="setMode('guid','${t.id}')">⊕ 가이드</button>
-        <button class="mbt" id="mm_${t.id}_eras" onclick="setMode('eras','${t.id}')">✕ 삭제</button>
+function buildBeforePhase(){
+  let html=`<div class="sec-hd"><h3>Before 촬영</h3><span class="hint">현재 상태를 촬영하세요</span><div class="progress-ring" id="progB"></div></div>`;
+  TESTS.forEach((t,i)=>{
+    html+=`<div class="test-card" id="bc_${t.id}">
+      <div class="tc-head">
+        <div class="tc-num" id="tcn_${t.id}_B">${t.n}</div>
+        <div class="tc-info"><h4>${t.title}</h4><p>${t.sub}</p></div>
+        <div class="tc-badge none" id="tcb_${t.id}_B">미촬영</div>
       </div>
-      <div class="mhint" id="mhint_${t.id}">클릭하여 마커를 찍으세요.</div>
-    </div>
-    <div id="overlap_${t.id}" style="display:none">
-      <div class="overlap-section">
-        <div class="overlap-head">
-          <span class="overlap-lbl">오버랩 비교</span>
-          <button class="btn" style="font-size:10px;padding:4px 10px" onclick="openFS('${t.id}')">전체화면 ↗</button>
-        </div>
-        <div class="overlap-canvas-wrap"><canvas class="oc" id="oc_${t.id}"></canvas></div>
-        <div class="ctrl-row"><span class="ctrl-lbl">Before 투명도</span><input type="range" id="alpha_${t.id}" min="10" max="70" value="35" oninput="drawOverlap('${t.id}')"><span class="ctrl-val" id="alphaV_${t.id}">35%</span></div>
-        <div class="ctrl-divider">Before 수동 보정</div>
-        <div class="ctrl-row"><span class="ctrl-lbl">크기</span><input type="range" id="scale_${t.id}" min="50" max="150" value="100" oninput="drawOverlap('${t.id}')"><span class="ctrl-val" id="scaleV_${t.id}">100%</span></div>
-        <div class="ctrl-row"><span class="ctrl-lbl">상하</span><input type="range" id="ty_${t.id}" min="-400" max="400" value="0" oninput="drawOverlap('${t.id}')"><span class="ctrl-val" id="tyV_${t.id}">0</span></div>
-        <div class="ctrl-row"><span class="ctrl-lbl">좌우</span><input type="range" id="tx_${t.id}" min="-400" max="400" value="0" oninput="drawOverlap('${t.id}')"><span class="ctrl-val" id="txV_${t.id}">0</span></div>
-        <div style="display:flex;justify-content:flex-end;margin-top:4px"><button class="btn" style="font-size:11px;padding:4px 12px" onclick="resetManual('${t.id}')">보정 초기화</button></div>
-        <div class="angle-display" id="angles_${t.id}"></div>
-      </div>
-      <div class="analysis-box" id="analysis_${t.id}"><div class="title">Clinical Analysis</div><div id="findings_${t.id}"><p style="font-size:12px;color:var(--tx3)">분석 중...</p></div></div>
-    </div>
-  </div>`;
-}
-
-function buildSlotHTML(tid,slot,tip){
-  const lbl=slot==='B'?'Before':'After';
-  return `<div class="photo-slot" id="slot_${tid}_${slot}">
-    <div class="slot-head">
-      <span class="slot-lbl ${slot}">${lbl}</span>
-      <span class="test-badge" id="sbdg_${tid}_${slot}" style="display:none;font-size:9px"></span>
-    </div>
-    <div class="slot-zone" id="zone_${tid}_${slot}">
-      <div class="slot-add" id="add_${tid}_${slot}">
-        <div class="sadd-btn cam" onclick="openCam('${tid}','${slot}','${tip}')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>촬영
-        </div>
-        <div class="sadd-btn" onclick="doUpload('${tid}','${slot}')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>업로드
+      <div class="photo-zone" id="zone_${t.id}_B">
+        <div class="photo-add" id="add_${t.id}_B">
+          <button class="pa-btn cam" onclick="openCam('${t.id}','B')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            카메라로 촬영
+          </button>
+          <button class="pa-btn" onclick="doUpload('${t.id}','B')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            갤러리 업로드
+          </button>
         </div>
       </div>
-    </div>
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-// CHECKLIST HTML
-// ═══════════════════════════════════════════════════════════
-function buildChecklistHTML(){
-  let html='<div class="sec-title">③ 체크리스트 — 촉진 및 수기 검사</div>';
-  CHECKLIST_GROUPS.forEach(g=>{
-    if(g.isAssess){
-      html+=`<div class="assess-wrap">
-        <div class="assess-title">Assessment & Training Position</div>
-        <textarea class="assess-textarea" id="assess_text" rows="4" placeholder="종합 평가 내용 입력..." oninput="ASSESS.text=this.value"></textarea>
-        <div style="font-size:11px;color:var(--tx3);margin:10px 0 6px">Training Position 선택</div>
-        <div class="training-pos">
-          ${['Supine','Prone','Side lying','Seated','Standing','Functional'].map(p=>`<div class="tp-btn" id="tp_${p}" onclick="toggleTP('${p}')">${p}</div>`).join('')}
-        </div>
-      </div>`;
-      return;
-    }
-    html+=`<div class="chk-group"><div class="chk-group-head"><div class="chk-group-title">${g.title}</div><div class="chk-group-sub">${g.sub}</div></div><div class="chk-body">`;
-    g.items.forEach(item=>{
-      html+=`<div class="chk-item"><div class="chk-label">${item.label}<small>${item.sub}</small></div><div class="chk-ctrl" id="ctrl_${item.id}">`;
-      if(item.type==='side_toggle'){
-        item.sides.forEach(s=>{
-          html+=`<div class="side-btns"><span style="font-size:10px;color:var(--tx3);padding:4px 2px">${s}.</span>
-            <div class="side-btn" id="sb_${item.id}_${s}_pos" onclick="toggleSide('${item.id}','${s}','pos')">양성</div>
-            <div class="side-btn" id="sb_${item.id}_${s}_neg" onclick="toggleSide('${item.id}','${s}','neg')">음성</div>
-          </div>`;
-        });
-      } else if(item.type==='side_select'){
-        item.sides.forEach(s=>{
-          html+=`<div style="margin-bottom:4px;width:100%"><span style="font-size:10px;color:var(--tx3)">${s}. </span>`;
-          item.options.forEach(o=>{
-            html+=`<span class="radio-btn" id="rb_${item.id}_${s}_${o.replace(/\./g,'').replace(/ /g,'_')}" onclick="selectSideOpt('${item.id}','${s}','${o}')">${o}</span>`;
-          });
-          html+='</div>';
-        });
-      } else if(item.type==='side_score'){
-        item.sides.forEach(s=>{
-          html+=`<div style="margin-bottom:4px;width:100%"><span style="font-size:10px;color:var(--tx3)">${s}. </span>`;
-          item.options.forEach(o=>{
-            html+=`<span class="radio-btn" id="rb_${item.id}_${s}_${o.replace(/\./g,'').replace(/ /g,'_')}" onclick="selectSideOpt('${item.id}','${s}','${o}')">${o}</span>`;
-          });
-          html+='</div>';
-        });
-      }
-      html+=`</div></div>`;
-      html+=`<div style="padding:0 0 8px"><input class="chk-note" id="note_${item.id}" type="text" placeholder="Special note..." oninput="saveNote('${item.id}',this.value)"></div>`;
-    });
-    html+='</div></div>';
+    </div>`;
   });
   return html;
 }
 
-function toggleSide(itemId,side,val){
-  if(!CHK[itemId])CHK[itemId]={};
-  const key=side+'_'+val;
-  CHK[itemId][key]=!CHK[itemId][key];
-  const el=document.getElementById(`sb_${itemId}_${side}_${val}`);
-  if(el)el.classList.toggle('on',CHK[itemId][key]);
-}
-function selectSideOpt(itemId,side,val){
-  if(!CHK[itemId])CHK[itemId]={};
-  const itemDef=CHECKLIST_GROUPS.flatMap(g=>g.items||[]).find(i=>i.id===itemId);
-  if(itemDef&&itemDef.options){
-    itemDef.options.forEach(o=>{
-      const key=o.replace(/\./g,'').replace(/ /g,'_');
-      const el=document.getElementById(`rb_${itemId}_${side}_${key}`);
-      if(el)el.classList.remove('on');
-    });
-  }
-  const selKey=val.replace(/\./g,'').replace(/ /g,'_');
-  const selEl=document.getElementById(`rb_${itemId}_${side}_${selKey}`);
-  if(selEl)selEl.classList.add('on');
-  CHK[itemId][side]=val;
-}
-function saveNote(itemId,val){if(!CHK[itemId])CHK[itemId]={};CHK[itemId].note=val}
-function toggleTP(pos){
-  const idx=ASSESS.training.indexOf(pos);
-  if(idx>=0)ASSESS.training.splice(idx,1);else ASSESS.training.push(pos);
-  const el=document.getElementById('tp_'+pos);
-  if(el)el.classList.toggle('on',ASSESS.training.includes(pos));
+function buildAfterPhase(){
+  let html=`<div class="sec-hd"><h3>After 촬영</h3><span class="hint">재검사 후 촬영하세요</span><div class="progress-ring" id="progA"></div></div>`;
+  TESTS.forEach(t=>{
+    html+=`<div class="test-card" id="ac_${t.id}">
+      <div class="tc-head">
+        <div class="tc-num" id="tcn_${t.id}_A">${t.n}</div>
+        <div class="tc-info"><h4>${t.title}</h4><p>${t.sub}</p></div>
+        <div class="tc-badge none" id="tcb_${t.id}_A">미촬영</div>
+      </div>
+      <div class="ref-thumb" id="refthumb_${t.id}" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span style="font-size:11px;color:var(--tx3)">Before 참고</span>
+        <img id="refimg_${t.id}" src="" alt="">
+      </div>
+      <div class="photo-zone" id="zone_${t.id}_A">
+        <div class="photo-add" id="add_${t.id}_A">
+          <button class="pa-btn cam" onclick="openCam('${t.id}','A')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            카메라로 촬영
+          </button>
+          <button class="pa-btn" onclick="doUpload('${t.id}','A')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            갤러리 업로드
+          </button>
+        </div>
+      </div>
+    </div>`;
+  });
+  return html;
 }
 
-// ═══════════════════════════════════════════════════════════
-// REPORT HTML
-// ═══════════════════════════════════════════════════════════
-function buildReportHTML(){
-  return `<div class="sec-title">④ 최종 리포트</div>
-  <div class="report-summary" id="reportSummary">
-    <p style="font-size:13px;color:var(--tx3);text-align:center;padding:16px 0">리포트 탭 열 때 자동 생성됩니다.</p>
+function buildComparePhase(){
+  let html=`<div class="compare-intro">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    <div><strong>Before/After 오버랩 비교</strong>빨간 스켈레톤 = Before · 파란 스켈레톤 = After. 슬라이더로 위치를 맞추세요.</div>
+  </div>`;
+  TESTS.forEach(t=>{
+    html+=`<div class="test-card" id="cmp_${t.id}" style="display:none">
+      <div class="tc-head">
+        <div class="tc-num done">${t.n}</div>
+        <div class="tc-info"><h4>${t.title}</h4><p>${t.sub}</p></div>
+        <button class="abtn" style="font-size:11px;padding:5px 12px;margin-left:auto" onclick="openFS('${t.id}')">전체화면 ↗</button>
+      </div>
+      <div class="overlap-zone">
+        <div class="oz-head">
+          <span>오버랩 비교</span>
+        </div>
+        <div class="oz-canvas-wrap"><canvas class="oc" id="oc_${t.id}"></canvas></div>
+        <div class="oz-ctrl">
+          <div class="cr-grid">
+            <div class="ctrl-section-lbl">투명도</div>
+            <div class="cr-row"><span class="cr-lbl">Before</span><input type="range" id="alpha_${t.id}" min="0" max="80" value="40" oninput="drawOL('${t.id}')"><span class="cr-val" id="alphaV_${t.id}">40%</span></div>
+            <div style="display:none"></div>
+            <div class="ctrl-section-lbl">크기 · 위치 보정</div>
+            <div class="cr-row"><span class="cr-lbl">크기 배율</span><input type="range" id="sc_${t.id}" min="50" max="150" value="100" oninput="drawOL('${t.id}')"><span class="cr-val" id="scV_${t.id}">100%</span></div>
+            <div class="cr-row" style="grid-column:1/-1"><button class="abtn" style="font-size:11px;padding:4px 12px;width:100%" onclick="resetCtrl('${t.id}')">보정 초기화</button></div>
+            <div class="ctrl-section-lbl">화각 보정 (Before 이미지 잘라내기)</div>
+            <div class="cr-row"><span class="cr-lbl">위쪽 자르기</span><input type="range" id="ct_${t.id}" min="0" max="40" value="0" oninput="drawOL('${t.id}')"><span class="cr-val" id="ctV_${t.id}">0%</span></div>
+            <div class="cr-row"><span class="cr-lbl">아래쪽 자르기</span><input type="range" id="cb_${t.id}" min="0" max="40" value="0" oninput="drawOL('${t.id}')"><span class="cr-val" id="cbV_${t.id}">0%</span></div>
+            <div class="cr-row"><span class="cr-lbl">왼쪽 자르기</span><input type="range" id="cl_${t.id}" min="0" max="40" value="0" oninput="drawOL('${t.id}')"><span class="cr-val" id="clV_${t.id}">0%</span></div>
+            <div class="cr-row"><span class="cr-lbl">오른쪽 자르기</span><input type="range" id="cr2_${t.id}" min="0" max="40" value="0" oninput="drawOL('${t.id}')"><span class="cr-val" id="crV_${t.id}">0%</span></div>
+          </div>
+        </div>
+      </div>
+      <div id="mbar_${t.id}" style="display:none">
+        <div class="mode-bar">
+          <button class="mbt on" id="mm_${t.id}_mark" onclick="setMode('mark','${t.id}')">● 마커</button>
+          <button class="mbt" id="mm_${t.id}_meas" onclick="setMode('meas','${t.id}')">↔ 측정선</button>
+          <button class="mbt" id="mm_${t.id}_guid" onclick="setMode('guid','${t.id}')">⊕ 가이드선</button>
+          <button class="mbt" id="mm_${t.id}_eras" onclick="setMode('eras','${t.id}')">✕ 삭제</button>
+          <button class="mbt" style="margin-left:auto" onclick="modeTarget='${t.id}';setMode('mark','${t.id}')">Before에 적용</button>
+        </div>
+        <div class="mhint" id="mhint_${t.id}">클릭하여 마커를 찍으세요.</div>
+      </div>
+      <div class="clinical-box" id="clin_${t.id}">
+        <div class="cb-title">Clinical Analysis</div>
+        <div id="findings_${t.id}"><p style="font-size:12px;color:var(--tx3)">분석 중...</p></div>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function buildChecklistPhase(){
+  let html=`<div class="sec-hd"><h3>NPT 체크리스트</h3><span class="hint">촉진 및 도수 검사 항목</span></div>`;
+  CHECKLIST.forEach(g=>{
+    html+=`<div class="chk-group"><div class="chk-ghead"><div class="chk-gtitle">${g.title}</div><div class="chk-gsub">${g.sub}</div></div><div class="chk-body">`;
+    g.items.forEach(item=>{
+      html+=`<div class="chk-item"><div class="chk-lbl">${item.label}</div><div class="chk-sub">${item.sides.join(' / ')}</div>`;
+      item.sides.forEach(side=>{
+        html+=`<div class="side-section"><span class="side-tag">${side}.</span>`;
+        item.opts.forEach((opt,oi)=>{
+          const colorClass=item.colors[oi]||'ok';
+          html+=`<button class="radio-pill" id="rp_${item.id}_${side}_${oi}" onclick="selectOpt('${item.id}','${side}',${oi},'${colorClass}')">${opt}</button>`;
+        });
+        html+='</div>';
+      });
+      html+=`<input class="note-input" id="note_${item.id}" type="text" placeholder="Special note..." oninput="saveNote('${item.id}',this.value)"></div>`;
+    });
+    html+='</div></div>';
+  });
+  html+=`<div class="assess-card">
+    <div class="assess-title">Assessment &amp; Training Position</div>
+    <textarea class="assess-ta" id="assessText" rows="5" placeholder="종합 평가 소견을 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea>
+    <div style="font-size:12px;font-weight:600;color:var(--tx3);margin:12px 0 8px;letter-spacing:.04em">TRAINING POSITION</div>
+    <div class="tp-grid">
+      ${['Supine','Prone','Side lying','Seated','Standing','Functional'].map(p=>`<button class="tp-btn" id="tp_${p}" onclick="toggleTP('${p}')">${p}</button>`).join('')}
+    </div>
+  </div>`;
+  return html;
+}
+
+function buildReportPhase(){
+  return `<div class="report-hero">
+    <h2 id="rHeroName">NationalGym NPT 분석 리포트</h2>
+    <p id="rHeroSub">전체 결과를 확인하고 내보내세요</p>
+    <div class="report-stats">
+      <div class="rs"><div class="n" id="rDone">0</div><div class="l">완료</div></div>
+      <div class="rs"><div class="n" id="rPending">0</div><div class="l">미촬영</div></div>
+      <div class="rs"><div class="n" id="rChk">0</div><div class="l">체크리스트</div></div>
+    </div>
+  </div>
+  <div class="report-section">
+    <div class="rs-head"><h4>검사 현황</h4></div>
+    <div id="reportTestList"></div>
+  </div>
+  <div id="reportAssess" style="display:none">
+    <div class="report-section">
+      <div class="rs-head"><h4>Assessment</h4></div>
+      <div style="padding:14px 16px;font-size:13px;color:var(--tx);line-height:1.6" id="reportAssessText"></div>
+    </div>
   </div>
   <div class="report-actions">
     <button class="ract pdf" onclick="exportPDF()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF 저장
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      PDF 저장
     </button>
     <button class="ract share" onclick="doShare()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>카톡 공유
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      카톡 공유
     </button>
   </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════
-// UPLOAD / CAMERA
+// CAMERA & UPLOAD
 // ═══════════════════════════════════════════════════════════
-function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';f.click()}
-document.getElementById('fi').addEventListener('change',function(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=ev=>loadImg(pendUp.tid,pendUp.slot,ev.target.result);r.readAsDataURL(f);
-});
-function openCam(tid,slot,tip){
-  activeTest=tid;activeSlot=slot;
-  document.getElementById('camTestName').textContent=getAllTests().find(t=>t.id===tid)?.title||'촬영';
-  document.getElementById('camTestSub').textContent=slot==='B'?'Before (현재)':'After (재검사)';
-  document.getElementById('camTip').textContent=tip||'전신을 박스 안에';
+function openCam(tid, slot) {
+  camTid=tid; camSlot=slot;
+  const t=TESTS.find(x=>x.id===tid)||{};
+  document.getElementById('ctName').textContent=t.title||'촬영';
+  document.getElementById('ctSub').textContent=t.tip||'';
+  document.getElementById('ctSlot').textContent=slot==='B'?'▶ Before 촬영':'▶ After 촬영';
+  document.getElementById('camTip').textContent=t.tip||'전신이 가이드 안에';
   document.getElementById('camOv').classList.add('show');
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
     .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
@@ -619,69 +659,73 @@ function openCam(tid,slot,tip){
 function snap(){
   const v=document.getElementById('camVid'),hc=document.getElementById('hc');
   hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0);
-  loadImg(activeTest,activeSlot,hc.toDataURL('image/jpeg',.92));
-  closeCam();toast('촬영 완료');
+  const src=hc.toDataURL('image/jpeg',.92);
+  loadImg(camTid,camSlot,src);
+  closeCam();
+  toast((camSlot==='B'?'Before':'After')+' 촬영 완료');
 }
 function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show')}
+function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';f.click()}
+document.getElementById('fi').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>loadImg(pendUp.tid,pendUp.slot,ev.target.result);r.readAsDataURL(f);
+});
 
 // ═══════════════════════════════════════════════════════════
 // LOAD IMAGE
 // ═══════════════════════════════════════════════════════════
-async function loadImg(tid,slot,src){
-  if(!DATA[tid])DATA[tid]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
-  const zone=document.getElementById(`zone_${tid}_${slot}`);
+async function loadImg(tid, slot, src, silent) {
+  if (!SHOTS[tid]) SHOTS[tid] = {
+    B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},
+    A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}
+  };
+  const zone = document.getElementById(`zone_${tid}_${slot}`);
+  if (!zone) return;
   const az=document.getElementById(`add_${tid}_${slot}`);if(az)az.remove();
   const oc=zone.querySelector('canvas');if(oc)oc.remove();
   const pl=zone.querySelector('.pload');if(pl)pl.remove();
-  const canvas=document.createElement('canvas');canvas.className='sc';zone.appendChild(canvas);
+  const canvas=document.createElement('canvas');canvas.className='pc';zone.appendChild(canvas);
   const img=new Image();
   img.onload=async()=>{
     canvas.width=img.width;canvas.height=img.height;
     const ctx=canvas.getContext('2d');
-    DATA[tid][slot]={img,canvas,ctx,pose:null,markers:[],lines:[],guides:[]};
-    redraw(tid,slot);
-    canvas.addEventListener('click',ev=>handleClick(ev,tid,slot));
-    canvas.addEventListener('touchend',ev=>{ev.preventDefault();handleClick(ev.changedTouches[0],tid,slot)},{passive:false});
-    document.getElementById(`mbar_${tid}`).style.display='block';
-    updateTestBadge(tid);
-    updateProgress();
+    SHOTS[tid][slot]={img,canvas,ctx,pose:null,markers:[],lines:[],guides:[]};
+    redrawSlot(tid,slot);
+    canvas.addEventListener('click',ev=>handleCanvasClick(ev,tid,slot));
+    canvas.addEventListener('touchend',ev=>{ev.preventDefault();handleCanvasClick(ev.changedTouches[0],tid,slot)},{passive:false});
+    updateSlotBadge(tid,slot);
+    // show After ref thumb
+    if(slot==='A'){
+      const sb=SHOTS[tid].B;
+      const refThumb=document.getElementById(`refthumb_${tid}`);
+      const refImg=document.getElementById(`refimg_${tid}`);
+      if(refThumb&&refImg&&sb&&sb.canvas){
+        refImg.src=sb.canvas.toDataURL('image/jpeg',.5);
+        refThumb.style.display='flex';
+      }
+    }
+    if(!silent) saveImgToStorage(tid,slot,src);
+    updateCompareCta();
     if(poseOk){
       const loader=document.createElement('div');loader.className='pload';
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
       const lm=await runPose(img);loader.remove();
-      const bdg=document.getElementById(`sbdg_${tid}_${slot}`);
-      if(lm){DATA[tid][slot].pose=lm;redraw(tid,slot);if(bdg){bdg.textContent='AI ✓';bdg.className='test-badge ok';bdg.style.display='inline-block'}}
-      else{if(bdg){bdg.textContent='수동';bdg.className='test-badge warn';bdg.style.display='inline-block'}}
+      if(lm){SHOTS[tid][slot].pose=lm;redrawSlot(tid,slot)}
     }
-    checkBothLoaded(tid);
   };
   img.src=src;
 }
 
-function checkBothLoaded(tid){
-  const d=DATA[tid];
-  if(d&&d.B&&d.B.img&&d.A&&d.A.img){
-    document.getElementById(`overlap_${tid}`).style.display='block';
-    setTimeout(()=>{
-      buildOverlap(tid);
-      buildAnalysis(tid);
-      document.getElementById(`overlap_${tid}`).scrollIntoView({behavior:'smooth',block:'nearest'});
-    },200);
-  }
-}
-
-function updateTestBadge(tid){
-  const d=DATA[tid];
-  const bdg=document.getElementById(`badge_${tid}`);if(!bdg)return;
-  const hasBoth=d&&d.B&&d.B.img&&d.A&&d.A.img;
-  const hasOne=d&&((d.B&&d.B.img)||(d.A&&d.A.img));
-  bdg.textContent=hasBoth?'완료':hasOne?'촬영중':'미촬영';
-  bdg.className='test-badge'+(hasBoth?' ok':hasOne?' warn':'');
+function updateSlotBadge(tid,slot){
+  const num=document.getElementById(`tcn_${tid}_${slot}`);
+  const bdg=document.getElementById(`tcb_${tid}_${slot}`);
+  if(num){num.classList.add('done')}
+  if(bdg){bdg.textContent='완료';bdg.className='tc-badge done'}
 }
 
 // ═══════════════════════════════════════════════════════════
-// MEDIAPIPE
+// POSE DETECTION
 // ═══════════════════════════════════════════════════════════
 async function runPose(imgEl){
   if(!poseOk||!poseEng)return null;
@@ -689,228 +733,352 @@ async function runPose(imgEl){
 }
 
 // ═══════════════════════════════════════════════════════════
-// REDRAW
+// REDRAW SLOT (individual before/after panel)
 // ═══════════════════════════════════════════════════════════
-function redraw(tid,slot){
-  const s=DATA[tid]?.[slot];if(!s||!s.ctx||!s.img)return;
+function redrawSlot(tid, slot){
+  const s=SHOTS[tid]?.[slot];if(!s||!s.ctx||!s.img)return;
   const c=s.ctx,W=s.canvas.width,H=s.canvas.height;
   c.clearRect(0,0,W,H);c.drawImage(s.img,0,0);
   const isB=slot==='B';
-  const skelCol=isB?'rgba(217,64,64,.5)':'rgba(46,125,212,.5)';
-  const ptCol=isB?'rgba(217,64,64,.8)':'rgba(46,125,212,.8)';
-  const mkCol=isB?'#d94040':'#2e7dd4';
+  const skelCol=isB?'rgba(200,30,30,.55)':'rgba(20,80,200,.55)';
+  const ptCol=isB?'rgba(200,30,30,.85)':'rgba(20,80,200,.85)';
+  const mkCol=isB?'#c81e1e':'#143cc8';
+  const lw=Math.max(3,W*.004);
+  const pr=Math.max(8,W*.01);
   if(s.pose){
     const lm=s.pose;
-    c.strokeStyle=skelCol;c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
+    c.strokeStyle=skelCol;c.lineWidth=lw;c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H,r=Math.max(5,W*.007);c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle=ptCol;c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke()});
+    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=ptCol;c.fill();c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=2;c.stroke()});
   }
-  s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(232,152,32,.85)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle='rgba(232,152,32,.9)';c.fill()})});
+  s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(180,120,0,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,7,0,Math.PI*2);c.fillStyle='rgba(200,130,0,.9)';c.fill()})});
   s.lines.forEach(l=>{
-    c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);c.strokeStyle=mkCol;c.lineWidth=Math.max(2,W*.003);c.setLineDash([8,4]);c.stroke();c.setLineDash([]);
+    c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);c.strokeStyle=mkCol;c.lineWidth=Math.max(3,W*.004);c.setLineDash([10,5]);c.stroke();c.setLineDash([]);
     const dx=l.x2-l.x1,dy=l.y2-l.y1,dist=Math.round(Math.sqrt(dx*dx+dy*dy));
-    const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2;
-    c.font=`bold ${Math.max(13,W*.018)}px -apple-system,sans-serif`;c.textAlign='center';
-    c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=3;c.strokeText(dist+'px',mx,my-8);c.fillStyle=mkCol;c.fillText(dist+'px',mx,my-8);
+    const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2,fs=Math.max(15,W*.022);
+    c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
+    c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-10);c.fillStyle=mkCol;c.fillText(dist+'px',mx,my-10);
   });
   s.markers.forEach((m,i)=>{
-    const col=['#d94040','#2e7dd4','#1a9e74','#e89820','#8b5cf6','#ef4444','#0ea5e9','#10b981'][i%8];
-    const r=Math.max(10,W*.013);
-    c.beginPath();c.arc(m.x,m.y,r,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=.88;c.fill();c.globalAlpha=1;
-    c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
-    c.font=`bold ${Math.max(10,W*.013)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
+    const cols=['#c81e1e','#143cc8','#059669','#b45309','#7c3aed','#0891b2','#d97706','#1d4ed8'];
+    const col=cols[i%cols.length];
+    const r=Math.max(13,W*.018);
+    c.beginPath();c.arc(m.x,m.y,r,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=.9;c.fill();c.globalAlpha=1;
+    c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
+    c.font=`bold ${Math.max(12,W*.016)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
   });
 }
 
 // ═══════════════════════════════════════════════════════════
 // CLICK HANDLER
 // ═══════════════════════════════════════════════════════════
-function setMode(m,tid){
-  mode=m;msStart=null;gsStart=null;activeTest=tid;
-  const modes=['mark','meas','guid','eras'];
-  modes.forEach(x=>{const el=document.getElementById(`mm_${tid}_${x}`);if(el)el.classList.toggle('on',x===m)});
-  const h={mark:'클릭하여 마커를 찍으세요.',meas:'시작→끝 클릭으로 측정선.',guid:'두 점 클릭으로 가이드선.',eras:'마커/선 클릭하여 삭제.'};
+function setMode(m, tid){
+  activeMode=m;msStart=null;gsStart=null;
+  ['mark','meas','guid','eras'].forEach(x=>{const el=document.getElementById(`mm_${tid}_${x}`);if(el)el.classList.toggle('on',x===m)});
+  const h={mark:'이미지 위 클릭 → 마커 찍기 (B=Before, A=After)',meas:'시작점 → 끝점 클릭으로 측정선 그리기',guid:'두 점 클릭으로 정렬 가이드선 그리기',eras:'마커나 선을 클릭하여 삭제'};
   const hint=document.getElementById(`mhint_${tid}`);if(hint)hint.textContent=h[m];
 }
 function getPos(ev,canvas){
   const r=canvas.getBoundingClientRect();
-  const cx=ev.clientX!==undefined?ev.clientX:ev.touches?.[0]?.clientX||0;
-  const cy=ev.clientY!==undefined?ev.clientY:ev.touches?.[0]?.clientY||0;
+  const cx=ev.clientX!==undefined?ev.clientX:(ev.touches?.[0]?.clientX||0);
+  const cy=ev.clientY!==undefined?ev.clientY:(ev.touches?.[0]?.clientY||0);
   return{x:(cx-r.left)*canvas.width/r.width,y:(cy-r.top)*canvas.height/r.height};
 }
 function ptSeg(pt,seg){const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(pt.x-seg.x1,pt.y-seg.y1);const t=Math.max(0,Math.min(1,((pt.x-seg.x1)*dx+(pt.y-seg.y1)*dy)/l2));return Math.hypot(pt.x-seg.x1-t*dx,pt.y-seg.y1-t*dy)}
-function handleClick(ev,tid,slot){
-  const s=DATA[tid]?.[slot];if(!s||!s.canvas)return;
+function handleCanvasClick(ev,tid,slot){
+  const s=SHOTS[tid]?.[slot];if(!s||!s.canvas)return;
   const pos=getPos(ev,s.canvas);
-  if(mode==='eras'&&activeTest===tid){
+  if(activeMode==='eras'){
     const mi=s.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<22);
-    if(mi>=0){s.markers.splice(mi,1);redraw(tid,slot);return}
-    const li=s.lines.findIndex(l=>ptSeg(pos,l)<16);if(li>=0){s.lines.splice(li,1);redraw(tid,slot);return}
-    const gi=s.guides.findIndex(g=>ptSeg(pos,g)<16);if(gi>=0){s.guides.splice(gi,1);redraw(tid,slot);}return;
+    if(mi>=0){s.markers.splice(mi,1);redrawSlot(tid,slot);return}
+    const li=s.lines.findIndex(l=>ptSeg(pos,l)<16);if(li>=0){s.lines.splice(li,1);redrawSlot(tid,slot);return}
+    const gi=s.guides.findIndex(g=>ptSeg(pos,g)<16);if(gi>=0){s.guides.splice(gi,1);redrawSlot(tid,slot);}return;
   }
-  if(mode==='meas'&&activeTest===tid){
-    if(!msStart)msStart={...pos,tid,slot};
-    else if(msStart.tid===tid&&msStart.slot===slot){s.lines.push({x1:msStart.x,y1:msStart.y,x2:pos.x,y2:pos.y});msStart=null;redraw(tid,slot)}return;
-  }
-  if(mode==='guid'&&activeTest===tid){
-    if(!gsStart)gsStart={...pos,tid,slot};
-    else if(gsStart.tid===tid&&gsStart.slot===slot){s.guides.push({x1:gsStart.x,y1:gsStart.y,x2:pos.x,y2:pos.y});gsStart=null;redraw(tid,slot)}return;
-  }
-  const lbl=slot==='B'?'B':'A';
-  s.markers.push({x:pos.x,y:pos.y,label:lbl+(s.markers.length+1)});redraw(tid,slot);
+  if(activeMode==='meas'){if(!msStart)msStart={...pos,tid,slot};else if(msStart.tid===tid&&msStart.slot===slot){s.lines.push({x1:msStart.x,y1:msStart.y,x2:pos.x,y2:pos.y});msStart=null;redrawSlot(tid,slot)}return}
+  if(activeMode==='guid'){if(!gsStart)gsStart={...pos,tid,slot};else if(gsStart.tid===tid&&gsStart.slot===slot){s.guides.push({x1:gsStart.x,y1:gsStart.y,x2:pos.x,y2:pos.y});gsStart=null;redrawSlot(tid,slot)}return}
+  s.markers.push({x:pos.x,y:pos.y,label:(slot+'')+(s.markers.length+1)});
+  redrawSlot(tid,slot);
 }
 
 // ═══════════════════════════════════════════════════════════
-// OVERLAP
+// OVERLAP (COMPARE)
 // ═══════════════════════════════════════════════════════════
-function computeTransform(srcPose,dstPose,sW,sH,dW,dH){
+function computeAlignHF(srcPose,dstPose,sW,sH,dW,dH){
   if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
   const v=i=>srcPose[i]&&srcPose[i].visibility>.4&&dstPose[i]&&dstPose[i].visibility>.4;
-  if(!v(11)||!v(12)||!v(23)||!v(24))return{tx:0,ty:0,scale:1};
-  const sMsx=(srcPose[11].x+srcPose[12].x)/2*sW,sMsy=(srcPose[11].y+srcPose[12].y)/2*sH;
-  const sMhx=(srcPose[23].x+srcPose[24].x)/2*sW,sMhy=(srcPose[23].y+srcPose[24].y)/2*sH;
-  const dMsx=(dstPose[11].x+dstPose[12].x)/2*dW,dMsy=(dstPose[11].y+dstPose[12].y)/2*dH;
-  const dMhx=(dstPose[23].x+dstPose[24].x)/2*dW,dMhy=(dstPose[23].y+dstPose[24].y)/2*dH;
-  const sLen=Math.hypot(sMsx-sMhx,sMsy-sMhy),dLen=Math.hypot(dMsx-dMhx,dMsy-dMhy);
-  const scale=sLen>10&&dLen>10?dLen/sLen:1;
-  return{tx:dMsx-sMsx*scale,ty:dMsy-sMsy*scale,scale};
+  // head = nose (0), feet = avg ankles (27,28)
+  if(v(0,27,28)&&v(0,27,28)){
+    const sHx=srcPose[0].x*sW,sHy=srcPose[0].y*sH;
+    const sFx=(srcPose[27].x+srcPose[28].x)/2*sW,sFy=(srcPose[27].y+srcPose[28].y)/2*sH;
+    const dHx=dstPose[0].x*dW,dHy=dstPose[0].y*dH;
+    const dFx=(dstPose[27].x+dstPose[28].x)/2*dW,dFy=(dstPose[27].y+dstPose[28].y)/2*dH;
+    const sLen=Math.hypot(sHx-sFx,sHy-sFy);
+    const dLen=Math.hypot(dHx-dFx,dHy-dFy);
+    const scale=sLen>20&&dLen>20?dLen/sLen:1;
+    return{tx:dHx-sHx*scale,ty:dHy-sHy*scale,scale};
+  }
+  // fallback: shoulder midpoint
+  if(v(11,12,23,24)){
+    const sMsx=(srcPose[11].x+srcPose[12].x)/2*sW,sMsy=(srcPose[11].y+srcPose[12].y)/2*sH;
+    const sMhx=(srcPose[23].x+srcPose[24].x)/2*sW,sMhy=(srcPose[23].y+srcPose[24].y)/2*sH;
+    const dMsx=(dstPose[11].x+dstPose[12].x)/2*dW,dMsy=(dstPose[11].y+dstPose[12].y)/2*dH;
+    const dMhx=(dstPose[23].x+dstPose[24].x)/2*dW,dMhy=(dstPose[23].y+dstPose[24].y)/2*dH;
+    const sLen=Math.hypot(sMsx-sMhx,sMsy-sMhy),dLen=Math.hypot(dMsx-dMhx,dMsy-dMhy);
+    const scale=sLen>10&&dLen>10?dLen/sLen:1;
+    return{tx:dMsx-sMsx*scale,ty:dMsy-sMsy*scale,scale};
+  }
+  return{tx:0,ty:0,scale:1};
 }
-function buildOverlap(tid){
-  const d=DATA[tid];if(!d||!d.A||!d.A.canvas)return;
-  const oc=document.getElementById(`oc_${tid}`);
-  oc.width=d.A.canvas.width;oc.height=d.A.canvas.height;
-  drawOverlap(tid);
-}
-function drawOverlap(tid){
-  const d=DATA[tid];if(!d||!d.B||!d.B.img||!d.A||!d.A.img)return;
-  const oc=document.getElementById(`oc_${tid}`);if(!oc)return;
-  const c=oc.getContext('2d');const W=oc.width,H=oc.height;
-  const alpha=parseInt(document.getElementById(`alpha_${tid}`).value)/100;
-  const manualScale=parseInt(document.getElementById(`scale_${tid}`).value)/100;
-  const manualTx=parseInt(document.getElementById(`tx_${tid}`).value);
-  const manualTy=parseInt(document.getElementById(`ty_${tid}`).value);
-  document.getElementById(`alphaV_${tid}`).textContent=Math.round(alpha*100)+'%';
-  document.getElementById(`scaleV_${tid}`).textContent=Math.round(manualScale*100)+'%';
-  document.getElementById(`txV_${tid}`).textContent=manualTx;
-  document.getElementById(`tyV_${tid}`).textContent=manualTy;
-  c.clearRect(0,0,W,H);c.globalAlpha=1;c.drawImage(d.A.img,0,0,W,H);
-  const t=computeTransform(d.B.pose,d.A.pose,d.B.canvas.width,d.B.canvas.height,W,H);
-  const fScale=t.scale*manualScale,fTx=t.tx+manualTx,fTy=t.ty+manualTy;
-  c.save();c.globalAlpha=alpha;c.transform(fScale,0,0,fScale,fTx,fTy);
-  c.filter='grayscale(50%)';c.drawImage(d.B.img,0,0,d.B.canvas.width,d.B.canvas.height);c.filter='none';c.restore();
-  if(d.B.pose){
-    const lm=d.B.pose;c.save();c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(alpha+.35,.75);
-    c.strokeStyle='rgba(217,64,64,.9)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
-    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*d.B.canvas.width,lm[a].y*d.B.canvas.height);c.lineTo(lm[b].x*d.B.canvas.width,lm[b].y*d.B.canvas.height);c.stroke()});
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*d.B.canvas.width,y=pt.y*d.B.canvas.height;c.beginPath();c.arc(x,y,Math.max(5,d.B.canvas.width*.007),0,Math.PI*2);c.fillStyle='rgba(217,64,64,.85)';c.fill();c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=1.5;c.stroke()});
+
+function drawOL(tid){
+  const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
+  const oc=document.getElementById('oc_'+tid);if(!oc)return;
+  const c=oc.getContext('2d');
+  const W=oc.width,H=oc.height;
+  const alpha=parseInt(document.getElementById('alpha_'+tid).value)/100;
+  const manSc=parseInt(document.getElementById('sc_'+tid).value)/100;
+  const cropT=parseInt(document.getElementById('ct_'+tid).value)/100;
+  const cropB=parseInt(document.getElementById('cb_'+tid).value)/100;
+  const cropL=parseInt(document.getElementById('cl_'+tid).value)/100;
+  const cropR=parseInt(document.getElementById('cr2_'+tid).value)/100;
+  const alphaEl=document.getElementById('alphaV_'+tid);if(alphaEl)alphaEl.textContent=Math.round(alpha*100)+'%';
+  const scEl=document.getElementById('scV_'+tid);if(scEl)scEl.textContent=Math.round(manSc*100)+'%';
+  const ctEl=document.getElementById('ctV_'+tid);if(ctEl)ctEl.textContent=Math.round(cropT*100)+'%';
+  const cbEl=document.getElementById('cbV_'+tid);if(cbEl)cbEl.textContent=Math.round(cropB*100)+'%';
+  const clEl=document.getElementById('clV_'+tid);if(clEl)clEl.textContent=Math.round(cropL*100)+'%';
+  const crEl=document.getElementById('crV_'+tid);if(crEl)crEl.textContent=Math.round(cropR*100)+'%';
+  c.clearRect(0,0,W,H);
+  // Draw After (full color, background)
+  c.globalAlpha=1;c.drawImage(aS.img,0,0,W,H);
+  // Compute alignment
+  const t=computeAlignHF(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,W,H);
+  const fScale=t.scale*manSc;
+  const fTx=t.tx;
+  const fTy=t.ty;
+  // Before: apply crop, then draw grayscale person only
+  const bW=bS.canvas.width,bH=bS.canvas.height;
+  const sx=cropL*bW,sy=cropT*bH,sw=bW*(1-cropL-cropR),sh=bH*(1-cropT-cropB);
+  if(sw>0&&sh>0){
+    c.save();
+    c.globalAlpha=alpha;
+    c.filter='grayscale(100%) brightness(1.1)';
+    c.transform(fScale,0,0,fScale,fTx+sx*fScale*(0),fTy+sy*fScale*(0));
+    // draw cropped before
+    const tmpC=document.createElement('canvas');tmpC.width=bW;tmpC.height=bH;
+    const tmpX=tmpC.getContext('2d');tmpX.drawImage(bS.img,0,0);
+    c.drawImage(tmpC,sx,sy,sw,sh,-sx*fScale+fTx,-sy*fScale+fTy,bW*fScale,bH*fScale);
+    c.filter='none';
     c.restore();
   }
-  if(d.A.pose){
-    const lm=d.A.pose;c.globalAlpha=1;c.strokeStyle='rgba(46,125,212,.85)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
+  // Before skeleton (red, semi-transparent)
+  if(bS.pose){
+    const lm=bS.pose;
+    c.save();c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(alpha+.4,.8);
+    c.strokeStyle='rgba(200,30,30,.95)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
+    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bW,lm[a].y*bH);c.lineTo(lm[b].x*bW,lm[b].y*bH);c.stroke()});
+    const pr=Math.max(7,bW*.009);
+    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*bW,y=pt.y*bH;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle='rgba(200,30,30,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=2;c.stroke()});
+    c.restore();
+  }
+  // After skeleton (blue, full)
+  if(aS.pose){
+    const lm=aS.pose;c.globalAlpha=1;
+    c.strokeStyle='rgba(20,80,200,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H,r=Math.max(5,W*.007);c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle='rgba(46,125,212,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke();
-      if(LBL[i]&&W>250){c.font=`bold ${Math.max(9,W*.013)}px -apple-system,sans-serif`;c.textAlign='center';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=2;c.strokeText(LBL[i],x,y-r-3);c.fillStyle='#fff';c.fillText(LBL[i],x,y-r-3)}
+    const pr2=Math.max(7,W*.009);
+    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr2,0,Math.PI*2);c.fillStyle='rgba(20,80,200,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=2;c.stroke();
+      if(LBL[i]&&W>250){c.font=`bold ${Math.max(11,W*.015)}px -apple-system,sans-serif`;c.textAlign='center';c.strokeStyle='rgba(0,0,0,.7)';c.lineWidth=3;c.strokeText(LBL[i],x,y-pr2-5);c.fillStyle='#fff';c.fillText(LBL[i],x,y-pr2-5)}
     });
   }
   c.globalAlpha=1;
-  const fs=Math.max(10,W*.015);c.fillStyle='rgba(0,0,0,.55)';c.fillRect(5,5,W*.28,26);
-  c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='left';c.fillStyle='#e87878';c.fillText('● Before',10,20);c.fillStyle='#6aadff';c.fillText('● After',W*.14+5,20);
+  // Legend
+  const fs=Math.max(12,W*.016);
+  c.fillStyle='rgba(0,0,0,.6)';c.fillRect(8,8,W*.32,32);
+  c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='left';
+  c.fillStyle='#ff9999';c.fillText('● Before',14,26);
+  c.fillStyle='#99aaff';c.fillText('● After',W*.17+8,26);
 }
-function resetManual(tid){
-  document.getElementById(`scale_${tid}`).value=100;
-  document.getElementById(`tx_${tid}`).value=0;
-  document.getElementById(`ty_${tid}`).value=0;
-  drawOverlap(tid);
+
+function buildOC(tid){
+  const aS=SHOTS[tid]?.A;if(!aS?.canvas)return;
+  const oc=document.getElementById('oc_'+tid);if(!oc)return;
+  oc.width=aS.canvas.width;oc.height=aS.canvas.height;
+  drawOL(tid);
+}
+
+function resetCtrl(tid){
+  ['sc_','ct_','cb_','cl_','cr2_'].forEach(p=>{const el=document.getElementById(p+tid);if(el)el.value=p==='sc_'?100:0});
+  drawOL(tid);
 }
 
 // ═══════════════════════════════════════════════════════════
-// CLINICAL ANALYSIS PER TEST
+// COMPARE PHASE UPDATE
 // ═══════════════════════════════════════════════════════════
-function calcMetrics(lm,W,H){
+function updateComparePanels(){
+  let hasAny=false;
+  TESTS.forEach(t=>{
+    const bS=SHOTS[t.id]?.B,aS=SHOTS[t.id]?.A;
+    const hasBoth=bS?.img&&aS?.img;
+    const card=document.getElementById('cmp_'+t.id);
+    if(card){
+      card.style.display=hasBoth?'block':'none';
+      if(hasBoth){
+        hasAny=true;
+        buildOC(t.id);
+        buildClinical(t.id);
+        const mbar=document.getElementById('mbar_'+t.id);if(mbar)mbar.style.display='block';
+      }
+    }
+  });
+  if(!hasAny){
+    const existing=document.getElementById('noCompareMsg');
+    if(!existing){
+      const msg=document.createElement('div');msg.id='noCompareMsg';
+      msg.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--tx3)"><p style="font-size:16px;margin-bottom:8px">아직 비교할 자료가 없습니다</p><p style="font-size:13px">Before와 After 모두 촬영하면 자동으로 비교됩니다.</p></div>';
+      const panel=document.getElementById('phase_compare');
+      if(panel)panel.appendChild(msg);
+    }
+  } else {
+    const existing=document.getElementById('noCompareMsg');
+    if(existing)existing.remove();
+  }
+}
+
+function updateCompareCta(){
+  const allDone=TESTS.every(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img);
+  const anyBoth=TESTS.some(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img);
+  const cta=document.getElementById('compareCta');
+  if(cta)cta.classList.toggle('show', anyBoth&&currentPhase!=='compare');
+}
+
+function goCompare(){showPhase('compare')}
+
+// ═══════════════════════════════════════════════════════════
+// CLINICAL ANALYSIS
+// ═══════════════════════════════════════════════════════════
+function calcM(lm,W,H){
   const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
-  const ang2d=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  const a2d=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
   const m={};
-  if(v(11,12)){const a=ang2d({x:lm[11].x*W,y:lm[11].y*H},{x:lm[12].x*W,y:lm[12].y*H});m.shoulderTilt=Math.abs(a).toFixed(1);m.shoulderHDiff=Math.abs((lm[11].y-lm[12].y)*H).toFixed(0);m.shoulderSide=lm[11].y>lm[12].y?'Rt.':'Lt.'}
-  if(v(23,24)){const a=ang2d({x:lm[23].x*W,y:lm[23].y*H},{x:lm[24].x*W,y:lm[24].y*H});m.hipTilt=Math.abs(a).toFixed(1);m.hipHDiff=Math.abs((lm[23].y-lm[24].y)*H).toFixed(0);m.hipSide=lm[23].y>lm[24].y?'Rt.':'Lt.'}
-  if(v(11,12,23,24)){const msX=(lm[11].x+lm[12].x)/2*W,msY=(lm[11].y+lm[12].y)/2*H,mhX=(lm[23].x+lm[24].x)/2*W,mhY=(lm[23].y+lm[24].y)/2*H;m.spineAngle=Math.abs(ang2d({x:mhX,y:mhY},{x:msX,y:msY})+90).toFixed(1);m.shoulderHipAlign=(Math.abs(msX-mhX)/W*100).toFixed(1)}
-  if(v(0,11,12)){m.headOffset=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W).toFixed(0)}
-  if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0)m.kneeAlign=(kw/hw*100).toFixed(0)}
-  // SLR angle: hip flexion from leg raise
-  if(v(23,25,27)){const hip={x:lm[23].x*W,y:lm[23].y*H},knee={x:lm[25].x*W,y:lm[25].y*H},ank={x:lm[27].x*W,y:lm[27].y*H};const a=ang2d(hip,knee);m.slrAngle=Math.abs(a+90).toFixed(0)}
-  // trunk flexion angle
-  if(v(11,12,23,24)){const msY=(lm[11].y+lm[12].y)/2,mhY=(lm[23].y+lm[24].y)/2,msX=(lm[11].x+lm[12].x)/2,mhX=(lm[23].x+lm[24].x)/2;const ang=Math.atan2(msY-mhY,msX-mhX)*180/Math.PI;m.trunkFlexAngle=Math.abs(ang).toFixed(1)}
+  if(v(11,12)){m.shoulderTilt=Math.abs(a2d({x:lm[11].x*W,y:lm[11].y*H},{x:lm[12].x*W,y:lm[12].y*H}));m.shoulderHDiff=Math.abs((lm[11].y-lm[12].y)*H);m.shoulderSide=lm[11].y>lm[12].y?'Rt.':'Lt.'}
+  if(v(23,24)){m.hipTilt=Math.abs(a2d({x:lm[23].x*W,y:lm[23].y*H},{x:lm[24].x*W,y:lm[24].y*H}));m.hipHDiff=Math.abs((lm[23].y-lm[24].y)*H);m.hipSide=lm[23].y>lm[24].y?'Rt.':'Lt.'}
+  if(v(11,12,23,24)){
+    const msX=(lm[11].x+lm[12].x)/2*W,msY=(lm[11].y+lm[12].y)/2*H;
+    const mhX=(lm[23].x+lm[24].x)/2*W,mhY=(lm[23].y+lm[24].y)/2*H;
+    m.spineAngle=Math.abs(a2d({x:mhX,y:mhY},{x:msX,y:msY})+90);
+    m.shoulderHipAlign=Math.abs(msX-mhX)/W*100;
+  }
+  if(v(0,11,12)){m.headOffset=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W)}
+  if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0)m.kneeAlign=kw/hw*100}
+  if(v(23,27)){const hip={x:lm[23].x*W,y:lm[23].y*H},ank={x:lm[27].x*W,y:lm[27].y*H};m.slrAngle=Math.abs(a2d(hip,ank)+90)}
+  if(v(11,12,23,24)){const msY=(lm[11].y+lm[12].y)/2,mhY=(lm[23].y+lm[24].y)/2,msX=(lm[11].x+lm[12].x)/2,mhX=(lm[23].x+lm[24].x)/2;m.trunkFlexAngle=Math.abs(Math.atan2(msY-mhY,msX-mhX)*180/Math.PI)}
   return m;
 }
 
-function buildAnalysis(tid){
-  const d=DATA[tid];if(!d||!d.B||!d.A)return;
-  const bm=d.B.pose?calcMetrics(d.B.pose,d.B.canvas.width,d.B.canvas.height):{};
-  const am=d.A.pose?calcMetrics(d.A.pose,d.A.canvas.width,d.A.canvas.height):{};
+function normCheck(key,val){
+  const n=NORMS[key];if(!n||val===undefined)return null;
+  if(n.hb){return val<(n.min||0)?'low':'ok'}
+  if(n.min!==undefined&&n.max!==undefined)return(val<n.min||val>n.max)?'bad':'ok';
+  if(n.max!==undefined)return val>n.max?'bad':'ok';
+  return 'ok';
+}
+
+function fmtVal(val,unit,key){
+  if(val===undefined||val===null)return '—';
+  const n=NORMS[key];
+  const prec=unit==='°'?1:unit==='%'?1:0;
+  return val.toFixed(prec)+unit;
+}
+
+function buildClinical(tid){
+  const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;
+  const el=document.getElementById('findings_'+tid);if(!el)return;
+  if(!bS?.pose&&!aS?.pose){el.innerHTML='<p style="font-size:12px;color:var(--tx3)">AI 포즈 감지 필요. 전신이 잘 보이는 사진으로 재시도하거나 마커를 수동으로 활용하세요.</p>';return}
+  const bm=bS?.pose?calcM(bS.pose,bS.canvas.width,bS.canvas.height):{};
+  const am=aS?.pose?calcM(aS.pose,aS.canvas.width,aS.canvas.height):{};
   const findings=[];
-  const add=(label,bv,av,unit,lb,desc)=>{
+  const add=(label,key,bv,av,unit,desc)=>{
     if(bv===undefined&&av===undefined)return;
-    const d2=bv!==undefined&&av!==undefined?parseFloat(av)-parseFloat(bv):null;
-    findings.push({label,bv:bv!==undefined?bv+unit:'—',av:av!==undefined?av+unit:'—',d2,lb,desc});
+    const norm=NORMS[key];
+    const bChk=normCheck(key,bv);
+    const aChk=normCheck(key,av);
+    const delta=bv!==undefined&&av!==undefined?av-bv:null;
+    const n=norm;
+    const hb=n?.hb||false;
+    const better=delta!==null&&(hb?delta>=1:delta<=-1);
+    const worse=delta!==null&&(hb?delta<=-1:delta>=1);
+    findings.push({label,key,bv,av,bChk,aChk,delta,better,worse,unit,desc,norm:n?.label});
   };
-  // test-specific analysis
   if(['ant','post','lat'].includes(tid)){
-    if(bm.shoulderHDiff!==undefined)add(`${bm.shoulderSide||''} Shoulder elevation`,bm.shoulderHDiff,am.shoulderHDiff,'px',true,'좌우 어깨 높이 차이 — 상부승모근 긴장 지표');
-    if(bm.shoulderTilt!==undefined)add('Shoulder tilt angle',bm.shoulderTilt,am.shoulderTilt,'°',true,'어깨선 기울기');
-    if(bm.hipTilt!==undefined)add(`${bm.hipSide||''} Pelvic obliquity`,bm.hipTilt,am.hipTilt,'°',true,'골반 기울기 — 요방형근 불균형 지표');
-    if(bm.hipHDiff!==undefined)add('Pelvic height asymmetry',bm.hipHDiff,am.hipHDiff,'px',true,'좌우 골반 높이 차이');
-    if(bm.headOffset!==undefined)add('Forward Head Posture (FHP)',bm.headOffset,am.headOffset,'px',true,'두부 전방 이동 — 경추 전만 지표');
-    if(bm.spineAngle!==undefined)add('Trunk inclination',bm.spineAngle,am.spineAngle,'°',true,'체간 기울기');
-    if(bm.kneeAlign!==undefined)add(parseFloat(bm.kneeAlign)<85?'Genu varum (O형)':parseFloat(bm.kneeAlign)>115?'Genu valgum (X형)':'Knee alignment',bm.kneeAlign,am.kneeAlign,'%',false,'무릎/골반 폭 비율 85~115% 정상');
-    if(bm.shoulderHipAlign!==undefined)add('Lateral trunk shift',bm.shoulderHipAlign,am.shoulderHipAlign,'%',true,'어깨-골반 수직 정렬 편차');
+    add(`${bm.shoulderSide||''}Shoulder elevation`,'shoulderHDiff',bm.shoulderHDiff,am.shoulderHDiff,'px',`어깨 좌우 높이 차이 — ${(bm.shoulderSide||'한쪽')} 어깨 상승, 상부승모근 단축 지표`);
+    add('Shoulder tilt angle','shoulderTilt',bm.shoulderTilt,am.shoulderTilt,'°','어깨선 기울기 — 좌우 균형 지표');
+    add(`${bm.hipSide||''}Pelvic obliquity`,'hipTilt',bm.hipTilt,am.hipTilt,'°','골반 좌우 기울기 — 요방형근·중둔근 불균형 지표');
+    add('Pelvic height diff','hipHDiff',bm.hipHDiff,am.hipHDiff,'px','좌우 골반 높이 차이');
+    add('Forward Head Posture (FHP)','headOffset',bm.headOffset,am.headOffset,'px','두부 전방 이동량 — 경추 과전만·거북목 지표');
+    add('Trunk inclination','spineAngle',bm.spineAngle,am.spineAngle,'°','체간 측방 기울기 — 척추측만 스크리닝');
+    add('Lateral trunk shift','shoulderHipAlign',bm.shoulderHipAlign,am.shoulderHipAlign,'%','어깨-골반 수직 정렬 편차');
+    if(bm.kneeAlign!==undefined)add(bm.kneeAlign<85?'Genu varum (O자형)':bm.kneeAlign>115?'Genu valgum (X자형)':'Knee alignment','kneeAlign',bm.kneeAlign,am.kneeAlign,'%','무릎 폭 / 골반 폭 비율');
   }
   if(tid==='trunk_b'||tid==='trunk_l'){
-    if(bm.trunkFlexAngle!==undefined)add('Trunk Flexion ROM',bm.trunkFlexAngle,am.trunkFlexAngle,'°',false,'체간 굴곡 가동범위 — 클수록 양호');
-    if(bm.spineAngle!==undefined)add('Spine inclination',bm.spineAngle,am.spineAngle,'°',true,'척추 측방 기울기 (측만 지표)');
-    if(bm.shoulderHipAlign!==undefined)add('Shoulder-Hip shift',bm.shoulderHipAlign,am.shoulderHipAlign,'%',true,'체간 측방 이동');
+    add('Trunk Flexion ROM','trunkFlexAngle',bm.trunkFlexAngle,am.trunkFlexAngle,'°','체간 전굴 가동범위 — 클수록 유연성 양호');
+    add('Spinal lateral shift','spineAngle',bm.spineAngle,am.spineAngle,'°','전굴 시 척추 측방 기울기');
+    add('Shoulder-Hip shift','shoulderHipAlign',bm.shoulderHipAlign,am.shoulderHipAlign,'%','전굴 시 체간 측방 이동');
   }
   if(tid==='ohs_f'||tid==='ohs_l'){
-    if(bm.kneeAlign!==undefined)add('Knee valgus/varus',bm.kneeAlign,am.kneeAlign,'%',false,'OHS 시 무릎 정렬 — 85~115% 정상');
-    if(bm.hipTilt!==undefined)add('Pelvic rotation/tilt',bm.hipTilt,am.hipTilt,'°',true,'OHS 시 골반 경사');
-    if(bm.spineAngle!==undefined)add('Trunk forward lean',bm.spineAngle,am.spineAngle,'°',true,'상체 전경각');
-    if(bm.shoulderHipAlign!==undefined)add('Hip-Shoulder alignment',bm.shoulderHipAlign,am.shoulderHipAlign,'%',true,'고관절-어깨 수직 정렬');
+    add('Knee valgus/varus','kneeAlign',bm.kneeAlign,am.kneeAlign,'%','OHS 시 무릎 정렬 — 85~115% 정상');
+    add('Pelvic rotation/tilt','hipTilt',bm.hipTilt,am.hipTilt,'°','OHS 최저점 시 골반 기울기');
+    add('Trunk forward lean','spineAngle',bm.spineAngle,am.spineAngle,'°','상체 전경각 — 낮을수록 양호');
+    add('Hip-Shoulder alignment','shoulderHipAlign',bm.shoulderHipAlign,am.shoulderHipAlign,'%','고관절-어깨 수직 정렬');
   }
   if(tid==='sku'){
-    if(bm.hipHDiff!==undefined)add('Pelvic stability (hip up)',bm.hipHDiff,am.hipHDiff,'px',true,'무릎 올릴 때 골반 안정성');
-    if(bm.hipTilt!==undefined)add('Contralateral pelvic drop',bm.hipTilt,am.hipTilt,'°',true,'반대측 골반 하강 — 중둔근 약화 지표');
+    add('Contralateral pelvic drop','hipHDiff',bm.hipHDiff,am.hipHDiff,'px','한 발 서기 시 반대측 골반 하강 — 중둔근 약화 지표');
+    add('Pelvic stability','hipTilt',bm.hipTilt,am.hipTilt,'°','무릎 들어올릴 때 골반 안정성');
   }
   if(tid==='slr'){
-    if(bm.slrAngle!==undefined)add('S.L.R. angle (hamstring)',bm.slrAngle,am.slrAngle,'°',false,'SLR 각도 — 클수록 유연성 양호. 정상 70~90°');
-    if(bm.hipTilt!==undefined)add('Pelvic compensation',bm.hipTilt,am.hipTilt,'°',true,'SLR 시 골반 보상 움직임');
+    add('S.L.R. angle — Hamstring','slrAngle',bm.slrAngle,am.slrAngle,'°','다리 올림 각도 — 클수록 슬굴곡근 유연성 양호. 정상 70~90°');
+    add('Pelvic compensation','hipTilt',bm.hipTilt,am.hipTilt,'°','SLR 시 골반 보상 움직임');
   }
   if(tid==='sh_flex'){
-    if(bm.shoulderHDiff!==undefined)add('Shoulder elevation asymmetry',bm.shoulderHDiff,am.shoulderHDiff,'px',true,'Shoulder flexion 시 좌우 비대칭');
-    if(bm.shoulderTilt!==undefined)add('Scapular tilt',bm.shoulderTilt,am.shoulderTilt,'°',true,'견갑골 기울기');
+    add('Shoulder elevation asymmetry','shoulderHDiff',bm.shoulderHDiff,am.shoulderHDiff,'px','팔 거상 시 어깨 높이 비대칭');
+    add('Scapular tilt','shoulderTilt',bm.shoulderTilt,am.shoulderTilt,'°','견갑골 기울기 — 전거근·하승모근 기능 지표');
   }
-
-  // clinical impression
   const clinLines=[];
-  if(bm.headOffset!==undefined&&parseFloat(bm.headOffset)>40)clinLines.push('• Forward Head Posture 양성 — 경추 심부굴곡근 강화 및 흉추 신전 가동성 개선 필요');
-  if(bm.shoulderHDiff!==undefined&&parseFloat(bm.shoulderHDiff)>20)clinLines.push(`• ${bm.shoulderSide||''} Shoulder elevation — 상부승모근 이완, 전거근·하부승모근 활성화 필요`);
-  if(bm.hipTilt!==undefined&&parseFloat(bm.hipTilt)>8)clinLines.push(`• ${bm.hipSide||''} Pelvic obliquity — 요방형근·중둔근 불균형, 골반 안정화 운동 권장`);
-  if(bm.spineAngle!==undefined&&parseFloat(bm.spineAngle)>8)clinLines.push('• Trunk inclination 증가 — 코어 안정화 및 척추 신전근 강화 권장');
-  if(bm.kneeAlign!==undefined&&parseFloat(bm.kneeAlign)<82)clinLines.push('• Genu varum — 고관절 외회전근·내측광근 강화, 족부 아치 지지 권장');
-  if(bm.kneeAlign!==undefined&&parseFloat(bm.kneeAlign)>118)clinLines.push('• Genu valgum — 고관절 외전근 강화, 족부 pronation 교정 권장');
-  if(tid==='slr'&&bm.slrAngle!==undefined&&parseFloat(bm.slrAngle)<60)clinLines.push('• Hamstring shortness 의심 — SLR <60° — 슬굴곡근 유연성 개선 필요');
-
-  const fEl=document.getElementById(`findings_${tid}`);
-  if(!fEl)return;
-  if(!findings.length&&!clinLines.length){fEl.innerHTML='<p style="font-size:12px;color:var(--tx3)">포즈 감지 데이터가 부족합니다. 수동 마커를 활용하세요.</p>';return}
+  if(bm.headOffset!==undefined&&bm.headOffset>40)clinLines.push('Forward Head Posture 양성 — 경추 심부굴곡근(DNF) 강화 및 흉추 신전 가동성 개선 권장');
+  if(bm.shoulderHDiff!==undefined&&bm.shoulderHDiff>20)clinLines.push(`${bm.shoulderSide||''}Shoulder elevation — 상부승모근 이완, 전거근·하부승모근 활성화 운동 필요`);
+  if(bm.hipTilt!==undefined&&bm.hipTilt>8)clinLines.push(`${bm.hipSide||''}Pelvic obliquity — 요방형근·중둔근 불균형, 골반 안정화 운동 집중 권장`);
+  if(bm.spineAngle!==undefined&&bm.spineAngle>8)clinLines.push('체간 기울기 증가 — 코어(복횡근·다열근) 안정화 및 척추 신전근 강화 권장');
+  if(bm.kneeAlign!==undefined&&bm.kneeAlign<82)clinLines.push('Genu varum — 고관절 외회전근·내측광근 강화, 족부 내측 아치 지지 권장');
+  if(bm.kneeAlign!==undefined&&bm.kneeAlign>118)clinLines.push('Genu valgum — 고관절 외전근·외측광근 강화, Pronation 교정 필요');
+  if(tid==='slr'&&bm.slrAngle!==undefined&&bm.slrAngle<60)clinLines.push('Hamstring shortness 양성 (SLR < 60°) — 슬굴곡근 스트레칭 및 신경 유동성(neural flossing) 개선 권장');
+  if(!findings.length&&!clinLines.length){el.innerHTML='<p style="font-size:12px;color:var(--tx3)">분석 데이터가 부족합니다. 전신이 잘 보이는 사진으로 재시도하세요.</p>';return}
   let out='';
   findings.forEach(f=>{
-    const better=f.d2!==null&&(f.lb?f.d2<=-1:f.d2>=1);
-    const worse=f.d2!==null&&(f.lb?f.d2>=1:f.d2<=-1);
-    const dStr=f.d2!==null?(f.d2>0?'+':'')+f.d2.toFixed(1):'—';
-    out+=`<div class="finding-row"><div style="flex:1"><div class="finding-name">${f.label}</div><div style="font-size:10px;color:var(--tx3)">${f.desc}</div></div><div class="finding-vals"><span class="fv B">${f.bv}</span><span class="fv A">${f.av}</span>${f.d2!==null?`<span class="fv ${better?'imp':worse?'dec':''}">${dStr}</span>`:''}</div></div>`;
+    const prec=f.unit==='°'?1:f.unit==='%'?1:0;
+    const bStr=f.bv!==undefined?f.bv.toFixed(prec)+f.unit:'—';
+    const aStr=f.av!==undefined?f.av.toFixed(prec)+f.unit:'—';
+    const dStr=f.delta!==null?(f.delta>0?'+':'')+f.delta.toFixed(prec)+f.unit:null;
+    const bAbnorm=f.bChk==='bad'||f.bChk==='low';
+    const aAbnorm=f.aChk==='bad'||f.aChk==='low';
+    out+=`<div class="finding-row">
+      <div class="finding-main">
+        <div class="finding-name">${f.label}</div>
+        <div class="finding-norm${f.norm?'':' '}">${f.desc}</div>
+        ${f.norm?`<div class="finding-norm" style="margin-top:2px;font-weight:600">기준: ${f.norm}</div>`:''}
+      </div>
+      <div class="finding-vals">
+        <span class="fv B${bAbnorm?' abnorm':''}">${bStr}</span>
+        <span class="fv A${aAbnorm?' abnorm':''}">${aStr}</span>
+        ${dStr?`<span class="fv ${f.better?'delta-ok':f.worse?'delta-bad':'delta-same'}">${dStr}</span>`:''}
+      </div>
+    </div>`;
   });
   if(clinLines.length){
-    out+=`<div style="background:#eef5fd;border:.5px solid #bdd9f5;border-radius:var(--r);padding:10px 12px;margin-top:8px"><div style="font-size:10px;font-weight:600;color:var(--blue);letter-spacing:.05em;margin-bottom:6px">CLINICAL IMPRESSION</div>${clinLines.map(l=>`<div style="font-size:11px;color:#1a4a7a;margin-bottom:3px">${l}</div>`).join('')}</div>`;
+    out+=`<div class="clinical-impression">
+      <div class="ci-title">Clinical Impression &amp; Recommendation</div>
+      ${clinLines.map(l=>`<div class="ci-line">${l}</div>`).join('')}
+    </div>`;
   }
-  fEl.innerHTML=out;
+  el.innerHTML=out;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -918,144 +1086,217 @@ function buildAnalysis(tid){
 // ═══════════════════════════════════════════════════════════
 function openFS(tid){
   fsTestId=tid;
-  const d=DATA[tid];if(!d||!d.B||!d.A)return;
-  document.getElementById('fsTitle').textContent=getAllTests().find(t=>t.id===tid)?.title+' — 오버랩 비교';
+  const t=TESTS.find(x=>x.id===tid);
+  document.getElementById('fsTitle').textContent=(t?.title||'')+' — 오버랩 비교';
   document.getElementById('fsView').classList.add('show');
+  const alphaEl=document.getElementById('alpha_'+tid);
+  const scEl=document.getElementById('sc_'+tid);
+  if(alphaEl)document.getElementById('fsAlpha').value=alphaEl.value;
+  if(scEl)document.getElementById('fsScale').value=scEl.value;
   setTimeout(drawFS,80);
 }
 function closeFS(){document.getElementById('fsView').classList.remove('show');fsTestId=null}
 function drawFS(){
   if(!fsTestId)return;
-  const oc=document.getElementById(`oc_${fsTestId}`);if(!oc||!oc.width)return;
+  const oc=document.getElementById('oc_'+fsTestId);if(!oc||!oc.width)return;
   const fsC=document.getElementById('fsCanvas');
   const wrap=document.querySelector('.fs-body');
   const wW=wrap.offsetWidth,wH=wrap.offsetHeight;
-  const ratio=oc.height/oc.width;let cW=wW,cH=wW*ratio;if(cH>wH){cH=wH;cW=wH/ratio}
+  const ratio=oc.height/oc.width;let cW=wW,cH=wW*ratio;
+  if(cH>wH){cH=wH;cW=wH/ratio}
   fsC.width=Math.round(cW);fsC.height=Math.round(cH);
   fsC.getContext('2d').drawImage(oc,0,0,fsC.width,fsC.height);
 }
-function syncAlpha(v){
+function syncFS(type,v){
   if(!fsTestId)return;
-  document.getElementById(`alpha_${fsTestId}`).value=v;
-  document.getElementById('fsAlphaVal').textContent=v+'%';
-  drawOverlap(fsTestId);setTimeout(drawFS,50);
-}
-function syncScale(v){
-  if(!fsTestId)return;
-  document.getElementById(`scale_${fsTestId}`).value=v;
-  document.getElementById('fsScaleVal').textContent=v+'%';
-  drawOverlap(fsTestId);setTimeout(drawFS,50);
+  if(type==='alpha'){document.getElementById('alpha_'+fsTestId).value=v;document.getElementById('fsAlphaVal').textContent=v+'%'}
+  if(type==='scale'){document.getElementById('sc_'+fsTestId).value=v;document.getElementById('fsScaleVal').textContent=v+'%'}
+  drawOL(fsTestId);setTimeout(drawFS,40);
 }
 
 // ═══════════════════════════════════════════════════════════
-// REPORT GENERATION
+// CHECKLIST
 // ═══════════════════════════════════════════════════════════
-function generateReport(){
-  const el=document.getElementById('reportSummary');if(!el)return;
-  const allTests=getAllTests();
-  const done=allTests.filter(t=>{const d=DATA[t.id];return d&&d.B&&d.B.img&&d.A&&d.A.img}).length;
-  let html=`<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-    <div style="flex:1;min-width:100px;padding:10px;background:var(--bg3);border-radius:var(--r);text-align:center"><div style="font-size:22px;font-weight:700;color:var(--green)">${done}</div><div style="font-size:11px;color:var(--tx3)">검사 완료</div></div>
-    <div style="flex:1;min-width:100px;padding:10px;background:var(--bg3);border-radius:var(--r);text-align:center"><div style="font-size:22px;font-weight:700;color:var(--amber)">${allTests.length-done}</div><div style="font-size:11px;color:var(--tx3)">미완료</div></div>
-    <div style="flex:1;min-width:100px;padding:10px;background:var(--bg3);border-radius:var(--r);text-align:center"><div style="font-size:22px;font-weight:700;color:var(--blue)">${Object.keys(CHK).length}</div><div style="font-size:11px;color:var(--tx3)">체크리스트</div></div>
-  </div>`;
-  // per-test summary
-  allTests.forEach(t=>{
-    const d=DATA[t.id];
-    const hasBoth=d&&d.B&&d.B.img&&d.A&&d.A.img;
-    const col=hasBoth?'var(--green)':'var(--tx3)';
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:.5px solid var(--brd)"><div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div><div style="flex:1;font-size:13px">${t.title}</div><div style="font-size:11px;color:${col}">${hasBoth?'완료':'미촬영'}</div></div>`;
-  });
-  if(ASSESS.text){html+=`<div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:var(--r)"><div style="font-size:10px;font-weight:600;color:var(--tx3);margin-bottom:5px">ASSESSMENT</div><div style="font-size:13px;color:var(--tx)">${ASSESS.text}</div></div>`}
-  if(ASSESS.training.length){html+=`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${ASSESS.training.map(p=>`<span style="font-size:12px;padding:4px 10px;background:var(--green);color:#fff;border-radius:10px">${p}</span>`).join('')}</div>`}
-  el.innerHTML=html;
+function selectOpt(itemId,side,optIdx,colorClass){
+  if(!CHK[itemId])CHK[itemId]={};
+  const item=CHECKLIST.flatMap(g=>g.items).find(i=>i.id===itemId);
+  if(!item)return;
+  item.opts.forEach((_,oi)=>{const el=document.getElementById(`rp_${itemId}_${side}_${oi}`);if(el)el.className='radio-pill'});
+  const el=document.getElementById(`rp_${itemId}_${side}_${optIdx}`);
+  if(el)el.className=`radio-pill on-${colorClass}`;
+  CHK[itemId][side+'_sel']=optIdx;
+  CHK[itemId][side+'_val']=item.opts[optIdx];
+  autoSave();
+}
+function saveNote(itemId,val){if(!CHK[itemId])CHK[itemId]={};CHK[itemId].note=val;autoSave()}
+function toggleTP(pos){
+  const idx=ASSESS.training.indexOf(pos);
+  if(idx>=0)ASSESS.training.splice(idx,1);else ASSESS.training.push(pos);
+  const el=document.getElementById('tp_'+pos);if(el)el.classList.toggle('on',ASSESS.training.includes(pos));
+  autoSave();
 }
 
 // ═══════════════════════════════════════════════════════════
-// SHOW SECTION OVERRIDE FOR REPORT
+// REPORT
 // ═══════════════════════════════════════════════════════════
-const _origShowSection=showSection;
-function showSection(id){_origShowSection(id);if(id==='report')setTimeout(generateReport,100)}
+function updateReport(){
+  const name=document.getElementById('cName')?.value||'회원';
+  const trainer=document.getElementById('cTrainer')?.value||'';
+  const hero=document.getElementById('rHeroName');if(hero)hero.textContent=`${name} — NPT 체형분석 리포트`;
+  const sub=document.getElementById('rHeroSub');if(sub)sub.textContent=trainer?`담당 트레이너: ${trainer}`:'';
+  const done=TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img).length;
+  const pending=TESTS.length-done;
+  const chkCount=Object.keys(CHK).length;
+  const rD=document.getElementById('rDone');if(rD)rD.textContent=done;
+  const rP=document.getElementById('rPending');if(rP)rP.textContent=pending;
+  const rC=document.getElementById('rChk');if(rC)rC.textContent=chkCount;
+  const list=document.getElementById('reportTestList');
+  if(list){
+    list.innerHTML=TESTS.map(t=>{
+      const hasBoth=SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img;
+      const col=hasBoth?'var(--green)':'var(--brd2)';
+      return `<div class="report-row"><div class="rr-dot" style="background:${col}"></div><span class="rr-name">${t.title}</span><span class="rr-status ${hasBoth?'done':'none'}">${hasBoth?'완료':'미촬영'}</span></div>`;
+    }).join('');
+  }
+  const assessSec=document.getElementById('reportAssess');
+  const assessText=document.getElementById('reportAssessText');
+  if(ASSESS.text&&assessSec&&assessText){
+    assessSec.style.display='block';
+    assessText.textContent=ASSESS.text;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERSISTENCE (localStorage)
+// ═══════════════════════════════════════════════════════════
+const LS='ng_npt_v2';
+function autoSave(){
+  try{
+    const meta={name:document.getElementById('cName')?.value||'',trainer:document.getElementById('cTrainer')?.value||'',assess:ASSESS,chk:CHK};
+    localStorage.setItem(LS+'_meta',JSON.stringify(meta));
+  }catch(e){}
+}
+function saveImgToStorage(tid,slot,src){
+  try{localStorage.setItem(`${LS}_img_${tid}_${slot}`,src)}catch(e){
+    // quota: try smaller
+    try{
+      const c=document.createElement('canvas');const s=SHOTS[tid]?.[slot];
+      if(s?.canvas){c.width=Math.min(s.canvas.width,800);c.height=Math.min(s.canvas.height,1000);c.getContext('2d').drawImage(s.canvas,0,0,c.width,c.height);localStorage.setItem(`${LS}_img_${tid}_${slot}`,c.toDataURL('image/jpeg',.5))}
+    }catch(e2){}
+  }
+}
+function restoreFromStorage(){
+  try{
+    const meta=localStorage.getItem(LS+'_meta');
+    if(meta){
+      const m=JSON.parse(meta);
+      const nameEl=document.getElementById('cName');if(nameEl&&m.name)nameEl.value=m.name;
+      const trainerEl=document.getElementById('cTrainer');if(trainerEl&&m.trainer)trainerEl.value=m.trainer;
+      if(m.assess)ASSESS=m.assess;
+      if(m.chk)Object.assign(CHK,m.chk);
+      // restore checklist UI
+      CHECKLIST.flatMap(g=>g.items).forEach(item=>{
+        const saved=CHK[item.id];if(!saved)return;
+        item.sides.forEach(side=>{
+          const selIdx=saved[side+'_sel'];
+          if(selIdx!==undefined){
+            const colorClass=item.colors[selIdx]||'ok';
+            item.opts.forEach((_,oi)=>{const el=document.getElementById(`rp_${item.id}_${side}_${oi}`);if(el)el.className='radio-pill'});
+            const el=document.getElementById(`rp_${item.id}_${side}_${selIdx}`);
+            if(el)el.className=`radio-pill on-${colorClass}`;
+          }
+        });
+        const noteEl=document.getElementById('note_'+item.id);if(noteEl&&saved.note)noteEl.value=saved.note;
+      });
+      if(ASSESS.text){const ta=document.getElementById('assessText');if(ta)ta.value=ASSESS.text}
+      ASSESS.training.forEach(p=>{const el=document.getElementById('tp_'+p);if(el)el.classList.add('on')});
+    }
+    TESTS.forEach(t=>{
+      ['B','A'].forEach(slot=>{
+        const src=localStorage.getItem(`${LS}_img_${t.id}_${slot}`);
+        if(src)loadImg(t.id,slot,src,true);
+      });
+    });
+  }catch(e){}
+}
+window.addEventListener('beforeunload',autoSave);
+document.getElementById('cName').addEventListener('input',autoSave);
+document.getElementById('cTrainer').addEventListener('change',autoSave);
 
 // ═══════════════════════════════════════════════════════════
 // PDF EXPORT
 // ═══════════════════════════════════════════════════════════
 function exportPDF(){
-  if(typeof window.jspdf==='undefined'){toast('PDF 로딩 중...');return}
+  if(typeof window.jspdf==='undefined'){toast('PDF 라이브러리 로딩 중...');return}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const pw=210,ph=297;
-  const name=document.getElementById('cName').value||'회원';
-  const trainer=document.getElementById('cTrainer').value||'';
-  const ts=document.getElementById('tsDisp').textContent;
-  // header
-  doc.setFillColor(20,20,20);doc.rect(0,0,pw,22,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('NationalGym — NPT 체형분석 리포트',pw/2,14,{align:'center'});
-  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(180,180,180);doc.text(ts,pw/2,19,{align:'center'});
-  doc.setTextColor(60,60,60);doc.setFontSize(9);doc.text('회원: '+name,14,30);if(trainer)doc.text('트레이너: '+trainer,90,30);
-  doc.setDrawColor(210,210,210);doc.setLineWidth(.3);doc.line(14,34,pw-14,34);
-  let yPos=38;
-  const iW=82,iH=100;
-  getAllTests().forEach(t=>{
-    const d=DATA[t.id];if(!d||(!d.B?.canvas&&!d.A?.canvas))return;
-    if(yPos>ph-50){doc.addPage();yPos=20}
-    doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text(t.title,14,yPos);yPos+=5;
-    if(d.B?.canvas){doc.addImage(d.B.canvas.toDataURL('image/jpeg',.8),'JPEG',14,yPos,iW,iH);doc.setFontSize(7);doc.setFont(undefined,'bold');doc.setTextColor(217,64,64);doc.text('BEFORE',14+iW/2,yPos+iH+4,{align:'center'})}
-    if(d.A?.canvas){doc.addImage(d.A.canvas.toDataURL('image/jpeg',.8),'JPEG',pw-14-iW,yPos,iW,iH);doc.setFontSize(7);doc.setFont(undefined,'bold');doc.setTextColor(46,125,212);doc.text('AFTER',pw-14-iW/2,yPos+iH+4,{align:'center'})}
-    const oc=document.getElementById(`oc_${t.id}`);
-    if(oc&&oc.width){const oW=pw-28,oH=Math.min(oW*oc.height/oc.width,55);if(yPos+iH+12+oH<ph-20){doc.addImage(oc.toDataURL('image/jpeg',.85),'JPEG',14,yPos+iH+8,oW,oH)}}
-    yPos+=iH+60;
+  const name=document.getElementById('cName')?.value||'회원';
+  const trainer=document.getElementById('cTrainer')?.value||'';
+  const ts=document.getElementById('tsDispVal')?.textContent||'';
+  doc.setFillColor(10,10,10);doc.rect(0,0,pw,25,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont(undefined,'bold');doc.text('NationalGym — NPT 체형분석 리포트',pw/2,15,{align:'center'});
+  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(160,200,180);doc.text(ts,pw/2,21,{align:'center'});
+  doc.setTextColor(60,60,60);doc.setFontSize(9);doc.text('회원: '+name,14,33);if(trainer)doc.text('트레이너: '+trainer,90,33);
+  doc.setDrawColor(200,200,200);doc.setLineWidth(.3);doc.line(14,37,pw-14,37);
+  let yPos=42;const iW=82,iH=100;
+  TESTS.forEach(t=>{
+    const bS=SHOTS[t.id]?.B,aS=SHOTS[t.id]?.A;
+    if(!bS?.canvas&&!aS?.canvas)return;
+    if(yPos>ph-60){doc.addPage();yPos=20}
+    doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(30,30,30);doc.text(t.title,14,yPos);yPos+=6;
+    if(bS?.canvas){doc.addImage(bS.canvas.toDataURL('image/jpeg',.8),'JPEG',14,yPos,iW,iH);doc.setFontSize(7);doc.setFont(undefined,'bold');doc.setTextColor(180,30,30);doc.text('BEFORE',14+iW/2,yPos+iH+4,{align:'center'})}
+    if(aS?.canvas){doc.addImage(aS.canvas.toDataURL('image/jpeg',.8),'JPEG',pw-14-iW,yPos,iW,iH);doc.setFontSize(7);doc.setFont(undefined,'bold');doc.setTextColor(20,60,180);doc.text('AFTER',pw-14-iW/2,yPos+iH+4,{align:'center'})}
+    const oc=document.getElementById('oc_'+t.id);
+    if(oc&&oc.width){const oW=pw-28,oH=Math.min(oW*oc.height/oc.width,60);if(yPos+iH+12+oH<ph-20){doc.addImage(oc.toDataURL('image/jpeg',.85),'JPEG',14,yPos+iH+8,oW,oH)}}
+    yPos+=iH+70;
   });
-  if(ASSESS.text){if(yPos>ph-40){doc.addPage();yPos=20}doc.setDrawColor(210,210,210);doc.line(14,yPos,pw-14,yPos);yPos+=5;doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('Assessment',14,yPos);yPos+=5;doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(60,60,60);doc.text(doc.splitTextToSize(ASSESS.text,pw-28),14,yPos)}
-  doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text('NationalGym  |  NPT 체형분석 시스템',pw/2,ph-5,{align:'center'});
-  doc.save(name+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');toast('PDF 저장 완료');
+  if(ASSESS.text){if(yPos>ph-45){doc.addPage();yPos=20}doc.setDrawColor(200,200,200);doc.line(14,yPos,pw-14,yPos);yPos+=6;doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(30,30,30);doc.text('Assessment',14,yPos);yPos+=5;doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(60,60,60);doc.text(doc.splitTextToSize(ASSESS.text,pw-28),14,yPos)}
+  doc.setFontSize(7);doc.setTextColor(170,170,170);doc.text('NationalGym  |  NPT 체형분석 시스템  |  Powered by WellnessMode',pw/2,ph-5,{align:'center'});
+  doc.save(name+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('PDF 저장 완료');
 }
 
 async function doShare(){
-  const allTests=getAllTests();
-  const firstDone=allTests.find(t=>{const d=DATA[t.id];return d&&(d.B?.img||d.A?.img)});
-  if(!firstDone){toast('촬영된 사진이 없습니다.');return}
-  const oc=document.getElementById(`oc_${firstDone.id}`);
-  const canvas=oc&&oc.width?oc:(DATA[firstDone.id].A?.canvas||DATA[firstDone.id].B?.canvas);
-  const name=document.getElementById('cName').value||'회원';
-  const trainer=document.getElementById('cTrainer').value||'';
+  const done=TESTS.find(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
+  if(!done){toast('촬영된 사진이 없습니다.');return}
+  const name=document.getElementById('cName')?.value||'회원';
+  const trainer=document.getElementById('cTrainer')?.value||'';
+  const oc=document.getElementById('oc_'+done.id);
+  const canvas=oc&&oc.width?oc:(SHOTS[done.id].A?.canvas||SHOTS[done.id].B?.canvas);
   canvas.toBlob(async blob=>{
-    const file=new File([blob],name+'_NPT체형분석.jpg',{type:'image/jpeg'});
+    const file=new File([blob],name+'_NPT.jpg',{type:'image/jpeg'});
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({title:'NationalGym NPT 체형분석',text:`[NationalGym] ${name} NPT 체형분석\n트레이너: ${trainer}`,files:[file]});toast('공유 완료')}
-      catch(e){if(e.name!=='AbortError')fallbackDL(blob,name)}
-    }else{fallbackDL(blob,name)}
+      try{await navigator.share({title:'NationalGym NPT 체형분석',text:`[NationalGym] ${name} NPT 체형분석\n담당: ${trainer}`,files:[file]});toast('공유 완료')}
+      catch(e){if(e.name!=='AbortError')fallDL(blob,name)}
+    }else{fallDL(blob,name)}
   },'image/jpeg',.92);
 }
-function fallbackDL(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_NPT체형분석.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 카톡 공유')}
+function fallDL(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_NPT.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 카톡 공유')}
 
 // ═══════════════════════════════════════════════════════════
 // CLEAR
 // ═══════════════════════════════════════════════════════════
-function getAllTests(){return SECTIONS.filter(s=>!s.isChecklist&&!s.isReport).flatMap(s=>s.tests||[])}
 function clearAll(){
-  getAllTests().forEach(t=>{
-    const d=DATA[t.id];
-    if(d){
-      ['B','A'].forEach(slot=>{
-        const zone=document.getElementById(`zone_${t.id}_${slot}`);
-        if(!zone)return;
-        zone.innerHTML=`<div class="slot-add" id="add_${t.id}_${slot}"><div class="sadd-btn cam" onclick="openCam('${t.id}','${slot}','${t.tip||''}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>촬영</div><div class="sadd-btn" onclick="doUpload('${t.id}','${slot}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>업로드</div></div>`;
-        const bdg=document.getElementById(`sbdg_${t.id}_${slot}`);if(bdg)bdg.style.display='none';
-      });
-      DATA[t.id]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
-    }
-    const ov=document.getElementById(`overlap_${t.id}`);if(ov)ov.style.display='none';
-    const mb=document.getElementById(`mbar_${t.id}`);if(mb)mb.style.display='none';
-    const bdg=document.getElementById(`badge_${t.id}`);if(bdg){bdg.textContent='미촬영';bdg.className='test-badge'}
+  if(!confirm('모든 데이터를 초기화하시겠습니까?'))return;
+  TESTS.forEach(t=>{
+    ['B','A'].forEach(slot=>{
+      const zone=document.getElementById(`zone_${t.id}_${slot}`);
+      if(zone){zone.innerHTML=`<div class="photo-add" id="add_${t.id}_${slot}"><button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</button><button class="pa-btn" onclick="doUpload('${t.id}','${slot}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 업로드</button></div>`}
+      const bdg=document.getElementById(`tcb_${t.id}_${slot}`);if(bdg){bdg.textContent='미촬영';bdg.className='tc-badge none'}
+      const num=document.getElementById(`tcn_${t.id}_${slot}`);if(num)num.classList.remove('done');
+      try{localStorage.removeItem(`${LS}_img_${t.id}_${slot}`)}catch(e){}
+    });
+    if(SHOTS[t.id])SHOTS[t.id]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
+    const cmp=document.getElementById('cmp_'+t.id);if(cmp)cmp.style.display='none';
   });
-  updateProgress();toast('초기화 완료');
+  Object.keys(CHK).forEach(k=>delete CHK[k]);
+  ASSESS={text:'',training:[]};
+  try{localStorage.removeItem(LS+'_meta')}catch(e){}
+  updateCompareCta();
+  toast('초기화 완료');
 }
 
-// ═══════════════════════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('load', init);
 </script>
 </body>
 </html>
