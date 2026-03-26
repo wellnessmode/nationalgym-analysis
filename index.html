@@ -327,10 +327,6 @@ function computeTransform(srcPose,dstPose,sW,sH,dW,dH){
   if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
   const v=i=>srcPose[i]&&srcPose[i].visibility>.4&&dstPose[i]&&dstPose[i].visibility>.4;
   if(!v(11)||!v(12)||!v(23)||!v(24))return{tx:0,ty:0,scale:1};
-  const sMs={(srcPose[11].x+srcPose[12].x)/2*sW,(srcPose[11].y+srcPose[12].y)/2*sH};
-  const sMh={(srcPose[23].x+srcPose[24].x)/2*sW,(srcPose[23].y+srcPose[24].y)/2*sH};
-  const dMs={(dstPose[11].x+dstPose[12].x)/2*dW,(dstPose[11].y+dstPose[12].y)/2*dH};
-  const dMh={(dstPose[23].x+dstPose[24].x)/2*dW,(dstPose[23].y+dstPose[24].y)/2*dH};
   const sMsx=(srcPose[11].x+srcPose[12].x)/2*sW,sMsy=(srcPose[11].y+srcPose[12].y)/2*sH;
   const sMhx=(srcPose[23].x+srcPose[24].x)/2*sW,sMhy=(srcPose[23].y+srcPose[24].y)/2*sH;
   const dMsx=(dstPose[11].x+dstPose[12].x)/2*dW,dMsy=(dstPose[11].y+dstPose[12].y)/2*dH;
