@@ -7,618 +7,566 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#f5f5f3;--bg2:#ffffff;--bg3:#f0efed;--bg4:#e8e7e4;
-  --border:#e0dedd;--border2:#cccbc8;
-  --text:#1a1a1a;--text2:#666;--text3:#aaa;
-  --green:#1D9E75;--green2:#0F6E56;
-  --blue:#378ADD;--amber:#EF9F27;
-  --radius:10px;--radius2:16px;
-}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.header{position:sticky;top:0;z-index:100;background:rgba(245,245,243,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
-.logo{font-size:13px;font-weight:700;letter-spacing:0.08em;color:var(--text)}
-.logo span{color:var(--green)}
-.logo sub{font-size:9px;font-weight:400;color:var(--text3);letter-spacing:0.04em;margin-left:4px}
-.header-btns{margin-left:auto;display:flex;gap:6px}
-.hbtn{padding:6px 13px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer}
-.hbtn:active{background:var(--bg3)}
-.hbtn.g{background:var(--green);color:#fff;border-color:var(--green)}
-.main{padding:14px;max-width:700px;margin:0 auto;padding-bottom:40px}
-
-/* META */
-.meta-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);padding:14px;margin-bottom:14px}
-.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.field label{display:block;font-size:10px;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em;text-transform:uppercase}
-.field input,.field select{width:100%;padding:8px 11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;appearance:none;-webkit-appearance:none}
-.field input::placeholder{color:var(--text3)}
-.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-.ts{padding:8px 11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums}
-
-/* MODE */
-.mode-bar{display:flex;gap:6px;margin-bottom:10px;background:var(--bg2);padding:5px;border-radius:var(--radius2);border:0.5px solid var(--border)}
-.mbtn{flex:1;padding:7px 4px;border:none;border-radius:var(--radius);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all 0.15s}
-.mbtn.active{background:var(--bg3);color:var(--text);font-weight:500;box-shadow:inset 0 0 0 0.5px var(--border2)}
-.mode-hint{font-size:11px;color:var(--text3);margin-bottom:12px;padding-left:2px;min-height:16px}
-
-/* PANELS */
-.panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.panel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);overflow:hidden}
-.panel-head{padding:8px 12px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:6px}
-.plabel{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
-.plabel.before{color:var(--blue)}
-.plabel.after{color:var(--green)}
-.pose-badge{font-size:9px;padding:2px 6px;border-radius:10px;background:#e8f5ef;color:var(--green);margin-left:auto}
-.canvas-zone{position:relative;background:#f8f7f5;min-height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-canvas.ac{display:block;width:100%;height:auto}
-
-/* ADD BUTTON ZONE */
-.add-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px;width:100%;min-height:200px}
-.add-row{display:flex;gap:10px;width:100%}
-.add-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 8px;border-radius:var(--radius2);border:0.5px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text2);transition:background 0.15s}
-.add-btn:active{background:var(--bg4)}
-.add-btn svg{opacity:0.6}
-.add-btn.cam svg{opacity:1}
-.add-btn.cam{border-color:#c8e6fa;background:#f0f7ff;color:var(--blue)}
-.add-btn.upload{border-color:var(--border)}
-
-.mlist{padding:6px 10px;max-height:68px;overflow-y:auto;border-top:0.5px solid var(--border)}
-.mitem{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);padding:1px 0}
-.mdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-
-/* COMPARE */
-.compare-section{margin-bottom:14px}
-.compare-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);overflow:hidden}
-.compare-head{padding:9px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.compare-head span{font-size:12px;font-weight:500;color:var(--text2)}
-.compare-inner{position:relative;background:#111;height:300px;overflow:hidden;cursor:ew-resize;touch-action:none}
-.c-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
-.c-clip{position:absolute;top:0;left:0;height:100%;overflow:hidden}
-.c-clip img{position:absolute;top:0;left:0;height:100%;width:auto;max-width:none}
-.c-div{position:absolute;top:0;bottom:0;width:2px;background:#fff;transform:translateX(-50%);z-index:5}
-.c-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #999;display:flex;align-items:center;justify-content:center;font-size:10px;color:#555}
-.clabel{position:absolute;top:8px;font-size:10px;font-weight:600;letter-spacing:0.08em;padding:2px 8px;border-radius:4px;z-index:4}
-.clabel.b{left:8px;background:var(--blue);color:#fff}
-.clabel.a{right:8px;background:var(--green);color:#fff}
-
-/* NOTES */
-.notes-wrap{margin-bottom:14px}
-textarea{width:100%;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);color:var(--text);font-size:13px;resize:none;font-family:inherit;line-height:1.5}
-textarea::placeholder{color:var(--text3)}
-
-/* ACTIONS */
-.action-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.abtn{padding:11px 6px;border-radius:var(--radius2);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:inherit}
-.abtn:active{background:var(--bg3)}
-.abtn.pdf{border-color:#c8ead9;color:var(--green)}
-.abtn.share-btn{background:#FAE100;border-color:#e6d200;color:#2a2000;font-weight:500}
-
-/* CAMERA OVERLAY */
-.cam-ov{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
+:root{--bg:#f4f3f0;--bg2:#fff;--bg3:#eeede9;--bg4:#e4e3df;--brd:#e0deda;--brd2:#cac9c4;--tx:#111;--tx2:#666;--tx3:#aaa;--green:#1a9e74;--blue:#2e7dd4;--red:#d94040;--amber:#e89820;--r:12px;--r2:18px}
+html,body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Segoe UI',sans-serif;min-height:100%}
+.hdr{position:sticky;top:0;z-index:200;background:rgba(244,243,240,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:.5px solid var(--brd);display:flex;align-items:center;padding:13px 16px;gap:10px}
+.logo{font-size:15px;font-weight:700;letter-spacing:.05em}.logo em{color:var(--green);font-style:normal}
+.logo small{font-size:10px;font-weight:400;color:var(--tx3);margin-left:5px}
+.hdr-r{margin-left:auto;display:flex;gap:7px}
+.btn{padding:7px 15px;border-radius:20px;border:.5px solid var(--brd2);background:var(--bg2);color:var(--tx);font-size:13px;cursor:pointer;font-family:inherit}
+.btn:active{background:var(--bg3)}.btn.g{background:var(--green);color:#fff;border-color:var(--green)}.btn.b{background:var(--blue);color:#fff;border-color:var(--blue)}
+.wrap{padding:15px;max-width:680px;margin:0 auto;padding-bottom:50px}
+.meta{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);padding:15px;margin-bottom:15px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.f label{display:block;font-size:10px;color:var(--tx3);margin-bottom:4px;letter-spacing:.05em;text-transform:uppercase}
+.f input,.f select{width:100%;padding:9px 12px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:14px;appearance:none;-webkit-appearance:none;font-family:inherit}
+.f input::placeholder{color:var(--tx3)}
+.f select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.ts-val{padding:9px 12px;background:var(--bg3);border:.5px solid var(--brd);border-radius:var(--r);font-size:12px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.panel{background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);overflow:hidden}
+.phead{padding:10px 14px;border-bottom:.5px solid var(--brd);display:flex;align-items:center;gap:8px}
+.plbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.plbl.B{color:var(--red)}.plbl.A{color:var(--blue)}
+.pbdg{font-size:9px;padding:2px 7px;border-radius:8px;margin-left:auto}
+.pbdg.ok{background:#e6f5ee;color:var(--green)}.pbdg.err{background:#fef0f0;color:var(--red)}
+.pzone{position:relative;background:#f0eeeb;min-height:210px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas.pc{display:block;width:100%;height:auto;cursor:crosshair}
+.addzone{display:flex;flex-direction:column;gap:10px;padding:18px 14px;width:100%}
+.abtn{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:var(--r);border:.5px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;color:var(--tx2)}
+.abtn:active{background:var(--bg4)}.abtn.cam{border-color:#bdd9f5;background:#f0f7ff;color:var(--blue)}
+.mklist{padding:6px 12px;max-height:64px;overflow-y:auto;border-top:.5px solid var(--brd)}
+.mki{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--tx2);padding:1.5px 0}
+.mkdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#modeBar{display:none;background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);padding:5px;margin-bottom:10px}
+.mbar{display:flex;gap:5px}
+.mbt{flex:1;padding:8px 4px;border:none;border-radius:var(--r);background:transparent;color:var(--tx2);font-size:12px;cursor:pointer;font-family:inherit}
+.mbt.on{background:var(--bg3);color:var(--tx);font-weight:600;box-shadow:inset 0 0 0 .5px var(--brd2)}
+.mhint{font-size:11px;color:var(--tx3);padding:4px 4px 2px;min-height:18px}
+#analysisCard{display:none;background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);overflow:hidden;margin-bottom:15px}
+.acard-head{padding:11px 15px;border-bottom:.5px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+.acard-head span{font-size:13px;font-weight:600}
+.atabs{display:flex;border-bottom:.5px solid var(--brd)}
+.atab{flex:1;padding:10px 6px;font-size:12px;text-align:center;cursor:pointer;color:var(--tx2);border-bottom:2px solid transparent}
+.atab.on{color:var(--tx);border-bottom-color:var(--green);font-weight:600}
+.overlap-wrap{position:relative;width:100%;background:#111;overflow:hidden}
+canvas#overlapCanvas{display:block;width:100%;height:auto}
+.opacity-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:.5px solid var(--brd)}
+.opacity-row label{font-size:11px;color:var(--tx3);white-space:nowrap}
+input[type=range]{flex:1;accent-color:var(--green)}
+.metrics-body{padding:12px 14px}
+.metric-group{margin-bottom:14px}
+.mg-title{font-size:11px;font-weight:600;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.metric-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:.5px solid var(--brd);flex-wrap:wrap}
+.metric-row:last-child{border-bottom:none}
+.mname{font-size:13px;color:var(--tx);flex:1;min-width:100px}
+.mdesc{font-size:10px;color:var(--tx3);margin-top:1px}
+.mvals{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mv{font-size:11px;padding:3px 8px;border-radius:6px;text-align:center;line-height:1.4}
+.mv.before{background:#fef0f0;color:var(--red)}.mv.after{background:#e8f4fd;color:var(--blue)}
+.mv b{display:block;font-size:13px}
+.mdelta{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px}
+.mdelta.better{background:#e6f5ee;color:var(--green)}.mdelta.worse{background:#fef0f0;color:var(--red)}.mdelta.same{background:var(--bg3);color:var(--tx3)}
+#fsCompare{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
+#fsCompare.show{display:flex}
+.fs-head{background:rgba(0,0,0,.75);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fs-head span{color:#fff;font-size:14px;font-weight:600}
+.fs-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0a0a0a}
+canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
+.fs-ctrl{background:rgba(0,0,0,.8);padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.fs-ctrl label{color:#ccc;font-size:12px;white-space:nowrap}
+.notes{margin-bottom:15px}
+.notes textarea{width:100%;padding:11px 13px;background:var(--bg2);border:.5px solid var(--brd);border-radius:var(--r2);color:var(--tx);font-size:14px;resize:none;font-family:inherit;line-height:1.6}
+.notes textarea::placeholder{color:var(--tx3)}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px}
+.actbtn{padding:13px 6px;border-radius:var(--r2);border:.5px solid var(--brd);background:var(--bg2);color:var(--tx);font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:inherit}
+.actbtn:active{background:var(--bg3)}.actbtn.pdf{border-color:#c0e8d5;color:var(--green)}.actbtn.shr{background:#FAE100;border-color:#dbd000;color:#2a1f00;font-weight:600}
+.cam-ov{display:none;position:fixed;inset:0;z-index:600;background:#000;flex-direction:column}
 .cam-ov.show{display:flex}
-.cam-con{flex:1;position:relative;overflow:hidden}
-#camVideo{width:100%;height:100%;object-fit:cover;display:block}
+.cam-body{flex:1;position:relative;overflow:hidden}
+#camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
-.gline{position:absolute;background:rgba(255,255,255,0.3)}
-.gv{width:1px;top:0;bottom:0}
-.gh{height:1px;left:0;right:0}
-.g-body-box{position:absolute;border:2px solid rgba(29,158,117,0.75);border-radius:4px;top:8%;bottom:5%;left:20%;right:20%}
-.g-body-label{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:rgba(29,158,117,0.75);color:#fff;font-size:11px;padding:3px 10px;border-radius:10px;white-space:nowrap}
-.g-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.cam-bar{background:rgba(20,20,20,0.9);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:0.5px solid #333}
-.cam-sel{display:flex;gap:8px}
-.csbtn{padding:7px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
-.csbtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.cam-shutter{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #aaa;cursor:pointer;flex-shrink:0}
-.cam-shutter:active{transform:scale(0.92)}
-.cam-x{padding:8px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
-
-/* POSE LOADING */
-.pose-loading{position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:10}
-.pose-loading p{font-size:12px;color:var(--text2)}
-.spinner{width:28px;height:28px;border:2.5px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:999;white-space:nowrap}
-.toast.show{opacity:1}
+.gbox{position:absolute;border:2px solid rgba(26,158,116,.8);top:8%;bottom:5%;left:18%;right:18%;border-radius:5px}
+.gtip{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:rgba(26,158,116,.75);color:#fff;font-size:12px;padding:4px 12px;border-radius:12px;white-space:nowrap}
+.gcv{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.28);transform:translateX(-50%)}
+.gch1{position:absolute;top:33%;left:0;right:0;height:1px;background:rgba(255,255,255,.22)}
+.gch2{position:absolute;top:66%;left:0;right:0;height:1px;background:rgba(255,255,255,.22)}
+.cam-bar{background:rgba(10,10,10,.9);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.csel{display:flex;gap:8px}
+.csb{padding:8px 18px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:14px;cursor:pointer;font-family:inherit}
+.csb.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:4px solid #999;cursor:pointer;flex-shrink:0}
+.shutter:active{transform:scale(.9)}
+.cclose{padding:8px 18px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:14px;cursor:pointer;font-family:inherit}
+.pload{position:absolute;inset:0;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;z-index:10}
+.pload p{font-size:12px;color:var(--tx2)}
+.spin{width:30px;height:30px;border:2.5px solid var(--brd2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="logo"><span>National</span>Gym <sub>체형분석</sub></div>
-  <div class="header-btns">
-    <button class="hbtn" onclick="clearAll()">초기화</button>
-    <button class="hbtn g" onclick="exportPDF()">PDF 저장</button>
+<div class="hdr">
+  <div class="logo"><em>National</em>Gym <small>체형분석</small></div>
+  <div class="hdr-r">
+    <button class="btn" onclick="clearAll()">초기화</button>
+    <button class="btn b" id="btnFS" onclick="openFS()" style="display:none">전체화면 비교</button>
+    <button class="btn g" onclick="exportPDF()">PDF</button>
   </div>
 </div>
-
-<div class="main">
-
-  <!-- META -->
-  <div class="meta-card">
-    <div class="meta-grid">
-      <div class="field">
-        <label>회원 이름</label>
-        <input type="text" id="clientName" placeholder="이름" />
+<div class="wrap">
+  <div class="meta">
+    <div class="mgrid">
+      <div class="f"><label>회원 이름</label><input id="cName" type="text" placeholder="이름"></div>
+      <div class="f"><label>트레이너</label>
+        <select id="cTrainer"><option value="">선택</option><option>최현승</option><option>정인재</option><option>이희성</option></select>
       </div>
-      <div class="field">
-        <label>트레이너</label>
-        <select id="trainerName">
-          <option value="">선택</option>
-          <option value="최현승">최현승</option>
-          <option value="정인재">정인재</option>
-          <option value="이희성">이희성</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>촬영 일시</label>
-        <div class="ts" id="tsDisplay">—</div>
-      </div>
+      <div class="f"><label>촬영 일시</label><div class="ts-val" id="tsDisp">—</div></div>
     </div>
   </div>
-
-  <!-- MODE (shown only when image loaded) -->
-  <div id="modeSection" style="display:none">
-    <div class="mode-bar">
-      <button class="mbtn active" id="modeMarker" onclick="setMode('marker')">● 마커</button>
-      <button class="mbtn" id="modeMeasure" onclick="setMode('measure')">↔ 측정선</button>
-      <button class="mbtn" id="modeGuide" onclick="setMode('guide')">⊕ 가이드선</button>
-      <button class="mbtn" id="modeErase" onclick="setMode('erase')">✕ 삭제</button>
+  <div id="modeBar">
+    <div class="mbar">
+      <button class="mbt on" id="mMark" onclick="setMode('mark')">● 마커</button>
+      <button class="mbt" id="mMeas" onclick="setMode('meas')">↔ 측정선</button>
+      <button class="mbt" id="mGuid" onclick="setMode('guid')">⊕ 가이드</button>
+      <button class="mbt" id="mEras" onclick="setMode('eras')">✕ 삭제</button>
     </div>
-    <p class="mode-hint" id="hintText">이미지를 클릭해 마커를 찍으세요.</p>
+    <div class="mhint" id="mHint">클릭하여 마커를 찍으세요.</div>
   </div>
-
-  <!-- PANELS -->
   <div class="panels">
     <div class="panel">
-      <div class="panel-head">
-        <span class="plabel before">Before</span>
-        <span class="pose-badge" id="poseBadgeBefore" style="display:none">AI 감지 완료</span>
-      </div>
-      <div class="canvas-zone" id="wrapBefore">
-        <div class="add-zone" id="addBefore">
-          <div class="add-row">
-            <div class="add-btn cam" onclick="openCamera('before')">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              카메라 촬영
-            </div>
-            <div class="add-btn upload" onclick="triggerUpload('before')">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              갤러리 업로드
-            </div>
-          </div>
+      <div class="phead"><span class="plbl B">Before</span><span class="pbdg" id="bdgB" style="display:none"></span></div>
+      <div class="pzone" id="zoneB">
+        <div class="addzone" id="addB">
+          <div class="abtn cam" onclick="openCam('B')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</div>
+          <div class="abtn" onclick="doUpload('B')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리에서 업로드</div>
         </div>
       </div>
-      <div class="mlist" id="listBefore"></div>
+      <div class="mklist" id="mkB"></div>
     </div>
     <div class="panel">
-      <div class="panel-head">
-        <span class="plabel after">After</span>
-        <span class="pose-badge" id="poseBadgeAfter" style="display:none">AI 감지 완료</span>
-      </div>
-      <div class="canvas-zone" id="wrapAfter">
-        <div class="add-zone" id="addAfter">
-          <div class="add-row">
-            <div class="add-btn cam" onclick="openCamera('after')">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              카메라 촬영
-            </div>
-            <div class="add-btn upload" onclick="triggerUpload('after')">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              갤러리 업로드
-            </div>
-          </div>
+      <div class="phead"><span class="plbl A">After</span><span class="pbdg" id="bdgA" style="display:none"></span></div>
+      <div class="pzone" id="zoneA">
+        <div class="addzone" id="addA">
+          <div class="abtn cam" onclick="openCam('A')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</div>
+          <div class="abtn" onclick="doUpload('A')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리에서 업로드</div>
         </div>
       </div>
-      <div class="mlist" id="listAfter"></div>
+      <div class="mklist" id="mkA"></div>
     </div>
   </div>
-
-  <!-- COMPARE (auto-shows when both loaded) -->
-  <div class="compare-section" id="compareSection" style="display:none">
-    <div class="compare-card">
-      <div class="compare-head">
-        <span>Before / After 비교</span>
-        <button class="hbtn" style="font-size:10px;padding:4px 10px" onclick="resetCompare()">다시 찍기</button>
-      </div>
-      <div class="compare-inner" id="compareInner">
-        <img class="c-img" id="cmpAfter" />
-        <div class="c-clip" id="cClip"><img id="cmpBefore" /></div>
-        <div class="c-div" id="cDivider" style="left:50%"><div class="c-handle">◀▶</div></div>
-        <span class="clabel b">Before</span>
-        <span class="clabel a">After</span>
+  <div id="analysisCard">
+    <div class="acard-head">
+      <span>비포/애프터 분석</span>
+      <button class="btn" style="font-size:11px;padding:5px 12px" onclick="openFS()">전체화면 ↗</button>
+    </div>
+    <div class="atabs">
+      <div class="atab on" id="tab1" onclick="showTab(1)">오버랩 비교</div>
+      <div class="atab" id="tab2" onclick="showTab(2)">신체정렬 분석</div>
+    </div>
+    <div id="tabPane1">
+      <div class="overlap-wrap"><canvas id="overlapCanvas"></canvas></div>
+      <div class="opacity-row">
+        <label>Before 투명도</label>
+        <input type="range" id="alphaSlider" min="10" max="70" value="35" oninput="drawOverlap()">
+        <label id="alphaVal">35%</label>
       </div>
     </div>
+    <div id="tabPane2" style="display:none">
+      <div class="metrics-body" id="metricsBody"><p style="font-size:13px;color:var(--tx3);text-align:center;padding:20px 0">AI 포즈 감지 후 자동 분석됩니다.</p></div>
+    </div>
   </div>
-
-  <!-- NOTES -->
-  <div class="notes-wrap">
-    <textarea id="noteText" rows="3" placeholder="메모: 측정 수치, 특이사항, 처방 내용 등 (PDF에 포함)"></textarea>
+  <div class="notes"><textarea id="noteText" rows="3" placeholder="메모: 특이사항, 처방 내용 등 (PDF 포함)"></textarea></div>
+  <div class="actions">
+    <button class="actbtn pdf" onclick="exportPDF()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF 저장</button>
+    <button class="actbtn" onclick="saveImgs()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>이미지 저장</button>
+    <button class="actbtn shr" onclick="doShare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>카톡 공유</button>
   </div>
-
-  <!-- ACTIONS -->
-  <div class="action-bar">
-    <button class="abtn pdf" onclick="exportPDF()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      PDF 저장
-    </button>
-    <button class="abtn" onclick="saveImages()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      이미지 저장
-    </button>
-    <button class="abtn share-btn" onclick="shareResult()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-      카톡 공유
-    </button>
-  </div>
-
 </div>
-
-<!-- CAMERA OVERLAY -->
+<div id="fsCompare">
+  <div class="fs-head">
+    <span>비포/애프터 오버랩 비교 — 빨강 Before · 파랑 After</span>
+    <button class="btn" style="font-size:12px;background:rgba(255,255,255,.12);border-color:#555;color:#fff" onclick="closeFS()">✕ 닫기</button>
+  </div>
+  <div class="fs-wrap"><canvas id="fsCanvas"></canvas></div>
+  <div class="fs-ctrl">
+    <label>Before 투명도</label>
+    <input type="range" id="fsAlpha" min="10" max="70" value="35" oninput="syncAlpha(this.value)">
+    <label id="fsAlphaVal" style="color:#ccc;font-size:12px;min-width:32px">35%</label>
+  </div>
+</div>
 <div class="cam-ov" id="camOv">
-  <div class="cam-con">
-    <video id="camVideo" autoplay playsinline muted></video>
+  <div class="cam-body">
+    <video id="camVid" autoplay playsinline muted></video>
     <div class="cam-guide">
-      <div class="g-body-box"></div>
-      <div class="g-body-label">전신이 박스 안에 들어오도록</div>
-      <div class="gline gv" style="left:50%;transform:translateX(-50%)"></div>
-      <div class="gline gh" style="top:33%"></div>
-      <div class="gline gh" style="top:66%"></div>
-      <svg class="g-crosshair" width="28" height="28" viewBox="0 0 28 28">
-        <line x1="14" y1="0" x2="14" y2="28" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-        <line x1="0" y1="14" x2="28" y2="14" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-        <circle cx="14" cy="14" r="4" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
-      </svg>
+      <div class="gbox"></div><div class="gtip">전신을 박스 안에</div>
+      <div class="gcv"></div><div class="gch1"></div><div class="gch2"></div>
     </div>
   </div>
   <div class="cam-bar">
-    <div class="cam-sel">
-      <button class="csbtn active" id="cbBefore" onclick="setCamP('before')">Before</button>
-      <button class="csbtn" id="cbAfter" onclick="setCamP('after')">After</button>
+    <div class="csel">
+      <button class="csb on" id="cbB" onclick="setCamP('B')">Before</button>
+      <button class="csb" id="cbA" onclick="setCamP('A')">After</button>
     </div>
-    <button class="cam-shutter" onclick="capturePhoto()"></button>
-    <button class="cam-x" onclick="closeCamera()">닫기</button>
+    <button class="shutter" onclick="snap()"></button>
+    <button class="cclose" onclick="closeCam()">닫기</button>
   </div>
 </div>
-
-<input type="file" id="fileInput" accept="image/*" style="display:none">
-<canvas id="hiddenCam" style="display:none"></canvas>
-<div class="toast" id="toast"></div>
-
+<input type="file" id="fi" accept="image/*" style="display:none">
+<canvas id="hc" style="display:none"></canvas>
+<div class="toast" id="toastEl"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
-
 <script>
-// ─── STATE ───────────────────────────────────────────────
-const COLORS=['#1D9E75','#378ADD','#F0997B','#FAC775','#ED93B1','#E24B4A','#AFA9EC','#EF9F27'];
-const POSE_CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]];
-const POSE_LABELS={0:'코',11:'왼어깨',12:'오른어깨',13:'왼팔꿈치',14:'오른팔꿈치',15:'왼손목',16:'오른손목',23:'왼골반',24:'오른골반',25:'왼무릎',26:'오른무릎',27:'왼발목',28:'오른발목'};
-const KEY_LANDMARKS=[0,11,12,13,14,15,16,23,24,25,26,27,28];
-
-const S={
-  before:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null},
-  after:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null}
-};
-let mode='marker',measureStart=null,guideStart=null,divDragging=false,divPos=50;
-let camPanel='before',camStream=null,pendingUploadPanel=null;
-let poseDetector=null,poseReady=false;
-
-// ─── TIMESTAMP ───────────────────────────────────────────
-function updateTS(){
-  const n=new Date(),p=x=>String(x).padStart(2,'0');
-  document.getElementById('tsDisplay').textContent=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
-}
-setInterval(updateTS,1000);updateTS();
-
-// ─── TOAST ───────────────────────────────────────────────
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
-function cap(s){return s[0].toUpperCase()+s.slice(1)}
-
-// ─── POSE INIT ───────────────────────────────────────────
-function initPose(){
-  if(typeof Pose==='undefined'){console.warn('MediaPipe Pose not loaded');return}
-  poseDetector=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
-  poseDetector.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
-  poseDetector.onResults(()=>{});
-  poseDetector.initialize().then(()=>{poseReady=true;console.log('Pose ready')}).catch(e=>console.warn('Pose init failed',e));
-}
-window.addEventListener('load',()=>setTimeout(initPose,500));
-
-async function detectPose(panel,imgEl){
-  if(!poseReady||!poseDetector)return null;
-  return new Promise(resolve=>{
-    poseDetector.onResults(results=>{
-      if(results.poseLandmarks)resolve(results.poseLandmarks);
-      else resolve(null);
-    });
-    poseDetector.send({image:imgEl}).catch(()=>resolve(null));
-  });
-}
-
-// ─── MODE ────────────────────────────────────────────────
-function setMode(m){
-  mode=m;measureStart=null;guideStart=null;
-  ['marker','measure','guide','erase'].forEach(x=>document.getElementById('mode'+cap(x)).classList.toggle('active',x===m));
-  const h={marker:'클릭하여 마커를 찍으세요.',measure:'시작점 → 끝점 클릭으로 측정선을 그립니다.',guide:'두 점 클릭으로 정렬 가이드선을 그립니다.',erase:'마커나 선을 클릭하면 삭제됩니다.'};
-  document.getElementById('hintText').textContent=h[m];
-}
-
-// ─── UPLOAD ──────────────────────────────────────────────
-function triggerUpload(p){
-  pendingUploadPanel=p;
-  const fi=document.getElementById('fileInput');fi.value='';fi.click();
-}
-document.getElementById('fileInput').addEventListener('change',function(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=ev=>loadImage(pendingUploadPanel,ev.target.result);r.readAsDataURL(f);
+const IMG={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
+let mode='mark',msStart=null,gsStart=null,pendUp=null,camP='B',camStream=null,poseEng=null,poseOk=false;
+const CONN=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]];
+const LBL={0:'코',11:'왼어깨',12:'오른어깨',13:'왼팔꿈치',14:'오른팔꿈치',15:'왼손목',16:'오른손목',23:'왼골반',24:'오른골반',25:'왼무릎',26:'오른무릎',27:'왼발목',28:'오른발목'};
+const KEY=[0,11,12,13,14,15,16,23,24,25,26,27,28];
+function tickTS(){const n=new Date(),p=x=>String(x).padStart(2,'0');document.getElementById('tsDisp').textContent=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`}
+setInterval(tickTS,1000);tickTS();
+function toast(m){const t=document.getElementById('toastEl');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
+window.addEventListener('load',()=>{
+  if(typeof Pose==='undefined')return;
+  poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
+  poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
+  poseEng.onResults(()=>{});
+  poseEng.initialize().then(()=>{poseOk=true}).catch(()=>{});
 });
-
-// ─── CAMERA ──────────────────────────────────────────────
-function openCamera(p){
-  camPanel=p;
-  document.getElementById('cbBefore').classList.toggle('active',p==='before');
-  document.getElementById('cbAfter').classList.toggle('active',p==='after');
+async function runPose(imgEl){
+  if(!poseOk||!poseEng)return null;
+  return new Promise(res=>{poseEng.onResults(r=>res(r.poseLandmarks||null));poseEng.send({image:imgEl}).catch(()=>res(null))});
+}
+function setMode(m){
+  mode=m;msStart=null;gsStart=null;
+  document.getElementById('mMark').classList.toggle('on',m==='mark');
+  document.getElementById('mMeas').classList.toggle('on',m==='meas');
+  document.getElementById('mGuid').classList.toggle('on',m==='guid');
+  document.getElementById('mEras').classList.toggle('on',m==='eras');
+  const h={mark:'클릭하여 마커를 찍으세요.',meas:'시작점 → 끝점 클릭으로 측정선을 그립니다.',guid:'두 점 클릭으로 정렬 가이드선을 그립니다.',eras:'마커나 선을 클릭하면 삭제됩니다.'};
+  document.getElementById('mHint').textContent=h[m];
+}
+function doUpload(p){pendUp=p;const f=document.getElementById('fi');f.value='';f.click()}
+document.getElementById('fi').addEventListener('change',function(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>loadImg(pendUp,ev.target.result);r.readAsDataURL(f)});
+function openCam(p){
+  camP=p;
+  document.getElementById('cbB').classList.toggle('on',p==='B');
+  document.getElementById('cbA').classList.toggle('on',p==='A');
   document.getElementById('camOv').classList.add('show');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})
-    .then(s=>{camStream=s;document.getElementById('camVideo').srcObject=s})
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
+    .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
 }
-function setCamP(p){camPanel=p;document.getElementById('cbBefore').classList.toggle('active',p==='before');document.getElementById('cbAfter').classList.toggle('active',p==='after')}
-function capturePhoto(){
-  const v=document.getElementById('camVideo');
-  const hc=document.getElementById('hiddenCam');hc.width=v.videoWidth;hc.height=v.videoHeight;
-  hc.getContext('2d').drawImage(v,0,0);
-  loadImage(camPanel,hc.toDataURL('image/jpeg',0.92));
-  closeCamera();toast(camPanel==='before'?'Before 촬영 완료':'After 촬영 완료');
-}
-function closeCamera(){
-  if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;
-  document.getElementById('camOv').classList.remove('show');
-}
-
-// ─── LOAD IMAGE ──────────────────────────────────────────
-function loadImage(p,src){
-  const wrap=document.getElementById('wrap'+cap(p));
-  // remove add-zone
-  const az=document.getElementById('add'+cap(p));if(az)az.remove();
-  // remove old canvas
-  const old=wrap.querySelector('canvas');if(old)old.remove();
-  const poseDiv=wrap.querySelector('.pose-loading');if(poseDiv)poseDiv.remove();
-
-  const canvas=document.createElement('canvas');canvas.className='ac';wrap.appendChild(canvas);
+function setCamP(p){camP=p;document.getElementById('cbB').classList.toggle('on',p==='B');document.getElementById('cbA').classList.toggle('on',p==='A')}
+function snap(){const v=document.getElementById('camVid'),hc=document.getElementById('hc');hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0);loadImg(camP,hc.toDataURL('image/jpeg',.92));closeCam();toast(camP==='B'?'Before 촬영 완료':'After 촬영 완료')}
+function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show')}
+function loadImg(p,src){
+  const zone=document.getElementById('zone'+p);
+  const az=document.getElementById('add'+p);if(az)az.remove();
+  const oc=zone.querySelector('canvas');if(oc)oc.remove();
+  const pl=zone.querySelector('.pload');if(pl)pl.remove();
+  const canvas=document.createElement('canvas');canvas.className='pc';zone.appendChild(canvas);
   const img=new Image();
   img.onload=async()=>{
     canvas.width=img.width;canvas.height=img.height;
-    const ctx=canvas.getContext('2d');
-    S[p]={img,markers:[],lines:[],guides:[],canvas,ctx,poseData:null};
+    IMG[p]={img,canvas,ctx:canvas.getContext('2d'),pose:null,markers:[],lines:[],guides:[]};
     redraw(p);
     canvas.addEventListener('click',ev=>handleClick(ev,p));
     canvas.addEventListener('touchend',ev=>{ev.preventDefault();handleClick(ev.changedTouches[0],p)},{passive:false});
-    document.getElementById('modeSection').style.display='block';
-
-    // pose detection
-    if(poseReady){
-      const loader=document.createElement('div');loader.className='pose-loading';
-      loader.innerHTML='<div class="spinner"></div><p>AI 포즈 감지 중...</p>';
-      wrap.appendChild(loader);
-      try{
-        const landmarks=await detectPose(p,img);
-        loader.remove();
-        if(landmarks){S[p].poseData=landmarks;redraw(p);document.getElementById('poseBadge'+cap(p)).style.display='flex';toast('포즈 자동 감지 완료')}
-        else{toast('포즈 감지 실패 — 수동으로 마커를 찍으세요')}
-      }catch(e){loader.remove()}
+    document.getElementById('modeBar').style.display='block';
+    if(poseOk){
+      const loader=document.createElement('div');loader.className='pload';
+      loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
+      zone.appendChild(loader);
+      const lm=await runPose(img);loader.remove();
+      const bdg=document.getElementById('bdg'+p);
+      if(lm){IMG[p].pose=lm;redraw(p);bdg.textContent='AI 감지 완료';bdg.className='pbdg ok';bdg.style.display='inline-block'}
+      else{bdg.textContent='수동 마커';bdg.className='pbdg err';bdg.style.display='inline-block'}
     }
-    checkAutoCompare();
+    checkBoth();
   };
   img.src=src;
 }
-
-// ─── AUTO COMPARE ────────────────────────────────────────
-function checkAutoCompare(){
-  if(S.before.canvas&&S.after.canvas){
-    setTimeout(()=>showCompare(),300);
+function checkBoth(){
+  if(IMG.B.img&&IMG.A.img){
+    document.getElementById('analysisCard').style.display='block';
+    document.getElementById('btnFS').style.display='inline-block';
+    setTimeout(()=>{buildOverlap();buildMetrics();document.getElementById('analysisCard').scrollIntoView({behavior:'smooth',block:'start'})},200);
   }
 }
-function showCompare(){
-  const inner=document.getElementById('compareInner');
-  const w=inner.offsetWidth||360;
-  document.getElementById('cmpAfter').src=S.after.canvas.toDataURL('image/jpeg',0.9);
-  const bImg=document.getElementById('cmpBefore');
-  bImg.src=S.before.canvas.toDataURL('image/jpeg',0.9);
-  bImg.style.cssText=`position:absolute;top:0;left:0;width:${w}px;height:300px;object-fit:contain`;
-  setDiv(50);
-  document.getElementById('compareSection').style.display='block';
-  document.getElementById('compareSection').scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-function resetCompare(){document.getElementById('compareSection').style.display='none'}
-
-// ─── CLICK HANDLER ───────────────────────────────────────
-function getPos(ev,canvas){
-  const r=canvas.getBoundingClientRect();
-  const cx=ev.clientX!==undefined?ev.clientX:(ev.touches?.[0]?.clientX||0);
-  const cy=ev.clientY!==undefined?ev.clientY:(ev.touches?.[0]?.clientY||0);
-  return{x:(cx-r.left)*canvas.width/r.width,y:(cy-r.top)*canvas.height/r.height};
-}
-function ptSegDist(pt,seg){
-  const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1,len2=dx*dx+dy*dy;
-  if(!len2)return Math.hypot(pt.x-seg.x1,pt.y-seg.y1);
-  const t=Math.max(0,Math.min(1,((pt.x-seg.x1)*dx+(pt.y-seg.y1)*dy)/len2));
-  return Math.hypot(pt.x-seg.x1-t*dx,pt.y-seg.y1-t*dy);
-}
-function handleClick(ev,p){
-  const s=S[p];if(!s.canvas)return;
-  const pos=getPos(ev,s.canvas);
-  if(mode==='erase'){
-    const mi=s.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<22);
-    if(mi>=0){s.markers.splice(mi,1);redraw(p);updateList(p);return}
-    const li=s.lines.findIndex(l=>ptSegDist(pos,l)<18);if(li>=0){s.lines.splice(li,1);redraw(p);return}
-    const gi=s.guides.findIndex(g=>ptSegDist(pos,g)<18);if(gi>=0){s.guides.splice(gi,1);redraw(p);}
-    return;
-  }
-  if(mode==='measure'){
-    if(!measureStart)measureStart={...pos,p};
-    else if(measureStart.p===p){s.lines.push({x1:measureStart.x,y1:measureStart.y,x2:pos.x,y2:pos.y});measureStart=null;redraw(p)}
-    return;
-  }
-  if(mode==='guide'){
-    if(!guideStart)guideStart={...pos,p};
-    else if(guideStart.p===p){s.guides.push({x1:guideStart.x,y1:guideStart.y,x2:pos.x,y2:pos.y});guideStart=null;redraw(p)}
-    return;
-  }
-  s.markers.push({x:pos.x,y:pos.y,label:'P'+(s.markers.length+1)});
-  redraw(p);updateList(p);
-}
-
-// ─── REDRAW ──────────────────────────────────────────────
 function redraw(p){
-  const s=S[p];if(!s.ctx||!s.img)return;
+  const s=IMG[p];if(!s.ctx||!s.img)return;
   const c=s.ctx,W=s.canvas.width,H=s.canvas.height;
   c.clearRect(0,0,W,H);c.drawImage(s.img,0,0);
-
-  // pose skeleton
-  if(s.poseData){
-    const lm=s.poseData;
-    // connections
-    c.strokeStyle='rgba(29,158,117,0.55)';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([]);
-    POSE_CONNECTIONS.forEach(([a,b])=>{
-      if(lm[a]&&lm[b]&&lm[a].visibility>0.4&&lm[b].visibility>0.4){
-        c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke();
-      }
-    });
-    // points
-    KEY_LANDMARKS.forEach(i=>{
-      const pt=lm[i];if(!pt||pt.visibility<0.4)return;
-      const x=pt.x*W,y=pt.y*H,r=Math.max(6,W*0.008);
-      c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle='rgba(29,158,117,0.85)';c.fill();
-      c.strokeStyle='#fff';c.lineWidth=1.5;c.stroke();
-      if(POSE_LABELS[i]&&W>400){
-        c.font=`${Math.max(11,W*0.016)}px -apple-system,sans-serif`;
-        c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,0.5)';c.lineWidth=2;
-        c.textAlign='center';c.strokeText(POSE_LABELS[i],x,y-r-3);c.fillText(POSE_LABELS[i],x,y-r-3);
-      }
+  const isB=p==='B';
+  const skelCol=isB?'rgba(217,64,64,.5)':'rgba(46,125,212,.5)';
+  const ptCol=isB?'rgba(217,64,64,.8)':'rgba(46,125,212,.8)';
+  const mkCol=isB?'#d94040':'#2e7dd4';
+  if(s.pose){
+    const lm=s.pose;
+    c.strokeStyle=skelCol;c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
+    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
+    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H,r=Math.max(5,W*.007);c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle=ptCol;c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke()});
+  }
+  s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(232,152,32,.85)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle='rgba(232,152,32,.9)';c.fill()})});
+  s.lines.forEach(l=>{
+    c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);c.strokeStyle=mkCol;c.lineWidth=Math.max(2,W*.003);c.setLineDash([8,4]);c.stroke();c.setLineDash([]);
+    const dx=l.x2-l.x1,dy=l.y2-l.y1,dist=Math.round(Math.sqrt(dx*dx+dy*dy));
+    const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2,fs=Math.max(13,W*.018);
+    c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
+    c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=3;c.strokeText(dist+'px',mx,my-8);c.fillStyle=mkCol;c.fillText(dist+'px',mx,my-8);
+  });
+  s.markers.forEach((m,i)=>{
+    const r=Math.max(11,W*.015);
+    c.beginPath();c.arc(m.x,m.y,r,0,Math.PI*2);c.fillStyle=mkCol;c.globalAlpha=.88;c.fill();c.globalAlpha=1;
+    c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
+    c.font=`bold ${Math.max(11,W*.014)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
+  });
+}
+function computeTransform(srcPose,dstPose,sW,sH,dW,dH){
+  if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
+  const v=i=>srcPose[i]&&srcPose[i].visibility>.4&&dstPose[i]&&dstPose[i].visibility>.4;
+  if(!v(11)||!v(12)||!v(23)||!v(24))return{tx:0,ty:0,scale:1};
+  const sMs={(srcPose[11].x+srcPose[12].x)/2*sW,(srcPose[11].y+srcPose[12].y)/2*sH};
+  const sMh={(srcPose[23].x+srcPose[24].x)/2*sW,(srcPose[23].y+srcPose[24].y)/2*sH};
+  const dMs={(dstPose[11].x+dstPose[12].x)/2*dW,(dstPose[11].y+dstPose[12].y)/2*dH};
+  const dMh={(dstPose[23].x+dstPose[24].x)/2*dW,(dstPose[23].y+dstPose[24].y)/2*dH};
+  const sMsx=(srcPose[11].x+srcPose[12].x)/2*sW,sMsy=(srcPose[11].y+srcPose[12].y)/2*sH;
+  const sMhx=(srcPose[23].x+srcPose[24].x)/2*sW,sMhy=(srcPose[23].y+srcPose[24].y)/2*sH;
+  const dMsx=(dstPose[11].x+dstPose[12].x)/2*dW,dMsy=(dstPose[11].y+dstPose[12].y)/2*dH;
+  const dMhx=(dstPose[23].x+dstPose[24].x)/2*dW,dMhy=(dstPose[23].y+dstPose[24].y)/2*dH;
+  const sLen=Math.hypot(sMsx-sMhx,sMsy-sMhy);
+  const dLen=Math.hypot(dMsx-dMhx,dMsy-dMhy);
+  const scale=sLen>10&&dLen>10?dLen/sLen:1;
+  return{tx:dMsx-sMsx*scale,ty:dMsy-sMsy*scale,scale};
+}
+function buildOverlap(){
+  const W=IMG.A.canvas.width,H=IMG.A.canvas.height;
+  const oc=document.getElementById('overlapCanvas');oc.width=W;oc.height=H;
+  drawOverlap();
+}
+function drawOverlap(){
+  const bS=IMG.B,aS=IMG.A;if(!bS.img||!aS.img)return;
+  const oc=document.getElementById('overlapCanvas');
+  const c=oc.getContext('2d');const W=oc.width,H=oc.height;
+  const alpha=parseInt(document.getElementById('alphaSlider').value)/100;
+  document.getElementById('alphaVal').textContent=Math.round(alpha*100)+'%';
+  c.clearRect(0,0,W,H);
+  // After full
+  c.globalAlpha=1;c.drawImage(aS.img,0,0,W,H);
+  // Before ghost aligned
+  const t=computeTransform(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,W,H);
+  c.save();c.globalAlpha=alpha;c.transform(t.scale,0,0,t.scale,t.tx,t.ty);
+  c.filter='grayscale(50%)';c.drawImage(bS.img,0,0,bS.canvas.width,bS.canvas.height);c.filter='none';c.restore();
+  // Before skeleton red
+  if(bS.pose){
+    const lm=bS.pose;
+    c.save();c.transform(t.scale,0,0,t.scale,t.tx,t.ty);c.globalAlpha=Math.min(alpha+.35,.75);
+    c.strokeStyle='rgba(217,64,64,.9)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
+    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bS.canvas.width,lm[a].y*bS.canvas.height);c.lineTo(lm[b].x*bS.canvas.width,lm[b].y*bS.canvas.height);c.stroke()});
+    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*bS.canvas.width,y=pt.y*bS.canvas.height;c.beginPath();c.arc(x,y,Math.max(5,bS.canvas.width*.007),0,Math.PI*2);c.fillStyle='rgba(217,64,64,.85)';c.fill();c.strokeStyle='rgba(255,255,255,.5)';c.lineWidth=1.5;c.stroke()});
+    c.restore();
+  }
+  // After skeleton blue
+  if(aS.pose){
+    const lm=aS.pose;c.globalAlpha=1;
+    c.strokeStyle='rgba(46,125,212,.85)';c.lineWidth=Math.max(2,W*.003);c.setLineDash([]);
+    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
+    KEY.forEach(i=>{
+      const pt=lm[i];if(!pt||pt.visibility<.4)return;
+      const x=pt.x*W,y=pt.y*H,r=Math.max(5,W*.007);
+      c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle='rgba(46,125,212,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke();
+      if(LBL[i]&&W>300){c.font=`bold ${Math.max(10,W*.014)}px -apple-system,sans-serif`;c.textAlign='center';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=2;c.strokeText(LBL[i],x,y-r-4);c.fillStyle='#fff';c.fillText(LBL[i],x,y-r-4)}
     });
   }
-
-  // guide lines (orange)
-  s.guides.forEach(g=>{
-    c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);
-    c.strokeStyle='rgba(239,159,39,0.85)';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([]);c.stroke();
-    [[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle='rgba(239,159,39,0.9)';c.fill();});
-  });
-
-  // measure lines
-  s.lines.forEach(l=>{
-    c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);
-    c.strokeStyle='#378ADD';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([8,4]);c.stroke();c.setLineDash([]);
-    const dx=l.x2-l.x1,dy=l.y2-l.y1,dist=Math.round(Math.sqrt(dx*dx+dy*dy));
-    const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2;
-    const fs=Math.max(14,W*0.02);
-    c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
-    c.strokeStyle='rgba(255,255,255,0.8)';c.lineWidth=3;c.strokeText(dist+'px',mx,my-10);
-    c.fillStyle='#378ADD';c.fillText(dist+'px',mx,my-10);
-  });
-
-  // manual markers
-  s.markers.forEach((m,i)=>{
-    const col=COLORS[i%COLORS.length],r=Math.max(10,W*0.014);
-    c.beginPath();c.arc(m.x,m.y,r,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=0.9;c.fill();c.globalAlpha=1;
-    c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
-    c.font=`bold ${Math.max(11,W*0.015)}px -apple-system,sans-serif`;
-    c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
-  });
+  c.globalAlpha=1;
+  // legend
+  const fs=Math.max(11,W*.016);
+  c.fillStyle='rgba(0,0,0,.55)';c.fillRect(6,6,W*.26,30);
+  c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='left';
+  c.fillStyle='#e87878';c.fillText('● Before',12,24);
+  c.fillStyle='#6aadff';c.fillText('● After',W*.13+6,24);
 }
-
-function updateList(p){
-  const s=S[p],el=document.getElementById('list'+cap(p));
+function openFS(){
+  if(!IMG.B.img||!IMG.A.img){toast('Before/After 이미지를 모두 업로드해주세요.');return}
+  document.getElementById('fsCompare').classList.add('show');
+  setTimeout(drawFS,80);
+}
+function closeFS(){document.getElementById('fsCompare').classList.remove('show')}
+function drawFS(){
+  const fsC=document.getElementById('fsCanvas'),oc=document.getElementById('overlapCanvas');
+  if(!oc.width)return;
+  const wrap=document.querySelector('.fs-wrap');
+  const wW=wrap.offsetWidth,wH=wrap.offsetHeight;
+  const ratio=oc.height/oc.width;
+  let cW=wW,cH=wW*ratio;if(cH>wH){cH=wH;cW=wH/ratio}
+  fsC.width=Math.round(cW);fsC.height=Math.round(cH);
+  fsC.getContext('2d').drawImage(oc,0,0,fsC.width,fsC.height);
+}
+function syncAlpha(v){document.getElementById('alphaSlider').value=v;document.getElementById('fsAlpha').value=v;document.getElementById('fsAlphaVal').textContent=v+'%';drawOverlap();setTimeout(drawFS,50)}
+document.getElementById('alphaSlider').addEventListener('input',function(){document.getElementById('fsAlpha').value=this.value;document.getElementById('fsAlphaVal').textContent=this.value+'%';setTimeout(drawFS,50)});
+function showTab(n){
+  document.getElementById('tab1').classList.toggle('on',n===1);document.getElementById('tab2').classList.toggle('on',n===2);
+  document.getElementById('tabPane1').style.display=n===1?'block':'none';document.getElementById('tabPane2').style.display=n===2?'block':'none';
+}
+function calcMetrics(lm,W,H){
+  const p=i=>({x:lm[i].x*W,y:lm[i].y*H});
+  const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
+  const ang2d=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  const m={};
+  if(v(11,12)){m.shoulderTilt=Math.abs(ang2d(p(11),p(12))).toFixed(1)}
+  if(v(23,24)){m.hipTilt=Math.abs(ang2d(p(23),p(24))).toFixed(1)}
+  if(v(11,12,23,24)){
+    const ms={x:(lm[11].x+lm[12].x)/2*W,y:(lm[11].y+lm[12].y)/2*H};
+    const mh={x:(lm[23].x+lm[24].x)/2*W,y:(lm[23].y+lm[24].y)/2*H};
+    m.spineAngle=Math.abs(ang2d(mh,ms)+90).toFixed(1);
+  }
+  if(v(0,11,12)){
+    const mx=(lm[11].x+lm[12].x)/2*W;m.headOffset=Math.abs(lm[0].x*W-mx).toFixed(0);
+  }
+  if(v(11,12,23,24)){
+    const lS=Math.abs((lm[11].x-lm[23].x)*W),rS=Math.abs((lm[12].x-lm[24].x)*W);
+    m.shoulderHipAlign=((lS+rS)/2/W*100).toFixed(1);
+  }
+  if(v(25,26,23,24)){
+    const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);
+    m.kneeAlign=(kw/hw*100).toFixed(0);
+  }
+  if(v(11,12)){m.shoulderHDiff=Math.abs((lm[11].y-lm[12].y)*H).toFixed(0)}
+  if(v(23,24)){m.hipHDiff=Math.abs((lm[23].y-lm[24].y)*H).toFixed(0)}
+  return m;
+}
+function buildMetrics(){
+  const b=IMG.B,a=IMG.A;
+  if(!b.pose||!a.pose){document.getElementById('metricsBody').innerHTML='<p style="font-size:13px;color:var(--tx3);text-align:center;padding:20px 0">AI 포즈가 감지되어야 분석이 가능합니다.<br>전신이 잘 보이는 사진으로 다시 시도해주세요.</p>';return}
+  const bm=calcMetrics(b.pose,b.canvas.width,b.canvas.height);
+  const am=calcMetrics(a.pose,a.canvas.width,a.canvas.height);
+  const delta=(bv,av,lb)=>{
+    if(bv===undefined||av===undefined)return null;
+    const d=parseFloat(av)-parseFloat(bv);
+    const better=lb?d<=-0.5:d>=0.5,worse=lb?d>=0.5:d<=-0.5;
+    return{val:(d>0?'+':'')+d.toFixed(1),cls:better?'better':worse?'worse':'same'};
+  };
+  const groups=[
+    {t:'어깨 / 상체',items:[
+      {k:'shoulderTilt',l:'어깨 기울기',u:'°',lb:true,d:'0°에 가까울수록 수평 정렬 양호'},
+      {k:'shoulderHDiff',l:'좌우 어깨 높이 차',u:'px',lb:true,d:'수치가 작을수록 균형'},
+      {k:'headOffset',l:'머리 전방 이동',u:'px',lb:true,d:'어깨 중심 대비 머리 수평 편차'},
+    ]},
+    {t:'척추 / 몸통',items:[
+      {k:'spineAngle',l:'척추 기울기',u:'°',lb:true,d:'0°에 가까울수록 직립 자세'},
+      {k:'shoulderHipAlign',l:'어깨-골반 정렬 편차',u:'%',lb:true,d:'낮을수록 수직 정렬 양호'},
+    ]},
+    {t:'골반 / 하체',items:[
+      {k:'hipTilt',l:'골반 기울기',u:'°',lb:true,d:'0°에 가까울수록 수평 정렬 양호'},
+      {k:'hipHDiff',l:'좌우 골반 높이 차',u:'px',lb:true,d:'수치가 작을수록 균형'},
+      {k:'kneeAlign',l:'무릎 폭 / 골반 폭',u:'%',lb:false,d:'100%에 가까울수록 이상적'},
+    ]},
+  ];
+  let html='';
+  groups.forEach(g=>{
+    const hasAny=g.items.some(it=>bm[it.k]!==undefined||am[it.k]!==undefined);
+    if(!hasAny)return;
+    html+=`<div class="metric-group"><div class="mg-title">${g.t}</div>`;
+    g.items.forEach(it=>{
+      const bv=bm[it.k],av=am[it.k];if(bv===undefined&&av===undefined)return;
+      const d=delta(bv,av,it.lb);
+      html+=`<div class="metric-row">
+        <div><div class="mname">${it.l}</div><div class="mdesc">${it.d}</div></div>
+        <div class="mvals">
+          ${bv!==undefined?`<span class="mv before">Before<b>${bv}${it.u}</b></span>`:''}
+          ${av!==undefined?`<span class="mv after">After<b>${av}${it.u}</b></span>`:''}
+          ${d?`<span class="mdelta ${d.cls}">${d.val}${it.u}</span>`:''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  if(!html)html='<p style="font-size:13px;color:var(--tx3);text-align:center;padding:20px 0">측정 가능한 랜드마크가 부족합니다.</p>';
+  document.getElementById('metricsBody').innerHTML=html;
+}
+function getPos(ev,canvas){
+  const r=canvas.getBoundingClientRect();
+  const cx=ev.clientX!==undefined?ev.clientX:ev.touches?.[0]?.clientX||0;
+  const cy=ev.clientY!==undefined?ev.clientY:ev.touches?.[0]?.clientY||0;
+  return{x:(cx-r.left)*canvas.width/r.width,y:(cy-r.top)*canvas.height/r.height};
+}
+function ptSeg(pt,seg){const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1,l2=dx*dx+dy*dy;if(!l2)return Math.hypot(pt.x-seg.x1,pt.y-seg.y1);const t=Math.max(0,Math.min(1,((pt.x-seg.x1)*dx+(pt.y-seg.y1)*dy)/l2));return Math.hypot(pt.x-seg.x1-t*dx,pt.y-seg.y1-t*dy)}
+function handleClick(ev,p){
+  const s=IMG[p];if(!s.canvas)return;
+  const pos=getPos(ev,s.canvas);
+  if(mode==='eras'){
+    const mi=s.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<22);if(mi>=0){s.markers.splice(mi,1);redraw(p);updateMkList(p);return}
+    const li=s.lines.findIndex(l=>ptSeg(pos,l)<16);if(li>=0){s.lines.splice(li,1);redraw(p);return}
+    const gi=s.guides.findIndex(g=>ptSeg(pos,g)<16);if(gi>=0){s.guides.splice(gi,1);redraw(p);}return;
+  }
+  if(mode==='meas'){if(!msStart)msStart={...pos,p};else if(msStart.p===p){s.lines.push({x1:msStart.x,y1:msStart.y,x2:pos.x,y2:pos.y});msStart=null;redraw(p)}return}
+  if(mode==='guid'){if(!gsStart)gsStart={...pos,p};else if(gsStart.p===p){s.guides.push({x1:gsStart.x,y1:gsStart.y,x2:pos.x,y2:pos.y});gsStart=null;redraw(p)}return}
+  s.markers.push({x:pos.x,y:pos.y,label:p+(s.markers.length+1)});redraw(p);updateMkList(p);
+}
+function updateMkList(p){
+  const s=IMG[p],el=document.getElementById('mk'+p);const col=p==='B'?'#d94040':'#2e7dd4';
   if(!s.markers.length){el.innerHTML='';return}
-  el.innerHTML=s.markers.map((m,i)=>`<div class="mitem"><div class="mdot" style="background:${COLORS[i%COLORS.length]}"></div><span>${m.label}: (${Math.round(m.x)}, ${Math.round(m.y)})</span></div>`).join('');
+  el.innerHTML=s.markers.map(m=>`<div class="mki"><div class="mkdot" style="background:${col}"></div><span>${m.label}: (${Math.round(m.x)}, ${Math.round(m.y)})</span></div>`).join('');
 }
-
 function clearAll(){
-  ['before','after'].forEach(p=>{
-    const wrap=document.getElementById('wrap'+cap(p));
-    wrap.innerHTML=`<div class="add-zone" id="add${cap(p)}"><div class="add-row"><div class="add-btn cam" onclick="openCamera('${p}')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라 촬영</div><div class="add-btn upload" onclick="triggerUpload('${p}')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 업로드</div></div></div>`;
-    S[p]={img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null};
-    document.getElementById('list'+cap(p)).innerHTML='';
-    document.getElementById('poseBadge'+cap(p)).style.display='none';
+  ['B','A'].forEach(p=>{
+    const zone=document.getElementById('zone'+p);
+    zone.innerHTML=`<div class="addzone" id="add${p}"><div class="abtn cam" onclick="openCam('${p}')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</div><div class="abtn" onclick="doUpload('${p}')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리에서 업로드</div></div>`;
+    IMG[p]={img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]};
+    document.getElementById('mk'+p).innerHTML='';const bdg=document.getElementById('bdg'+p);bdg.style.display='none';
   });
-  document.getElementById('compareSection').style.display='none';
-  document.getElementById('modeSection').style.display='none';
-  measureStart=null;guideStart=null;
-  toast('초기화 완료');
+  document.getElementById('analysisCard').style.display='none';document.getElementById('modeBar').style.display='none';document.getElementById('btnFS').style.display='none';document.getElementById('fsCompare').classList.remove('show');msStart=null;gsStart=null;toast('초기화 완료');
 }
-
-// ─── COMPARE DRAG ────────────────────────────────────────
-function setDiv(pct){divPos=pct;document.getElementById('cDivider').style.left=pct+'%';document.getElementById('cClip').style.width=pct+'%'}
-const ci=document.getElementById('compareInner');
-ci.addEventListener('mousedown',e=>{divDragging=true;e.preventDefault()});
-ci.addEventListener('touchstart',e=>{divDragging=true},{passive:true});
-document.addEventListener('mousemove',e=>{if(!divDragging)return;const r=ci.getBoundingClientRect();setDiv(Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100)))});
-document.addEventListener('touchmove',e=>{if(!divDragging)return;const r=ci.getBoundingClientRect();setDiv(Math.max(0,Math.min(100,(e.touches[0].clientX-r.left)/r.width*100)))},{passive:true});
-document.addEventListener('mouseup',()=>divDragging=false);
-document.addEventListener('touchend',()=>divDragging=false);
-
-// ─── EXPORT ──────────────────────────────────────────────
-function saveImages(){
-  const name=document.getElementById('clientName').value||'회원';
-  const date=new Date().toISOString().slice(0,10);
-  let saved=0;
-  ['before','after'].forEach(p=>{
-    if(!S[p].canvas)return;
-    const a=document.createElement('a');a.href=S[p].canvas.toDataURL('image/jpeg',0.92);a.download=`${name}_${p}_${date}.jpg`;a.click();saved++;
-  });
-  if(saved)toast('이미지 저장 완료 ('+saved+'장)');else toast('저장할 이미지가 없습니다.');
+function saveImgs(){
+  const name=document.getElementById('cName').value||'회원',date=new Date().toISOString().slice(0,10);
+  let n=0;['B','A'].forEach(p=>{if(!IMG[p].canvas)return;const a=document.createElement('a');a.href=IMG[p].canvas.toDataURL('image/jpeg',.92);a.download=`${name}_${p==='B'?'before':'after'}_${date}.jpg`;a.click();n++});
+  const oc=document.getElementById('overlapCanvas');if(oc.width){const a=document.createElement('a');a.href=oc.toDataURL('image/jpeg',.92);a.download=`${name}_overlap_${date}.jpg`;a.click();n++}
+  toast(`이미지 저장 완료 (${n}장)`);
 }
-
 function exportPDF(){
-  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 먼저 업로드해주세요.');return}
-  if(typeof window.jspdf==='undefined'){toast('PDF 라이브러리 로딩 중...');return}
+  if(!IMG.B.canvas&&!IMG.A.canvas){toast('이미지를 먼저 업로드해주세요.');return}
+  if(typeof window.jspdf==='undefined'){toast('PDF 로딩 중...');return}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const pw=210,ph=297;
-  const name=document.getElementById('clientName').value||'회원';
-  const trainer=document.getElementById('trainerName').value||'';
-  const ts=document.getElementById('tsDisplay').textContent;
-  const note=document.getElementById('noteText').value||'';
-  doc.setFillColor(26,26,26);doc.rect(0,0,pw,20,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('NationalGym  —  체형 분석 리포트',pw/2,13,{align:'center'});
-  doc.setFontSize(8.5);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);
-  doc.text('회원: '+name,14,28);if(trainer)doc.text('트레이너: '+trainer,80,28);doc.text(ts,pw-14,28,{align:'right'});
-  doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);doc.line(14,32,pw-14,32);
-  const iW=86,iH=115,y0=36;
-  if(S.before.canvas){
-    doc.addImage(S.before.canvas.toDataURL('image/jpeg',0.88),'JPEG',14,y0,iW,iH);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(55,138,221);doc.text('BEFORE',14+iW/2,y0+iH+5,{align:'center'});
-    if(S.before.markers.length){doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);S.before.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',14,y0+iH+10+i*4.5))}
+  const pw=210,ph=297,name=document.getElementById('cName').value||'회원',trainer=document.getElementById('cTrainer').value||'',ts=document.getElementById('tsDisp').textContent,note=document.getElementById('noteText').value||'';
+  doc.setFillColor(20,20,20);doc.rect(0,0,pw,22,'F');doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont(undefined,'bold');doc.text('NationalGym  —  체형 분석 리포트',pw/2,14,{align:'center'});
+  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(180,180,180);doc.text(ts,pw/2,19,{align:'center'});
+  doc.setTextColor(60,60,60);doc.setFontSize(9);doc.text('회원: '+name,14,30);if(trainer)doc.text('트레이너: '+trainer,90,30);
+  doc.setDrawColor(210,210,210);doc.setLineWidth(.3);doc.line(14,34,pw-14,34);
+  const iW=84,iH=112,y0=38;
+  if(IMG.B.canvas){doc.addImage(IMG.B.canvas.toDataURL('image/jpeg',.85),'JPEG',14,y0,iW,iH);doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(217,64,64);doc.text('BEFORE',14+iW/2,y0+iH+5,{align:'center'})}
+  if(IMG.A.canvas){doc.addImage(IMG.A.canvas.toDataURL('image/jpeg',.85),'JPEG',pw-14-iW,y0,iW,iH);doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(46,125,212);doc.text('AFTER',pw-14-iW/2,y0+iH+5,{align:'center'})}
+  const oc=document.getElementById('overlapCanvas');
+  if(oc.width){const y1=y0+iH+12,oW=pw-28,oH=Math.min(oW*oc.height/oc.width,75);doc.addImage(oc.toDataURL('image/jpeg',.9),'JPEG',14,y1,oW,oH);doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);doc.text('오버랩 비교  ●빨강=Before  ●파랑=After',pw/2,y1+oH+5,{align:'center'})}
+  if(IMG.B.pose&&IMG.A.pose){
+    const bm=calcMetrics(IMG.B.pose,IMG.B.canvas.width,IMG.B.canvas.height);
+    const am=calcMetrics(IMG.A.pose,IMG.A.canvas.width,IMG.A.canvas.height);
+    let my=y0+iH+100;doc.setDrawColor(210,210,210);doc.line(14,my,pw-14,my);my+=5;
+    doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('신체정렬 분석',14,my);my+=6;
+    [{k:'shoulderTilt',l:'어깨 기울기',u:'°'},{k:'hipTilt',l:'골반 기울기',u:'°'},{k:'spineAngle',l:'척추 기울기',u:'°'},{k:'headOffset',l:'머리 전방 이동',u:'px'},{k:'shoulderHipAlign',l:'어깨-골반 편차',u:'%'},{k:'kneeAlign',l:'무릎/골반 비율',u:'%'}].forEach(it=>{
+      if(bm[it.k]===undefined&&am[it.k]===undefined)return;
+      doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);doc.text(it.l,14,my);
+      doc.setTextColor(217,64,64);doc.text('Before: '+(bm[it.k]!==undefined?bm[it.k]+it.u:'—'),90,my);
+      doc.setTextColor(46,125,212);doc.text('After: '+(am[it.k]!==undefined?am[it.k]+it.u:'—'),148,my);my+=5.5;
+    });
   }
-  if(S.after.canvas){
-    const x2=pw-14-iW;doc.addImage(S.after.canvas.toDataURL('image/jpeg',0.88),'JPEG',x2,y0,iW,iH);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(29,158,117);doc.text('AFTER',x2+iW/2,y0+iH+5,{align:'center'});
-    if(S.after.markers.length){doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);S.after.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',x2,y0+iH+10+i*4.5))}
-  }
-  if(note){const ny=y0+iH+48;doc.setDrawColor(200,200,200);doc.line(14,ny-3,pw-14,ny-3);doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('메모',14,ny+3);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);doc.text(doc.splitTextToSize(note,pw-28),14,ny+9)}
+  if(note){doc.setDrawColor(210,210,210);doc.line(14,ph-38,pw-14,ph-38);doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('메모',14,ph-33);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);doc.text(doc.splitTextToSize(note,pw-28),14,ph-28)}
   doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text('NationalGym  |  체형분석 시스템',pw/2,ph-5,{align:'center'});
-  doc.save(name+'_체형분석_'+new Date().toISOString().slice(0,10)+'.pdf');
-  toast('PDF 저장 완료');
+  doc.save(name+'_체형분석_'+new Date().toISOString().slice(0,10)+'.pdf');toast('PDF 저장 완료');
 }
-
-async function shareResult(){
-  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 먼저 업로드해주세요.');return}
-  const name=document.getElementById('clientName').value||'회원';
-  const trainer=document.getElementById('trainerName').value||'트레이너';
-  const ts=document.getElementById('tsDisplay').textContent;
-  const canvas=S.after.canvas||S.before.canvas;
-  canvas.toBlob(async blob=>{
+async function doShare(){
+  if(!IMG.B.canvas&&!IMG.A.canvas){toast('이미지를 먼저 업로드해주세요.');return}
+  const name=document.getElementById('cName').value||'회원',trainer=document.getElementById('cTrainer').value||'',ts=document.getElementById('tsDisp').textContent;
+  const oc=document.getElementById('overlapCanvas');
+  const shareCanvas=oc.width?oc:(IMG.A.canvas||IMG.B.canvas);
+  shareCanvas.toBlob(async blob=>{
     const file=new File([blob],name+'_체형분석.jpg',{type:'image/jpeg'});
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({title:'NationalGym 체형 분석',text:`[NationalGym] ${name} 체형 분석\n트레이너: ${trainer}\n${ts}`,files:[file]});toast('공유 완료')}
-      catch(e){if(e.name!=='AbortError'){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 공유하세요')}}
-    } else {
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();
-      toast('이미지 저장됨 → 갤러리에서 카톡으로 공유하세요');
-    }
-  },'image/jpeg',0.92);
+      try{await navigator.share({title:'NationalGym 체형 분석',text:`[NationalGym] ${name}\n트레이너: ${trainer}\n${ts}`,files:[file]});toast('공유 완료')}
+      catch(e){if(e.name!=='AbortError'){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 카톡 공유하세요')}}
+    }else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 카톡 공유하세요')}
+  },'image/jpeg',.92);
 }
 </script>
 </body>
