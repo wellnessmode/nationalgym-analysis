@@ -8,129 +8,129 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0e0e0e;--bg2:#1a1a1a;--bg3:#242424;--bg4:#2e2e2e;
-  --border:#333;--border2:#444;
-  --text:#f0f0f0;--text2:#aaa;--text3:#666;
+  --bg:#f5f5f3;--bg2:#ffffff;--bg3:#f0efed;--bg4:#e8e7e4;
+  --border:#e0dedd;--border2:#cccbc8;
+  --text:#1a1a1a;--text2:#666;--text3:#aaa;
   --green:#1D9E75;--green2:#0F6E56;
-  --blue:#378ADD;--blue2:#185FA5;
-  --amber:#EF9F27;--red:#E24B4A;
+  --blue:#378ADD;--amber:#EF9F27;
   --radius:10px;--radius2:16px;
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-/* HEADER */
-.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
-.logo{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.header{position:sticky;top:0;z-index:100;background:rgba(245,245,243,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:0.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.logo{font-size:13px;font-weight:700;letter-spacing:0.08em;color:var(--text)}
 .logo span{color:var(--green)}
-.header-right{margin-left:auto;display:flex;gap:6px}
-.hbtn{padding:6px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text);font-size:12px;cursor:pointer}
+.logo sub{font-size:9px;font-weight:400;color:var(--text3);letter-spacing:0.04em;margin-left:4px}
+.header-btns{margin-left:auto;display:flex;gap:6px}
+.hbtn{padding:6px 13px;border-radius:20px;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer}
 .hbtn:active{background:var(--bg3)}
-.hbtn.primary{background:var(--green);color:#fff;border-color:var(--green)}
-/* MAIN */
-.main{padding:16px;max-width:800px;margin:0 auto;padding-bottom:100px}
+.hbtn.g{background:var(--green);color:#fff;border-color:var(--green)}
+.main{padding:14px;max-width:700px;margin:0 auto;padding-bottom:40px}
+
 /* META */
 .meta-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);padding:14px;margin-bottom:14px}
-.meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.meta-row:last-child{margin-bottom:0}
-.field label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;letter-spacing:0.04em;text-transform:uppercase}
-.field input,.field select{width:100%;padding:9px 12px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:14px;appearance:none;-webkit-appearance:none}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field label{display:block;font-size:10px;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em;text-transform:uppercase}
+.field input,.field select{width:100%;padding:8px 11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;appearance:none;-webkit-appearance:none}
 .field input::placeholder{color:var(--text3)}
-.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-.timestamp-display{padding:9px 12px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text2);font-variant-numeric:tabular-nums}
-/* MODE BAR */
-.mode-bar{display:flex;gap:6px;margin-bottom:14px;background:var(--bg2);padding:6px;border-radius:var(--radius2);border:0.5px solid var(--border)}
-.mode-btn{flex:1;padding:8px 4px;border:none;border-radius:var(--radius);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s}
-.mode-btn.active{background:var(--bg4);color:var(--text);font-weight:500}
-.mode-hint{font-size:11px;color:var(--text3);margin-bottom:12px;padding-left:2px}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.ts{padding:8px 11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums}
+
+/* MODE */
+.mode-bar{display:flex;gap:6px;margin-bottom:10px;background:var(--bg2);padding:5px;border-radius:var(--radius2);border:0.5px solid var(--border)}
+.mbtn{flex:1;padding:7px 4px;border:none;border-radius:var(--radius);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all 0.15s}
+.mbtn.active{background:var(--bg3);color:var(--text);font-weight:500;box-shadow:inset 0 0 0 0.5px var(--border2)}
+.mode-hint{font-size:11px;color:var(--text3);margin-bottom:12px;padding-left:2px;min-height:16px}
+
 /* PANELS */
 .panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .panel{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);overflow:hidden}
-.panel-head{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border)}
-.panel-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
-.panel-label.before{color:var(--blue)}
-.panel-label.after{color:var(--green)}
-.canvas-wrap{position:relative;background:#111;min-height:180px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-canvas.analysis-canvas{display:block;width:100%;height:auto;cursor:crosshair}
-.upload-ph{display:flex;flex-direction:column;align-items:center;gap:6px;padding:28px 12px;color:var(--text3);width:100%;text-align:center}
-.upload-ph svg{opacity:0.35}
-.upload-ph p{font-size:11px}
-.mlist{padding:6px 10px;max-height:70px;overflow-y:auto;border-top:0.5px solid var(--border)}
+.panel-head{padding:8px 12px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:6px}
+.plabel{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
+.plabel.before{color:var(--blue)}
+.plabel.after{color:var(--green)}
+.pose-badge{font-size:9px;padding:2px 6px;border-radius:10px;background:#e8f5ef;color:var(--green);margin-left:auto}
+.canvas-zone{position:relative;background:#f8f7f5;min-height:200px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas.ac{display:block;width:100%;height:auto}
+
+/* ADD BUTTON ZONE */
+.add-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px;width:100%;min-height:200px}
+.add-row{display:flex;gap:10px;width:100%}
+.add-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 8px;border-radius:var(--radius2);border:0.5px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text2);transition:background 0.15s}
+.add-btn:active{background:var(--bg4)}
+.add-btn svg{opacity:0.6}
+.add-btn.cam svg{opacity:1}
+.add-btn.cam{border-color:#c8e6fa;background:#f0f7ff;color:var(--blue)}
+.add-btn.upload{border-color:var(--border)}
+
+.mlist{padding:6px 10px;max-height:68px;overflow-y:auto;border-top:0.5px solid var(--border)}
 .mitem{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);padding:1px 0}
 .mdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
 /* COMPARE */
-.compare-wrap{display:none;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);overflow:hidden;margin-bottom:14px}
-.compare-wrap.show{display:block}
-.compare-inner{position:relative;background:#111;height:280px;overflow:hidden;cursor:ew-resize}
-.c-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.compare-section{margin-bottom:14px}
+.compare-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);overflow:hidden}
+.compare-head{padding:9px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.compare-head span{font-size:12px;font-weight:500;color:var(--text2)}
+.compare-inner{position:relative;background:#111;height:300px;overflow:hidden;cursor:ew-resize;touch-action:none}
+.c-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
 .c-clip{position:absolute;top:0;left:0;height:100%;overflow:hidden}
 .c-clip img{position:absolute;top:0;left:0;height:100%;width:auto;max-width:none}
-.c-divider{position:absolute;top:0;bottom:0;width:2px;background:#fff;transform:translateX(-50%);z-index:5;pointer-events:none}
-.c-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #888;display:flex;align-items:center;justify-content:center;font-size:11px;color:#444;pointer-events:none}
-.c-label{position:absolute;top:8px;font-size:10px;font-weight:600;letter-spacing:0.1em;padding:2px 8px;border-radius:4px;z-index:4;pointer-events:none}
-.c-label.b{left:8px;background:var(--blue);color:#fff}
-.c-label.a{right:8px;background:var(--green);color:#fff}
+.c-div{position:absolute;top:0;bottom:0;width:2px;background:#fff;transform:translateX(-50%);z-index:5}
+.c-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #999;display:flex;align-items:center;justify-content:center;font-size:10px;color:#555}
+.clabel{position:absolute;top:8px;font-size:10px;font-weight:600;letter-spacing:0.08em;padding:2px 8px;border-radius:4px;z-index:4}
+.clabel.b{left:8px;background:var(--blue);color:#fff}
+.clabel.a{right:8px;background:var(--green);color:#fff}
+
 /* NOTES */
 .notes-wrap{margin-bottom:14px}
-.notes-wrap textarea{width:100%;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);color:var(--text);font-size:13px;resize:none;font-family:inherit;line-height:1.5}
-.notes-wrap textarea::placeholder{color:var(--text3)}
-/* ACTION BAR */
-.action-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-.action-btn{padding:11px 6px;border-radius:var(--radius2);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
-.action-btn svg{opacity:0.7}
-.action-btn:active{background:var(--bg3)}
-.action-btn.pdf{border-color:var(--green);color:var(--green)}
-.action-btn.share{border-color:#FAE100;background:#FAE100;color:#222;font-weight:500}
-.action-btn.share svg{opacity:1}
-/* FLOATING BTN */
-.fab-wrap{position:fixed;bottom:24px;right:20px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-.fab-menu{display:none;flex-direction:column;gap:8px;align-items:flex-end}
-.fab-menu.open{display:flex}
-.fab-item{display:flex;align-items:center;gap:10px;cursor:pointer}
-.fab-item-label{background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);font-size:13px;padding:6px 14px;border-radius:20px;white-space:nowrap}
-.fab-item-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--border2)}
-.fab-item-icon.cam{background:var(--blue)}
-.fab-item-icon.upload{background:var(--bg3)}
-.fab-main{width:54px;height:54px;border-radius:50%;background:var(--green);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform 0.2s}
-.fab-main.open{transform:rotate(45deg)}
-.fab-main:active{transform:scale(0.94)}
+textarea{width:100%;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius2);color:var(--text);font-size:13px;resize:none;font-family:inherit;line-height:1.5}
+textarea::placeholder{color:var(--text3)}
+
+/* ACTIONS */
+.action-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.abtn{padding:11px 6px;border-radius:var(--radius2);border:0.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:inherit}
+.abtn:active{background:var(--bg3)}
+.abtn.pdf{border-color:#c8ead9;color:var(--green)}
+.abtn.share-btn{background:#FAE100;border-color:#e6d200;color:#2a2000;font-weight:500}
+
 /* CAMERA OVERLAY */
-.cam-overlay{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
-.cam-overlay.show{display:flex}
-.cam-container{flex:1;position:relative;overflow:hidden}
-#camVideo{width:100%;height:100%;object-fit:cover}
+.cam-ov{display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column}
+.cam-ov.show{display:flex}
+.cam-con{flex:1;position:relative;overflow:hidden}
+#camVideo{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
-.guide-line{position:absolute;background:rgba(255,255,255,0.35)}
-.guide-vert{width:1px;top:0;bottom:0}
-.guide-horiz{height:1px;left:0;right:0}
-.guide-center-v{left:50%;transform:translateX(-50%)}
-.guide-third-l{left:33.33%}
-.guide-third-r{left:66.66%}
-.guide-third-t{top:33.33%}
-.guide-third-b{top:66.66%}
-.guide-box{position:absolute;border:1.5px solid rgba(29,158,117,0.7);top:10%;bottom:10%;left:15%;right:15%;border-radius:4px}
-.cam-label-box{position:absolute;top:12%;left:50%;transform:translateX(-50%);background:rgba(29,158,117,0.7);color:#fff;font-size:11px;letter-spacing:0.06em;padding:3px 10px;border-radius:10px;white-space:nowrap}
-.cam-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
-.cam-bar{background:rgba(0,0,0,0.7);padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:0.5px solid #333}
-.cam-panel-sel{display:flex;gap:8px}
-.cam-panel-btn{padding:7px 14px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
-.cam-panel-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.cam-capture{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #888;cursor:pointer;flex-shrink:0}
-.cam-capture:active{transform:scale(0.92)}
-.cam-close{padding:8px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
+.gline{position:absolute;background:rgba(255,255,255,0.3)}
+.gv{width:1px;top:0;bottom:0}
+.gh{height:1px;left:0;right:0}
+.g-body-box{position:absolute;border:2px solid rgba(29,158,117,0.75);border-radius:4px;top:8%;bottom:5%;left:20%;right:20%}
+.g-body-label{position:absolute;top:10%;left:50%;transform:translateX(-50%);background:rgba(29,158,117,0.75);color:#fff;font-size:11px;padding:3px 10px;border-radius:10px;white-space:nowrap}
+.g-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.cam-bar{background:rgba(20,20,20,0.9);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:0.5px solid #333}
+.cam-sel{display:flex;gap:8px}
+.csbtn{padding:7px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
+.csbtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.cam-shutter{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #aaa;cursor:pointer;flex-shrink:0}
+.cam-shutter:active{transform:scale(0.92)}
+.cam-x{padding:8px 16px;border-radius:20px;border:1px solid #555;background:transparent;color:#ccc;font-size:13px;cursor:pointer}
+
+/* POSE LOADING */
+.pose-loading{position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:10}
+.pose-loading p{font-size:12px;color:var(--text2)}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* TOAST */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);padding:9px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:1000;white-space:nowrap}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast.show{opacity:1}
-/* scrollbar */
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo"><span>National</span>Gym</div>
-  <div style="font-size:11px;color:var(--text3)">체형 분석 시스템</div>
-  <div class="header-right">
+  <div class="logo"><span>National</span>Gym <sub>체형분석</sub></div>
+  <div class="header-btns">
     <button class="hbtn" onclick="clearAll()">초기화</button>
-    <button class="hbtn" onclick="toggleCompare()">비교</button>
+    <button class="hbtn g" onclick="exportPDF()">PDF 저장</button>
   </div>
 </div>
 
@@ -138,80 +138,98 @@ canvas.analysis-canvas{display:block;width:100%;height:auto;cursor:crosshair}
 
   <!-- META -->
   <div class="meta-card">
-    <div class="meta-row">
+    <div class="meta-grid">
       <div class="field">
         <label>회원 이름</label>
-        <input type="text" id="clientName" placeholder="이름 입력" />
+        <input type="text" id="clientName" placeholder="이름" />
       </div>
       <div class="field">
         <label>트레이너</label>
         <select id="trainerName">
-          <option value="">-- 선택 --</option>
+          <option value="">선택</option>
           <option value="최현승">최현승</option>
           <option value="정인재">정인재</option>
           <option value="이희성">이희성</option>
         </select>
       </div>
-    </div>
-    <div class="meta-row" style="margin-bottom:0">
-      <div class="field" style="grid-column:1/-1">
+      <div class="field">
         <label>촬영 일시</label>
-        <div class="timestamp-display" id="tsDisplay">—</div>
+        <div class="ts" id="tsDisplay">—</div>
       </div>
     </div>
   </div>
 
-  <!-- MODE -->
-  <div class="mode-bar">
-    <button class="mode-btn active" id="modeMarker" onclick="setMode('marker')">● 마커</button>
-    <button class="mode-btn" id="modeMeasure" onclick="setMode('measure')">↔ 측정선</button>
-    <button class="mode-btn" id="modeErase" onclick="setMode('erase')">✕ 삭제</button>
-    <button class="mode-btn" id="modeGuide" onclick="setMode('guide')">⊕ 가이드선</button>
+  <!-- MODE (shown only when image loaded) -->
+  <div id="modeSection" style="display:none">
+    <div class="mode-bar">
+      <button class="mbtn active" id="modeMarker" onclick="setMode('marker')">● 마커</button>
+      <button class="mbtn" id="modeMeasure" onclick="setMode('measure')">↔ 측정선</button>
+      <button class="mbtn" id="modeGuide" onclick="setMode('guide')">⊕ 가이드선</button>
+      <button class="mbtn" id="modeErase" onclick="setMode('erase')">✕ 삭제</button>
+    </div>
+    <p class="mode-hint" id="hintText">이미지를 클릭해 마커를 찍으세요.</p>
   </div>
-  <p class="mode-hint" id="hintText">사진을 먼저 업로드하거나, 우측 하단 + 버튼으로 카메라를 여세요.</p>
 
   <!-- PANELS -->
   <div class="panels">
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-label before">Before</span>
-        <button class="hbtn" style="font-size:10px;padding:3px 8px" onclick="openFab('before')">추가</button>
+        <span class="plabel before">Before</span>
+        <span class="pose-badge" id="poseBadgeBefore" style="display:none">AI 감지 완료</span>
       </div>
-      <div class="canvas-wrap" id="wrapBefore">
-        <div class="upload-ph" onclick="openFab('before')">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <p>+ 사진 추가</p>
+      <div class="canvas-zone" id="wrapBefore">
+        <div class="add-zone" id="addBefore">
+          <div class="add-row">
+            <div class="add-btn cam" onclick="openCamera('before')">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              카메라 촬영
+            </div>
+            <div class="add-btn upload" onclick="triggerUpload('before')">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              갤러리 업로드
+            </div>
+          </div>
         </div>
       </div>
       <div class="mlist" id="listBefore"></div>
     </div>
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-label after">After</span>
-        <button class="hbtn" style="font-size:10px;padding:3px 8px" onclick="openFab('after')">추가</button>
+        <span class="plabel after">After</span>
+        <span class="pose-badge" id="poseBadgeAfter" style="display:none">AI 감지 완료</span>
       </div>
-      <div class="canvas-wrap" id="wrapAfter">
-        <div class="upload-ph" onclick="openFab('after')">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <p>+ 사진 추가</p>
+      <div class="canvas-zone" id="wrapAfter">
+        <div class="add-zone" id="addAfter">
+          <div class="add-row">
+            <div class="add-btn cam" onclick="openCamera('after')">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              카메라 촬영
+            </div>
+            <div class="add-btn upload" onclick="triggerUpload('after')">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              갤러리 업로드
+            </div>
+          </div>
         </div>
       </div>
       <div class="mlist" id="listAfter"></div>
     </div>
   </div>
 
-  <!-- COMPARE -->
-  <div class="compare-wrap" id="compareView">
-    <div class="panel-head">
-      <span style="font-size:12px;color:var(--text2)">Before / After 슬라이드 비교</span>
-      <button class="hbtn" style="font-size:10px;padding:3px 8px" onclick="toggleCompare()">닫기</button>
-    </div>
-    <div class="compare-inner" id="compareInner">
-      <img class="c-img" id="cmpAfter" />
-      <div class="c-clip" id="cClip"><img id="cmpBefore" /></div>
-      <div class="c-divider" id="cDivider" style="left:50%"><div class="c-handle">◀▶</div></div>
-      <span class="c-label b">Before</span>
-      <span class="c-label a">After</span>
+  <!-- COMPARE (auto-shows when both loaded) -->
+  <div class="compare-section" id="compareSection" style="display:none">
+    <div class="compare-card">
+      <div class="compare-head">
+        <span>Before / After 비교</span>
+        <button class="hbtn" style="font-size:10px;padding:4px 10px" onclick="resetCompare()">다시 찍기</button>
+      </div>
+      <div class="compare-inner" id="compareInner">
+        <img class="c-img" id="cmpAfter" />
+        <div class="c-clip" id="cClip"><img id="cmpBefore" /></div>
+        <div class="c-div" id="cDivider" style="left:50%"><div class="c-handle">◀▶</div></div>
+        <span class="clabel b">Before</span>
+        <span class="clabel a">After</span>
+      </div>
     </div>
   </div>
 
@@ -222,15 +240,15 @@ canvas.analysis-canvas{display:block;width:100%;height:auto;cursor:crosshair}
 
   <!-- ACTIONS -->
   <div class="action-bar">
-    <button class="action-btn pdf" onclick="exportPDF()">
+    <button class="abtn pdf" onclick="exportPDF()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       PDF 저장
     </button>
-    <button class="action-btn" onclick="saveImages()">
+    <button class="abtn" onclick="saveImages()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       이미지 저장
     </button>
-    <button class="action-btn share" onclick="shareResult()">
+    <button class="abtn share-btn" onclick="shareResult()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       카톡 공유
     </button>
@@ -238,184 +256,213 @@ canvas.analysis-canvas{display:block;width:100%;height:auto;cursor:crosshair}
 
 </div>
 
-<!-- FLOATING + -->
-<div class="fab-wrap" id="fabWrap">
-  <div class="fab-menu" id="fabMenu">
-    <div class="fab-item" onclick="openCamera(pendingPanel)">
-      <div class="fab-item-label">카메라로 촬영</div>
-      <div class="fab-item-icon cam">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      </div>
-    </div>
-    <div class="fab-item" onclick="triggerUpload(pendingPanel)">
-      <div class="fab-item-label">갤러리에서 업로드</div>
-      <div class="fab-item-icon upload">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </div>
-    </div>
-  </div>
-  <button class="fab-main" id="fabMain" onclick="toggleFab()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-</div>
-
 <!-- CAMERA OVERLAY -->
-<div class="cam-overlay" id="camOverlay">
-  <div class="cam-container">
+<div class="cam-ov" id="camOv">
+  <div class="cam-con">
     <video id="camVideo" autoplay playsinline muted></video>
     <div class="cam-guide">
-      <!-- 가이드 박스 (인체 윤곽) -->
-      <div class="guide-box"></div>
-      <div class="cam-label-box">이 선 안에 전신이 들어오도록</div>
-      <!-- 중앙선 -->
-      <div class="guide-line guide-vert guide-center-v"></div>
-      <!-- 1/3 수평선 -->
-      <div class="guide-line guide-horiz guide-third-t"></div>
-      <div class="guide-line guide-horiz guide-third-b"></div>
-      <!-- 십자 -->
-      <svg class="cam-crosshair" width="30" height="30" viewBox="0 0 30 30">
-        <line x1="15" y1="0" x2="15" y2="30" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-        <line x1="0" y1="15" x2="30" y2="15" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-        <circle cx="15" cy="15" r="4" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1"/>
+      <div class="g-body-box"></div>
+      <div class="g-body-label">전신이 박스 안에 들어오도록</div>
+      <div class="gline gv" style="left:50%;transform:translateX(-50%)"></div>
+      <div class="gline gh" style="top:33%"></div>
+      <div class="gline gh" style="top:66%"></div>
+      <svg class="g-crosshair" width="28" height="28" viewBox="0 0 28 28">
+        <line x1="14" y1="0" x2="14" y2="28" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+        <line x1="0" y1="14" x2="28" y2="14" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+        <circle cx="14" cy="14" r="4" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
       </svg>
     </div>
   </div>
   <div class="cam-bar">
-    <div class="cam-panel-sel">
-      <button class="cam-panel-btn active" id="camBtnBefore" onclick="setCamPanel('before')">Before</button>
-      <button class="cam-panel-btn" id="camBtnAfter" onclick="setCamPanel('after')">After</button>
+    <div class="cam-sel">
+      <button class="csbtn active" id="cbBefore" onclick="setCamP('before')">Before</button>
+      <button class="csbtn" id="cbAfter" onclick="setCamP('after')">After</button>
     </div>
-    <button class="cam-capture" onclick="capturePhoto()" id="camCapture"></button>
-    <button class="cam-close" onclick="closeCamera()">닫기</button>
+    <button class="cam-shutter" onclick="capturePhoto()"></button>
+    <button class="cam-x" onclick="closeCamera()">닫기</button>
   </div>
 </div>
 
-<!-- HIDDEN INPUTS -->
 <input type="file" id="fileInput" accept="image/*" style="display:none">
 <canvas id="hiddenCam" style="display:none"></canvas>
-
 <div class="toast" id="toast"></div>
 
-<script>
-const COLORS=['#5DCAA5','#378ADD','#F0997B','#FAC775','#ED93B1','#97C459','#AFA9EC','#D85A30'];
-const S={before:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null},after:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null}};
-let mode='marker',measureStart=null,guideStart=null,divDragging=false,divPos=50,pendingPanel='before',camPanel='before',camStream=null,fabOpen=false,pendingUploadPanel=null;
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 
-// TIMESTAMP
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const COLORS=['#1D9E75','#378ADD','#F0997B','#FAC775','#ED93B1','#E24B4A','#AFA9EC','#EF9F27'];
+const POSE_CONNECTIONS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]];
+const POSE_LABELS={0:'코',11:'왼어깨',12:'오른어깨',13:'왼팔꿈치',14:'오른팔꿈치',15:'왼손목',16:'오른손목',23:'왼골반',24:'오른골반',25:'왼무릎',26:'오른무릎',27:'왼발목',28:'오른발목'};
+const KEY_LANDMARKS=[0,11,12,13,14,15,16,23,24,25,26,27,28];
+
+const S={
+  before:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null},
+  after:{img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null}
+};
+let mode='marker',measureStart=null,guideStart=null,divDragging=false,divPos=50;
+let camPanel='before',camStream=null,pendingUploadPanel=null;
+let poseDetector=null,poseReady=false;
+
+// ─── TIMESTAMP ───────────────────────────────────────────
 function updateTS(){
-  const now=new Date();
-  const pad=n=>String(n).padStart(2,'0');
-  document.getElementById('tsDisplay').textContent=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}  ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  document.getElementById('tsDisplay').textContent=`${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}  ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
 }
 setInterval(updateTS,1000);updateTS();
 
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+// ─── TOAST ───────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function cap(s){return s[0].toUpperCase()+s.slice(1)}
 
+// ─── POSE INIT ───────────────────────────────────────────
+function initPose(){
+  if(typeof Pose==='undefined'){console.warn('MediaPipe Pose not loaded');return}
+  poseDetector=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
+  poseDetector.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+  poseDetector.onResults(()=>{});
+  poseDetector.initialize().then(()=>{poseReady=true;console.log('Pose ready')}).catch(e=>console.warn('Pose init failed',e));
+}
+window.addEventListener('load',()=>setTimeout(initPose,500));
+
+async function detectPose(panel,imgEl){
+  if(!poseReady||!poseDetector)return null;
+  return new Promise(resolve=>{
+    poseDetector.onResults(results=>{
+      if(results.poseLandmarks)resolve(results.poseLandmarks);
+      else resolve(null);
+    });
+    poseDetector.send({image:imgEl}).catch(()=>resolve(null));
+  });
+}
+
+// ─── MODE ────────────────────────────────────────────────
 function setMode(m){
   mode=m;measureStart=null;guideStart=null;
-  ['marker','measure','erase','guide'].forEach(x=>document.getElementById('mode'+cap(x)).classList.toggle('active',x===m));
-  const h={marker:'클릭하여 마커를 찍으세요.',measure:'시작점 → 끝점 클릭으로 측정선을 그립니다.',erase:'마커/선을 클릭하면 삭제됩니다.',guide:'두 점 클릭으로 정렬 가이드선을 그립니다.'};
+  ['marker','measure','guide','erase'].forEach(x=>document.getElementById('mode'+cap(x)).classList.toggle('active',x===m));
+  const h={marker:'클릭하여 마커를 찍으세요.',measure:'시작점 → 끝점 클릭으로 측정선을 그립니다.',guide:'두 점 클릭으로 정렬 가이드선을 그립니다.',erase:'마커나 선을 클릭하면 삭제됩니다.'};
   document.getElementById('hintText').textContent=h[m];
 }
 
-// FAB
-function toggleFab(forcePanel){
-  if(forcePanel)pendingPanel=forcePanel;
-  fabOpen=!fabOpen;
-  document.getElementById('fabMenu').classList.toggle('open',fabOpen);
-  document.getElementById('fabMain').classList.toggle('open',fabOpen);
-}
-function openFab(panel){pendingPanel=panel;if(!fabOpen)toggleFab(panel);else{pendingPanel=panel}}
-
-// UPLOAD
-function triggerUpload(panel){
-  pendingUploadPanel=panel||pendingPanel;
-  closeFab();
+// ─── UPLOAD ──────────────────────────────────────────────
+function triggerUpload(p){
+  pendingUploadPanel=p;
   const fi=document.getElementById('fileInput');fi.value='';fi.click();
 }
-function closeFab(){fabOpen=false;document.getElementById('fabMenu').classList.remove('open');document.getElementById('fabMain').classList.remove('open')}
 document.getElementById('fileInput').addEventListener('change',function(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=ev=>initPanel(pendingUploadPanel||pendingPanel,ev.target.result);r.readAsDataURL(f);
+  const r=new FileReader();r.onload=ev=>loadImage(pendingUploadPanel,ev.target.result);r.readAsDataURL(f);
 });
 
-// CAMERA
-function openCamera(panel){
-  camPanel=panel||pendingPanel;
-  document.getElementById('camBtnBefore').classList.toggle('active',camPanel==='before');
-  document.getElementById('camBtnAfter').classList.toggle('active',camPanel==='after');
-  closeFab();
-  const overlay=document.getElementById('camOverlay');overlay.classList.add('show');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})
-    .then(stream=>{camStream=stream;document.getElementById('camVideo').srcObject=stream})
-    .catch(err=>{toast('카메라 접근 실패: '+err.message);overlay.classList.remove('show')});
-}
-function setCamPanel(p){
+// ─── CAMERA ──────────────────────────────────────────────
+function openCamera(p){
   camPanel=p;
-  document.getElementById('camBtnBefore').classList.toggle('active',p==='before');
-  document.getElementById('camBtnAfter').classList.toggle('active',p==='after');
+  document.getElementById('cbBefore').classList.toggle('active',p==='before');
+  document.getElementById('cbAfter').classList.toggle('active',p==='after');
+  document.getElementById('camOv').classList.add('show');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})
+    .then(s=>{camStream=s;document.getElementById('camVideo').srcObject=s})
+    .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
 }
+function setCamP(p){camPanel=p;document.getElementById('cbBefore').classList.toggle('active',p==='before');document.getElementById('cbAfter').classList.toggle('active',p==='after')}
 function capturePhoto(){
-  const video=document.getElementById('camVideo');
-  const hc=document.getElementById('hiddenCam');
-  hc.width=video.videoWidth;hc.height=video.videoHeight;
-  hc.getContext('2d').drawImage(video,0,0);
-  const dataUrl=hc.toDataURL('image/jpeg',0.92);
-  initPanel(camPanel,dataUrl);
-  closeCamera();
-  toast(cap(camPanel)+' 촬영 완료');
+  const v=document.getElementById('camVideo');
+  const hc=document.getElementById('hiddenCam');hc.width=v.videoWidth;hc.height=v.videoHeight;
+  hc.getContext('2d').drawImage(v,0,0);
+  loadImage(camPanel,hc.toDataURL('image/jpeg',0.92));
+  closeCamera();toast(camPanel==='before'?'Before 촬영 완료':'After 촬영 완료');
 }
 function closeCamera(){
-  if(camStream)camStream.getTracks().forEach(t=>t.stop());
-  camStream=null;
-  document.getElementById('camOverlay').classList.remove('show');
+  if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;
+  document.getElementById('camOv').classList.remove('show');
 }
 
-// PANEL
-function initPanel(p,src){
+// ─── LOAD IMAGE ──────────────────────────────────────────
+function loadImage(p,src){
   const wrap=document.getElementById('wrap'+cap(p));
-  wrap.innerHTML='';
-  const canvas=document.createElement('canvas');
-  canvas.className='analysis-canvas';
-  wrap.appendChild(canvas);
+  // remove add-zone
+  const az=document.getElementById('add'+cap(p));if(az)az.remove();
+  // remove old canvas
+  const old=wrap.querySelector('canvas');if(old)old.remove();
+  const poseDiv=wrap.querySelector('.pose-loading');if(poseDiv)poseDiv.remove();
+
+  const canvas=document.createElement('canvas');canvas.className='ac';wrap.appendChild(canvas);
   const img=new Image();
-  img.onload=()=>{
+  img.onload=async()=>{
     canvas.width=img.width;canvas.height=img.height;
     const ctx=canvas.getContext('2d');
-    S[p]={img,markers:[],lines:[],guides:[],canvas,ctx};
+    S[p]={img,markers:[],lines:[],guides:[],canvas,ctx,poseData:null};
     redraw(p);
     canvas.addEventListener('click',ev=>handleClick(ev,p));
     canvas.addEventListener('touchend',ev=>{ev.preventDefault();handleClick(ev.changedTouches[0],p)},{passive:false});
+    document.getElementById('modeSection').style.display='block';
+
+    // pose detection
+    if(poseReady){
+      const loader=document.createElement('div');loader.className='pose-loading';
+      loader.innerHTML='<div class="spinner"></div><p>AI 포즈 감지 중...</p>';
+      wrap.appendChild(loader);
+      try{
+        const landmarks=await detectPose(p,img);
+        loader.remove();
+        if(landmarks){S[p].poseData=landmarks;redraw(p);document.getElementById('poseBadge'+cap(p)).style.display='flex';toast('포즈 자동 감지 완료')}
+        else{toast('포즈 감지 실패 — 수동으로 마커를 찍으세요')}
+      }catch(e){loader.remove()}
+    }
+    checkAutoCompare();
   };
   img.src=src;
 }
 
+// ─── AUTO COMPARE ────────────────────────────────────────
+function checkAutoCompare(){
+  if(S.before.canvas&&S.after.canvas){
+    setTimeout(()=>showCompare(),300);
+  }
+}
+function showCompare(){
+  const inner=document.getElementById('compareInner');
+  const w=inner.offsetWidth||360;
+  document.getElementById('cmpAfter').src=S.after.canvas.toDataURL('image/jpeg',0.9);
+  const bImg=document.getElementById('cmpBefore');
+  bImg.src=S.before.canvas.toDataURL('image/jpeg',0.9);
+  bImg.style.cssText=`position:absolute;top:0;left:0;width:${w}px;height:300px;object-fit:contain`;
+  setDiv(50);
+  document.getElementById('compareSection').style.display='block';
+  document.getElementById('compareSection').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function resetCompare(){document.getElementById('compareSection').style.display='none'}
+
+// ─── CLICK HANDLER ───────────────────────────────────────
 function getPos(ev,canvas){
   const r=canvas.getBoundingClientRect();
-  const clientX=ev.clientX!==undefined?ev.clientX:ev.touches?.[0]?.clientX;
-  const clientY=ev.clientY!==undefined?ev.clientY:ev.touches?.[0]?.clientY;
-  return{x:(clientX-r.left)*canvas.width/r.width,y:(clientY-r.top)*canvas.height/r.height};
+  const cx=ev.clientX!==undefined?ev.clientX:(ev.touches?.[0]?.clientX||0);
+  const cy=ev.clientY!==undefined?ev.clientY:(ev.touches?.[0]?.clientY||0);
+  return{x:(cx-r.left)*canvas.width/r.width,y:(cy-r.top)*canvas.height/r.height};
 }
-
+function ptSegDist(pt,seg){
+  const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1,len2=dx*dx+dy*dy;
+  if(!len2)return Math.hypot(pt.x-seg.x1,pt.y-seg.y1);
+  const t=Math.max(0,Math.min(1,((pt.x-seg.x1)*dx+(pt.y-seg.y1)*dy)/len2));
+  return Math.hypot(pt.x-seg.x1-t*dx,pt.y-seg.y1-t*dy);
+}
 function handleClick(ev,p){
   const s=S[p];if(!s.canvas)return;
   const pos=getPos(ev,s.canvas);
   if(mode==='erase'){
-    let found=false;
-    const mi=s.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<25);
-    if(mi>=0){s.markers.splice(mi,1);found=true}
-    if(!found){const li=s.lines.findIndex(l=>ptToSegDist(pos,l)<20);if(li>=0)s.lines.splice(li,1)}
-    if(!found){const gi=s.guides.findIndex(g=>ptToSegDist(pos,g)<20);if(gi>=0)s.guides.splice(gi,1)}
-    redraw(p);updateList(p);return;
+    const mi=s.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<22);
+    if(mi>=0){s.markers.splice(mi,1);redraw(p);updateList(p);return}
+    const li=s.lines.findIndex(l=>ptSegDist(pos,l)<18);if(li>=0){s.lines.splice(li,1);redraw(p);return}
+    const gi=s.guides.findIndex(g=>ptSegDist(pos,g)<18);if(gi>=0){s.guides.splice(gi,1);redraw(p);}
+    return;
   }
   if(mode==='measure'){
-    if(!measureStart){measureStart={...pos,p}}
+    if(!measureStart)measureStart={...pos,p};
     else if(measureStart.p===p){s.lines.push({x1:measureStart.x,y1:measureStart.y,x2:pos.x,y2:pos.y});measureStart=null;redraw(p)}
     return;
   }
   if(mode==='guide'){
-    if(!guideStart){guideStart={...pos,p}}
+    if(!guideStart)guideStart={...pos,p};
     else if(guideStart.p===p){s.guides.push({x1:guideStart.x,y1:guideStart.y,x2:pos.x,y2:pos.y});guideStart=null;redraw(p)}
     return;
   }
@@ -423,42 +470,62 @@ function handleClick(ev,p){
   redraw(p);updateList(p);
 }
 
-function ptToSegDist(pt,seg){
-  const dx=seg.x2-seg.x1,dy=seg.y2-seg.y1;
-  const t=Math.max(0,Math.min(1,((pt.x-seg.x1)*dx+(pt.y-seg.y1)*dy)/(dx*dx+dy*dy)));
-  return Math.hypot(pt.x-seg.x1-t*dx,pt.y-seg.y1-t*dy);
-}
-
+// ─── REDRAW ──────────────────────────────────────────────
 function redraw(p){
   const s=S[p];if(!s.ctx||!s.img)return;
-  const c=s.ctx;
-  c.clearRect(0,0,s.canvas.width,s.canvas.height);
-  c.drawImage(s.img,0,0);
-  // guide lines
+  const c=s.ctx,W=s.canvas.width,H=s.canvas.height;
+  c.clearRect(0,0,W,H);c.drawImage(s.img,0,0);
+
+  // pose skeleton
+  if(s.poseData){
+    const lm=s.poseData;
+    // connections
+    c.strokeStyle='rgba(29,158,117,0.55)';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([]);
+    POSE_CONNECTIONS.forEach(([a,b])=>{
+      if(lm[a]&&lm[b]&&lm[a].visibility>0.4&&lm[b].visibility>0.4){
+        c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke();
+      }
+    });
+    // points
+    KEY_LANDMARKS.forEach(i=>{
+      const pt=lm[i];if(!pt||pt.visibility<0.4)return;
+      const x=pt.x*W,y=pt.y*H,r=Math.max(6,W*0.008);
+      c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle='rgba(29,158,117,0.85)';c.fill();
+      c.strokeStyle='#fff';c.lineWidth=1.5;c.stroke();
+      if(POSE_LABELS[i]&&W>400){
+        c.font=`${Math.max(11,W*0.016)}px -apple-system,sans-serif`;
+        c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,0.5)';c.lineWidth=2;
+        c.textAlign='center';c.strokeText(POSE_LABELS[i],x,y-r-3);c.fillText(POSE_LABELS[i],x,y-r-3);
+      }
+    });
+  }
+
+  // guide lines (orange)
   s.guides.forEach(g=>{
     c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);
-    c.strokeStyle='rgba(237,147,107,0.8)';c.lineWidth=3;c.setLineDash([]);c.stroke();
-    [g.x1,g.x2].forEach((x,i)=>{
-      const y=i===0?g.y1:g.y2;
-      c.beginPath();c.arc(x,y,6,0,Math.PI*2);c.fillStyle='rgba(237,147,107,0.9)';c.fill();
-    });
+    c.strokeStyle='rgba(239,159,39,0.85)';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([]);c.stroke();
+    [[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle='rgba(239,159,39,0.9)';c.fill();});
   });
+
   // measure lines
   s.lines.forEach(l=>{
     c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);
-    c.strokeStyle='#FAC775';c.lineWidth=3;c.setLineDash([8,4]);c.stroke();c.setLineDash([]);
+    c.strokeStyle='#378ADD';c.lineWidth=Math.max(2,W*0.003);c.setLineDash([8,4]);c.stroke();c.setLineDash([]);
     const dx=l.x2-l.x1,dy=l.y2-l.y1,dist=Math.round(Math.sqrt(dx*dx+dy*dy));
     const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2;
-    c.font='bold 18px -apple-system,sans-serif';c.fillStyle='#FAC775';c.textAlign='center';
-    c.strokeStyle='rgba(0,0,0,0.6)';c.lineWidth=3;c.strokeText(dist+'px',mx,my-10);
-    c.fillText(dist+'px',mx,my-10);
+    const fs=Math.max(14,W*0.02);
+    c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
+    c.strokeStyle='rgba(255,255,255,0.8)';c.lineWidth=3;c.strokeText(dist+'px',mx,my-10);
+    c.fillStyle='#378ADD';c.fillText(dist+'px',mx,my-10);
   });
-  // markers
+
+  // manual markers
   s.markers.forEach((m,i)=>{
-    const col=COLORS[i%COLORS.length];
-    c.beginPath();c.arc(m.x,m.y,12,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=0.88;c.fill();c.globalAlpha=1;
-    c.beginPath();c.arc(m.x,m.y,12,0,Math.PI*2);c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
-    c.font='bold 13px -apple-system,sans-serif';c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
+    const col=COLORS[i%COLORS.length],r=Math.max(10,W*0.014);
+    c.beginPath();c.arc(m.x,m.y,r,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=0.9;c.fill();c.globalAlpha=1;
+    c.strokeStyle='#fff';c.lineWidth=2;c.stroke();
+    c.font=`bold ${Math.max(11,W*0.015)}px -apple-system,sans-serif`;
+    c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
   });
 }
 
@@ -469,28 +536,21 @@ function updateList(p){
 }
 
 function clearAll(){
-  ['before','after'].forEach(p=>{if(S[p].markers){S[p].markers=[];S[p].lines=[];S[p].guides=[];redraw(p);updateList(p)}});
+  ['before','after'].forEach(p=>{
+    const wrap=document.getElementById('wrap'+cap(p));
+    wrap.innerHTML=`<div class="add-zone" id="add${cap(p)}"><div class="add-row"><div class="add-btn cam" onclick="openCamera('${p}')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라 촬영</div><div class="add-btn upload" onclick="triggerUpload('${p}')"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 업로드</div></div></div>`;
+    S[p]={img:null,markers:[],lines:[],guides:[],canvas:null,ctx:null,poseData:null};
+    document.getElementById('list'+cap(p)).innerHTML='';
+    document.getElementById('poseBadge'+cap(p)).style.display='none';
+  });
+  document.getElementById('compareSection').style.display='none';
+  document.getElementById('modeSection').style.display='none';
   measureStart=null;guideStart=null;
   toast('초기화 완료');
 }
 
-// COMPARE
-function toggleCompare(){
-  const v=document.getElementById('compareView');
-  if(v.classList.contains('show')){v.classList.remove('show');return}
-  if(!S.before.canvas||!S.after.canvas){toast('Before/After 이미지를 모두 업로드해주세요.');return}
-  document.getElementById('cmpAfter').src=S.after.canvas.toDataURL('image/jpeg',0.9);
-  document.getElementById('cmpBefore').src=S.before.canvas.toDataURL('image/jpeg',0.9);
-  const inner=document.getElementById('compareInner');
-  const w=inner.offsetWidth;
-  document.getElementById('cmpBefore').style.cssText=`position:absolute;top:0;left:0;width:${w}px;height:280px;object-fit:contain`;
-  setDiv(50);v.classList.add('show');v.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-function setDiv(pct){
-  divPos=pct;
-  document.getElementById('cDivider').style.left=pct+'%';
-  document.getElementById('cClip').style.width=pct+'%';
-}
+// ─── COMPARE DRAG ────────────────────────────────────────
+function setDiv(pct){divPos=pct;document.getElementById('cDivider').style.left=pct+'%';document.getElementById('cClip').style.width=pct+'%'}
 const ci=document.getElementById('compareInner');
 ci.addEventListener('mousedown',e=>{divDragging=true;e.preventDefault()});
 ci.addEventListener('touchstart',e=>{divDragging=true},{passive:true});
@@ -499,25 +559,20 @@ document.addEventListener('touchmove',e=>{if(!divDragging)return;const r=ci.getB
 document.addEventListener('mouseup',()=>divDragging=false);
 document.addEventListener('touchend',()=>divDragging=false);
 
-// SAVE
+// ─── EXPORT ──────────────────────────────────────────────
 function saveImages(){
   const name=document.getElementById('clientName').value||'회원';
   const date=new Date().toISOString().slice(0,10);
   let saved=0;
   ['before','after'].forEach(p=>{
     if(!S[p].canvas)return;
-    const a=document.createElement('a');
-    a.href=S[p].canvas.toDataURL('image/jpeg',0.92);
-    a.download=`${name}_${p}_${date}.jpg`;
-    a.click();saved++;
+    const a=document.createElement('a');a.href=S[p].canvas.toDataURL('image/jpeg',0.92);a.download=`${name}_${p}_${date}.jpg`;a.click();saved++;
   });
-  if(saved)toast('이미지 저장 완료 ('+saved+'장)');
-  else toast('저장할 이미지가 없습니다.');
+  if(saved)toast('이미지 저장 완료 ('+saved+'장)');else toast('저장할 이미지가 없습니다.');
 }
 
-// PDF
 function exportPDF(){
-  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 업로드해주세요.');return}
+  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 먼저 업로드해주세요.');return}
   if(typeof window.jspdf==='undefined'){toast('PDF 라이브러리 로딩 중...');return}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -526,85 +581,45 @@ function exportPDF(){
   const trainer=document.getElementById('trainerName').value||'';
   const ts=document.getElementById('tsDisplay').textContent;
   const note=document.getElementById('noteText').value||'';
-
-  // header
-  doc.setFillColor(14,14,14);doc.rect(0,0,pw,20,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont(undefined,'bold');
-  doc.text('NationalGym  —  체형 분석 리포트',pw/2,13,{align:'center'});
-
-  // meta
+  doc.setFillColor(26,26,26);doc.rect(0,0,pw,20,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('NationalGym  —  체형 분석 리포트',pw/2,13,{align:'center'});
   doc.setFontSize(8.5);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);
-  doc.text('회원: '+name,14,28);
-  if(trainer)doc.text('트레이너: '+trainer,80,28);
-  doc.text('촬영: '+ts,140,28,{maxWidth:60});
+  doc.text('회원: '+name,14,28);if(trainer)doc.text('트레이너: '+trainer,80,28);doc.text(ts,pw-14,28,{align:'right'});
   doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);doc.line(14,32,pw-14,32);
-
-  const imgW=86,imgH=115,yImg=36;
+  const iW=86,iH=115,y0=36;
   if(S.before.canvas){
-    doc.addImage(S.before.canvas.toDataURL('image/jpeg',0.88),'JPEG',14,yImg,imgW,imgH);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(55,138,221);
-    doc.text('BEFORE',14+imgW/2,yImg+imgH+5,{align:'center'});
-    if(S.before.markers.length){
-      doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);
-      S.before.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',14,yImg+imgH+10+i*4.5));
-    }
+    doc.addImage(S.before.canvas.toDataURL('image/jpeg',0.88),'JPEG',14,y0,iW,iH);
+    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(55,138,221);doc.text('BEFORE',14+iW/2,y0+iH+5,{align:'center'});
+    if(S.before.markers.length){doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);S.before.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',14,y0+iH+10+i*4.5))}
   }
   if(S.after.canvas){
-    const x2=pw-14-imgW;
-    doc.addImage(S.after.canvas.toDataURL('image/jpeg',0.88),'JPEG',x2,yImg,imgW,imgH);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(29,158,117);
-    doc.text('AFTER',x2+imgW/2,yImg+imgH+5,{align:'center'});
-    if(S.after.markers.length){
-      doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);
-      S.after.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',x2,yImg+imgH+10+i*4.5));
-    }
+    const x2=pw-14-iW;doc.addImage(S.after.canvas.toDataURL('image/jpeg',0.88),'JPEG',x2,y0,iW,iH);
+    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(29,158,117);doc.text('AFTER',x2+iW/2,y0+iH+5,{align:'center'});
+    if(S.after.markers.length){doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(80,80,80);S.after.markers.forEach((m,i)=>doc.text('● '+m.label+': ('+Math.round(m.x)+', '+Math.round(m.y)+')',x2,y0+iH+10+i*4.5))}
   }
-
-  if(note){
-    const ny=yImg+imgH+45;
-    doc.setDrawColor(200,200,200);doc.line(14,ny-3,pw-14,ny-3);
-    doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('메모',14,ny+3);
-    doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(60,60,60);
-    doc.text(doc.splitTextToSize(note,pw-28),14,ny+9);
-  }
-
-  doc.setFontSize(7);doc.setTextColor(180,180,180);
-  doc.text('NationalGym  |  체형분석 시스템',pw/2,ph-5,{align:'center'});
-
+  if(note){const ny=y0+iH+48;doc.setDrawColor(200,200,200);doc.line(14,ny-3,pw-14,ny-3);doc.setFontSize(8);doc.setFont(undefined,'bold');doc.setTextColor(40,40,40);doc.text('메모',14,ny+3);doc.setFont(undefined,'normal');doc.setTextColor(60,60,60);doc.text(doc.splitTextToSize(note,pw-28),14,ny+9)}
+  doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text('NationalGym  |  체형분석 시스템',pw/2,ph-5,{align:'center'});
   doc.save(name+'_체형분석_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('PDF 저장 완료');
 }
 
-// SHARE
 async function shareResult(){
-  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 업로드해주세요.');return}
+  if(!S.before.canvas&&!S.after.canvas){toast('이미지를 먼저 업로드해주세요.');return}
   const name=document.getElementById('clientName').value||'회원';
   const trainer=document.getElementById('trainerName').value||'트레이너';
   const ts=document.getElementById('tsDisplay').textContent;
   const canvas=S.after.canvas||S.before.canvas;
   canvas.toBlob(async blob=>{
     const file=new File([blob],name+'_체형분석.jpg',{type:'image/jpeg'});
-    const shareData={title:'NationalGym 체형 분석',text:`[NationalGym] ${name} 체형 분석 결과\n트레이너: ${trainer}\n촬영: ${ts}`,files:[file]};
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share(shareData);toast('공유 완료')}
-      catch(e){if(e.name!=='AbortError')fallbackShare(blob,name)}
-    } else if(navigator.share){
-      try{await navigator.share({title:shareData.title,text:shareData.text})}catch(e){}
+      try{await navigator.share({title:'NationalGym 체형 분석',text:`[NationalGym] ${name} 체형 분석\n트레이너: ${trainer}\n${ts}`,files:[file]});toast('공유 완료')}
+      catch(e){if(e.name!=='AbortError'){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();toast('이미지 저장됨 → 갤러리에서 공유하세요')}}
     } else {
-      fallbackShare(blob,name);
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_체형분석.jpg';a.click();
+      toast('이미지 저장됨 → 갤러리에서 카톡으로 공유하세요');
     }
   },'image/jpeg',0.92);
 }
-function fallbackShare(blob,name){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=name+'_체형분석.jpg';a.click();
-  toast('이미지 저장됨 → 갤러리에서 카톡으로 공유하세요');
-}
-
-// close fab on outside click
-document.addEventListener('click',e=>{
-  if(fabOpen&&!document.getElementById('fabWrap').contains(e.target)){closeFab()}
-});
 </script>
 </body>
 </html>
