@@ -56,6 +56,8 @@ button,input,select,textarea{font-family:inherit}
 .tc-badge.done{background:var(--g3);color:var(--g2)}
 .tc-badge.partial{background:var(--a3);color:var(--amber)}
 .photo-zone{position:relative;background:var(--bg3);min-height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo-retake{position:absolute;bottom:8px;right:8px;z-index:20;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
+.photo-retake:active{background:rgba(0,0,0,.85)}
 canvas.pc{display:block;width:100%;height:auto}
 .photo-add{display:flex;flex-direction:column;gap:8px;padding:16px;width:100%;max-width:300px}
 .pa-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:var(--r);border:1px solid var(--brd);background:#fff;font-size:13px;color:var(--tx2);transition:all .15s;width:100%;cursor:pointer}
@@ -191,6 +193,9 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .pload p{font-size:12px;color:var(--tx2);font-weight:500}
 .spin{width:28px;height:28px;border:2.5px solid var(--brd2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.next-phase-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:250;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(0,168,120,.5);display:flex;align-items:center;gap:10px;border:none;white-space:nowrap;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
+.next-phase-btn.visible{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+.next-phase-btn:active{transform:translateX(-50%) scale(.94)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 input[type=range]{accent-color:var(--green)}
@@ -258,6 +263,10 @@ input[type=range]{accent-color:var(--green)}
     </div>
   </div>
 </div>
+<button class="next-phase-btn" id="nextPhaseBtn" onclick="nextPhaseClick()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  <span id="nextPhaseLbl">After 촬영으로 →</span>
+</button>
 <div class="cam-ov" id="camOv">
   <div class="cam-body">
     <video id="camVid" autoplay playsinline muted></video>
@@ -278,6 +287,22 @@ input[type=range]{accent-color:var(--green)}
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script>
+const IDB_NAME='ng_npt_v3',IDB_VER=1,IDB_STORE='photos';
+let _idb=null;
+function openIDB(){
+  if(_idb)return Promise.resolve(_idb);
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(IDB_NAME,IDB_VER);
+    req.onupgradeneeded=e=>{e.target.result.createObjectStore(IDB_STORE)};
+    req.onsuccess=e=>{_idb=e.target.result;res(_idb)};
+    req.onerror=e=>rej(e);
+  });
+}
+async function idbSet(key,val){const db=await openIDB();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=()=>res();tx.onerror=e=>rej(e)})}
+async function idbGet(key){const db=await openIDB();return new Promise((res,rej)=>{const req=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(key);req.onsuccess=()=>res(req.result);req.onerror=e=>rej(e)})}
+async function idbDel(key){const db=await openIDB();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).delete(key);tx.oncomplete=()=>res();tx.onerror=e=>rej(e)})}
+
+
 // ═══════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════
@@ -412,6 +437,17 @@ window.addEventListener('load', () => {
   showPhase('before');
   setInterval(tickTS,1000); tickTS();
   restoreAll();
+  let _scTm=null;
+  window.addEventListener('scroll',()=>{
+    clearTimeout(_scTm);_scTm=setTimeout(()=>{
+      const btn=document.getElementById('nextPhaseBtn');if(!btn)return;
+      const nearBottom=window.scrollY+window.innerHeight>document.body.scrollHeight-150;
+      if(nearBottom&&(currentPhase==='before'||currentPhase==='after')){
+        btn.classList.add('visible');
+        btn.querySelector('span').textContent=currentPhase==='before'?'After 촬영으로 →':'비교 분석으로 →';
+      } else {btn.classList.remove('visible')}
+    },150);
+  },{passive:true});
   if(typeof Pose!=='undefined'){
     poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
     poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
@@ -538,6 +574,10 @@ function selChk(itemId,slot,oi,cc){
   if(!CHK[k])CHK[k]={};
   const item=Object.values(TEST_CHECKLIST).flat().find(i=>i.id===itemId);
   if(!item)return;
+  if(CHK[k].sel===oi){
+    item.opts.forEach((_,i)=>{const el=document.getElementById(`cp_${itemId}_${slot}_${i}`);if(el)el.className='ci-pill'});
+    delete CHK[k].sel;delete CHK[k].val;delete CHK[k].cc;autoSave();return;
+  }
   item.opts.forEach((_,i)=>{const el=document.getElementById(`cp_${itemId}_${slot}_${i}`);if(el)el.className='ci-pill'});
   const el=document.getElementById(`cp_${itemId}_${slot}_${oi}`);if(el)el.className=`ci-pill on-${cc}`;
   CHK[k].sel=oi;CHK[k].val=item.opts[oi];CHK[k].cc=cc;
@@ -591,6 +631,12 @@ async function loadImg(tid,slot,src,skipSave){
   zone.querySelector('canvas')?.remove();
   zone.querySelector('.pload')?.remove();
   const canvas=document.createElement('canvas');canvas.className='pc';zone.appendChild(canvas);
+  const oldRt=zone.querySelector('.photo-retake');if(oldRt)oldRt.remove();
+  const rtBtn=document.createElement('button');rtBtn.className='photo-retake';
+  rtBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg> 재촬영';
+  const _tid=tid,_slot=slot;
+  rtBtn.onclick=(ev)=>{ev.stopPropagation();showRetakeMenu(_tid,_slot)};
+  zone.appendChild(rtBtn);
   const img=new Image();
   img.onload=async()=>{
     canvas.width=img.width;canvas.height=img.height;
@@ -626,6 +672,20 @@ async function loadImg(tid,slot,src,skipSave){
   img.src=src;
 }
 
+function showRetakeMenu(tid,slot){
+  const existing=document.getElementById('retakeMenu');if(existing)existing.remove();
+  const menu=document.createElement('div');menu.id='retakeMenu';
+  menu.style.cssText='position:fixed;bottom:80px;right:16px;z-index:500;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.2);overflow:hidden;min-width:170px;border:1px solid var(--brd)';
+  menu.innerHTML=`<div style="padding:8px 14px;font-size:10px;font-weight:700;color:var(--tx3);border-bottom:1px solid var(--brd);text-transform:uppercase;letter-spacing:.05em">사진 변경</div>
+    <button style="width:100%;padding:12px 16px;text-align:left;border:none;background:#fff;font-size:13px;color:var(--blue);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit" onclick="document.getElementById('retakeMenu').remove();openCam('${tid}','${slot}')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라 재촬영
+    </button>
+    <button style="width:100%;padding:12px 16px;text-align:left;border:none;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid var(--brd);font-family:inherit" onclick="document.getElementById('retakeMenu').remove();pendUp={tid:'${tid}',slot:'${slot}'};const f=document.getElementById('fi');f.value='';f.click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 재선택
+    </button>`;
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',()=>{const m=document.getElementById('retakeMenu');if(m)m.remove()},{once:true}),50);
+}
 function updateSlotBadge(tid,slot){
   const n=document.getElementById(`tcn_${tid}_${slot}`);if(n)n.classList.add('done');
   const b=document.getElementById(`tcb_${tid}_${slot}`);if(b){b.textContent='완료';b.className='tc-badge done'}
@@ -779,6 +839,23 @@ function redrawOL(tid){
     });
   }
   c.globalAlpha=1;
+  // After manual markers (blue)
+  const aMk=aS.markers||[];
+  aMk.forEach((m,i)=>{
+    const cols=['#0f46c8','#059669','#7c3aed','#0891b2'];const col=cols[i%cols.length];
+    const r2=Math.max(11,W*.015);
+    c.beginPath();c.arc(m.x,m.y,r2,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=.9;c.fill();c.globalAlpha=1;
+    c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
+    c.font=`bold ${Math.max(11,W*.015)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
+  });
+  (aS.lines||[]).forEach(l=>{
+    c.beginPath();c.moveTo(l.x1,l.y1);c.lineTo(l.x2,l.y2);
+    c.strokeStyle='#0f46c8';c.lineWidth=Math.max(3,W*.004);c.setLineDash([10,5]);c.stroke();c.setLineDash([]);
+    const dx=l.x2-l.x1,dy=l.y2-l.y1,dist=Math.round(Math.sqrt(dx*dx+dy*dy));
+    const mx=(l.x1+l.x2)/2,my=(l.y1+l.y2)/2;
+    c.font=`bold ${Math.max(14,W*.02)}px -apple-system,sans-serif`;c.textAlign='center';
+    c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-9);c.fillStyle='#0f46c8';c.fillText(dist+'px',mx,my-9);
+  });
 }
 
 function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1};redrawOL(tid);toast('보정 초기화')}
@@ -1085,10 +1162,12 @@ ${chkSummary||'체크리스트 미입력'}
 
 한국어로 작성. 간결하고 전문적으로. 불필요한 인사말 없이 바로 내용 시작.`;
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    let _key=localStorage.getItem('ng_api_key');
+  if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com 에서 발급');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json','x-api-key':_key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:800,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'분석 실패';
@@ -1183,10 +1262,12 @@ ${allFindings.join('\n')}
 
 한국어, 전문 PT 리포트 문체, 임상 용어 포함. 불필요한 인사말·면책조항 없이.`;
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    let _key2=localStorage.getItem('ng_api_key');
+  if(!_key2){_key2=prompt('Anthropic API 키 입력:');if(!_key2)return;localStorage.setItem('ng_api_key',_key2.trim())}
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json','x-api-key':_key2,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'생성 실패';
@@ -1241,13 +1322,13 @@ function compress(canvas,maxW){
 }
 function saveImg(tid,slot,src){
   try{
-    const img=new Image();img.onload=()=>{
+    const img=new Image();img.onload=async()=>{
       const tc=document.createElement('canvas');
       const maxW=720;
       const r=img.height/img.width;
       tc.width=Math.min(img.width,maxW);tc.height=Math.round(tc.width*r);
       tc.getContext('2d').drawImage(img,0,0,tc.width,tc.height);
-      try{localStorage.setItem(`${LS}_img_${tid}_${slot}`,tc.toDataURL('image/jpeg',.75))}catch(e){}
+      try{await idbSet(`${LS}_img_${tid}_${slot}`,tc.toDataURL('image/jpeg',.82))}catch(e){try{localStorage.setItem(`${LS}_img_${tid}_${slot}`,tc.toDataURL('image/jpeg',.5))}catch(e2){}}
     };img.src=src;
   }catch(e){}
 }
@@ -1258,7 +1339,7 @@ function saveMarkers(tid,slot){
 function autoSave(){
   try{localStorage.setItem(LS+'_meta',JSON.stringify({name:document.getElementById('cName')?.value||'',trainer:document.getElementById('cTrainer')?.value||'',assess:ASSESS,chk:CHK}))}catch(e){}
 }
-function restoreAll(){
+async function restoreAll(){
   try{
     const meta=localStorage.getItem(LS+'_meta');
     if(meta){
@@ -1285,9 +1366,9 @@ function restoreAll(){
         },500);
       }
     }
-    TESTS.forEach(t=>{
-      ['B','A'].forEach(slot=>{
-        const src=localStorage.getItem(`${LS}_img_${t.id}_${slot}`);
+    for(const t of TESTS){
+      for(const slot of ['B','A']){
+        const src=await idbGet(`${LS}_img_${t.id}_${slot}`) || localStorage.getItem(`${LS}_img_${t.id}_${slot}`);
         if(src){
           loadImg(t.id,slot,src,true).then?.(()=>{
             // restore markers
@@ -1310,11 +1391,15 @@ function restoreAll(){
             }
           },2000);
         }
-      });
-    });
+      }
+    }
   }catch(e){console.warn('restore failed',e)}
 }
-window.addEventListener('beforeunload',autoSave);
+window.addEventListener('beforeunload',(e)=>{
+  autoSave();
+  const hasData=TESTS.some(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
+  if(hasData){e.preventDefault();e.returnValue='촬영된 데이터가 있습니다. 페이지를 나가면 사진이 사라질 수 있습니다.';}
+});
 document.getElementById('cName').addEventListener('input',autoSave);
 document.getElementById('cTrainer').addEventListener('change',autoSave);
 
@@ -1372,18 +1457,24 @@ async function doShare(){
 // ═══════════════════════════════════════════
 // CLEAR
 // ═══════════════════════════════════════════
-function clearAll(){
+function nextPhaseClick(){
+  if(currentPhase==='before')showPhase('after');
+  else showPhase('compare');
+  document.getElementById('nextPhaseBtn').classList.remove('visible');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function clearAll(){
   if(!confirm('모든 데이터를 초기화하시겠습니까?'))return;
-  TESTS.forEach(t=>{
-    ['B','A'].forEach(slot=>{
+  for(const t of TESTS){
+    for(const slot of ['B','A']){
       const zone=document.getElementById(`zone_${t.id}_${slot}`);
       if(zone)zone.innerHTML=`<div class="photo-add" id="add_${t.id}_${slot}"><button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</button><button class="pa-btn" onclick="doUpload('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 업로드</button></div>`;
       const b=document.getElementById(`tcb_${t.id}_${slot}`);if(b){b.textContent='미촬영';b.className='tc-badge none'}
       const n=document.getElementById(`tcn_${t.id}_${slot}`);if(n)n.classList.remove('done');
-      try{localStorage.removeItem(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
-    });
+      try{await idbDel(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
+    }
     if(SHOTS[t.id])SHOTS[t.id]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
-  });
+  }
   Object.keys(CHK).forEach(k=>delete CHK[k]);
   ASSESS={text:'',training:[]};
   try{localStorage.removeItem(LS+'_meta')}catch(e){}
