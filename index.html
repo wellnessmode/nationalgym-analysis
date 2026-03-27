@@ -256,8 +256,44 @@ input[type=range]{accent-color:var(--green)}
     <div class="drag-hint">한 손가락 = 이동 · 두 손가락 = 크기</div>
   </div>
   <div class="drag-ctrl">
+    <div style="display:flex;gap:6px;margin-bottom:6px;width:100%">
+      <button id="dragModeMove" onclick="setDragMode('move')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid #444;background:#2a2a2a;color:#fff;font-size:11px;font-weight:600;cursor:pointer">✥ 이동/크기</button>
+      <button id="dragModeRotate" onclick="setDragMode('rotate')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid #444;background:#111;color:#888;font-size:11px;cursor:pointer">↻ 회전</button>
+      <button id="dragModeCrop" onclick="setDragMode('crop')" style="flex:1;padding:8px 4px;border-radius:8px;border:1px solid #444;background:#111;color:#888;font-size:11px;cursor:pointer">⊡ 화각</button>
+    </div>
+    <div id="dragModeHint" style="font-size:10px;color:#888;text-align:center;margin-bottom:6px;width:100%">한손가락=이동 · 두손가락=크기</div>
+    <div id="rotateCtrls" style="display:none;width:100%;gap:6px;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:#888;min-width:40px">회전</label>
+        <input type="range" id="dragRotate" min="-30" max="30" value="0" oninput="onDragRotate(this.value)" style="flex:1;accent-color:#00a878">
+        <label id="dragRotateV" style="font-size:11px;color:#ccc;min-width:28px">0°</label>
+        <button onclick="document.getElementById('dragRotate').value=0;onDragRotate(0)" style="padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#888;font-size:10px;cursor:pointer">초기화</button>
+      </div>
+    </div>
+    <div id="cropCtrls" style="display:none;width:100%;gap:4px;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:10px;color:#888;min-width:36px">위</label>
+        <input type="range" id="dragCropT" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
+        <span id="dragCropTV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:10px;color:#888;min-width:36px">아래</label>
+        <input type="range" id="dragCropB" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
+        <span id="dragCropBV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:10px;color:#888;min-width:36px">왼쪽</label>
+        <input type="range" id="dragCropL" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
+        <span id="dragCropLV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:10px;color:#888;min-width:36px">오른쪽</label>
+        <input type="range" id="dragCropR" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
+        <span id="dragCropRV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+      </div>
+    </div>
     <div class="drag-alpha-row">
-      <label style="font-size:11px;color:#888;min-width:80px">Before 투명도</label>
+      <label style="font-size:11px;color:#888;min-width:56px">투명도</label>
       <input type="range" id="dragAlpha" min="20" max="80" value="50" oninput="onDragAlpha(this.value)" style="flex:1;accent-color:var(--green)">
       <label id="dragAlphaV" style="font-size:11px;color:#ccc;min-width:28px">50%</label>
     </div>
@@ -408,7 +444,7 @@ const NORMS = {
   shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하'},
   kneeAlign:{min:85,max:115,unit:'%',lbl:'정상 85~115%'},
   slrAngle:{min:60,max:85,unit:'°',lbl:'정상 60~85°'},
-  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상'},
+  trunkFlex:{min:40,unit:'°',lbl:'정상 40~90° (전굴 시 요추+흉추 합산)'},
 };
 
 // ═══════════════════════════════════════════
@@ -545,7 +581,12 @@ function buildSlotPhase(slot, title, hint){
 }
 
 function buildComparePhase(){
-  return `<div id="cmpContent"><p style="text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px">Before와 After 촬영 후 비교 분석이 여기에 표시됩니다.</p></div>`;
+  return `<div id="cmpContent"><p style="text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px">Before와 After 촬영 후 비교 분석이 여기에 표시됩니다.</p></div>
+<div style="padding:20px 0;text-align:center">
+  <button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px" onclick="showPhase('report');window.scrollTo({top:0,behavior:'smooth'})">
+    최종 리포트 보기 →
+  </button>
+</div>`;
 }
 
 function buildReportPhase(){
@@ -610,7 +651,8 @@ function snap(){
   closeCam();toast((camSlot==='B'?'Before':'After')+' 촬영 완료');
 }
 function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show')}
-function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';f.click()}
+function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';const _sy=window.scrollY;f.click();setTimeout(()=>window.scrollTo(0,_sy),100)}
+document.getElementById('fi').addEventListener('click',function(e){e.stopPropagation()},{capture:true});
 document.getElementById('fi').addEventListener('change',function(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=ev=>loadImg(pendUp.tid,pendUp.slot,ev.target.result);r.readAsDataURL(f);
@@ -680,7 +722,7 @@ function showRetakeMenu(tid,slot){
     <button style="width:100%;padding:12px 16px;text-align:left;border:none;background:#fff;font-size:13px;color:var(--blue);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit" onclick="document.getElementById('retakeMenu').remove();openCam('${tid}','${slot}')">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라 재촬영
     </button>
-    <button style="width:100%;padding:12px 16px;text-align:left;border:none;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid var(--brd);font-family:inherit" onclick="document.getElementById('retakeMenu').remove();pendUp={tid:'${tid}',slot:'${slot}'};const f=document.getElementById('fi');f.value='';f.click()">
+    <button style="width:100%;padding:12px 16px;text-align:left;border:none;background:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid var(--brd);font-family:inherit" onclick="document.getElementById('retakeMenu').remove();pendUp={tid:'${tid}',slot:'${slot}'};const f=document.getElementById('fi');f.value='';const _sy=window.scrollY;f.click();setTimeout(()=>window.scrollTo(0,_sy),100)">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 재선택
     </button>`;
   document.body.appendChild(menu);
@@ -710,7 +752,7 @@ function redrawSlot(tid,slot){
   const lw=Math.max(3,W*.0045);
   if(s.pose){
     const lm=s.pose;
-    c.strokeStyle=skelCol;c.lineWidth=lw;c.setLineDash([]);
+    const lw2=Math.max(3,W*.005);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
     const pr=Math.max(7,W*.009);
     KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=ptCol;c.fill();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;c.stroke()});
@@ -763,7 +805,11 @@ function rebuildCompare(){
         <button class="abtn" onclick="resetOL('${t.id}')">초기화</button>
       </div>
       <div class="oc-canvas-wrap" style="padding:10px 14px 8px;background:#fff;border-top:1px solid var(--brd)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="font-size:11px;color:var(--tx3);min-width:80px">Before 투명도</span><input type="range" id="alpha_${t.id}" min="0" max="85" value="45" oninput="redrawOL('${t.id}')" style="flex:1;accent-color:var(--green)"><span id="alphaLbl_${t.id}" style="font-size:11px;color:var(--tx2);min-width:28px">45%</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:700;color:var(--red);min-width:36px">Before</span>
+          <input type="range" id="alpha_${t.id}" min="0" max="100" value="50" oninput="redrawOL('${t.id}')" style="flex:1;accent-color:var(--green)">
+          <span style="font-size:11px;font-weight:700;color:var(--blue);min-width:36px;text-align:right">After</span>
+        </div>
       </div>
       <div id="modeBar_${t.id}" class="mode-bar">
         <button class="mbt on" id="mm_${t.id}_none" onclick="setMode(null,'${t.id}')">보기 모드</button>
@@ -784,6 +830,12 @@ function rebuildCompare(){
     buildClinical(t.id);
     addOLClick(t.id);
   });
+  // Add report button at bottom
+  const existingRepBtn=document.getElementById('gotoReportBtn');if(existingRepBtn)existingRepBtn.remove();
+  const repBtn=document.createElement('div');repBtn.id='gotoReportBtn';
+  repBtn.style.cssText='padding:20px 0;text-align:center;margin-top:8px';
+  repBtn.innerHTML=`<button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px" onclick="showPhase('report');window.scrollTo({top:0,behavior:'smooth'})">최종 리포트 보기 →</button>`;
+  const ctn2=document.getElementById('cmpContent');if(ctn2)ctn2.appendChild(repBtn);
 }
 
 function initOL(tid){
@@ -794,19 +846,22 @@ function initOL(tid){
 }
 
 const OL_MANUAL = {};
-function getOLM(tid){if(!OL_MANUAL[tid])OL_MANUAL[tid]={tx:0,ty:0,scale:1};return OL_MANUAL[tid]}
+function getOLM(tid){if(!OL_MANUAL[tid])OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,crop:{t:0,b:0,l:0,r:0}};return OL_MANUAL[tid]}
 
 function redrawOL(tid){
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
   const oc=document.getElementById('oc_'+tid);if(!oc||!oc.width)return;
   const c=oc.getContext('2d');const W=oc.width,H=oc.height;
   const alphaEl=document.getElementById('alpha_'+tid);
-  const alpha=alphaEl?parseInt(alphaEl.value)/100:0.45;
-  const lbl=document.getElementById('alphaLbl_'+tid);if(lbl)lbl.textContent=Math.round(alpha*100)+'%';
+  const sliderVal=alphaEl?parseInt(alphaEl.value):50;
+  // 0=full Before, 100=full After, 50=50/50
+  const afterAlpha=sliderVal/100;  // After opacity
+  const beforeAlpha=1-sliderVal/100; // Before opacity
+  const alpha=beforeAlpha; // kept for skeleton calc
   const m=getOLM(tid);
   c.clearRect(0,0,W,H);
   // After background
-  c.globalAlpha=1;c.drawImage(aS.img,0,0,W,H);
+  c.globalAlpha=afterAlpha;c.drawImage(aS.img,0,0,W,H);c.globalAlpha=1;
   // Before: compute auto-align then apply manual offset
   const auto=autoAlign(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,W,H);
   const fScale=auto.scale*m.scale;
@@ -814,14 +869,16 @@ function redrawOL(tid){
   const fTy=auto.ty+m.ty;
   const bW=bS.canvas.width,bH=bS.canvas.height;
   // draw before grayscale
-  c.save();c.globalAlpha=alpha;c.filter='grayscale(100%) brightness(1.05)';
+  c.save();c.globalAlpha=beforeAlpha;c.filter='grayscale(100%) brightness(1.05)';
   c.transform(fScale,0,0,fScale,fTx,fTy);
   c.drawImage(bS.img,0,0,bW,bH);
   c.filter='none';c.restore();
   // Before skeleton red
   if(bS.pose){
     const lm=bS.pose;
-    c.save();c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(alpha+.4,.82);
+    c.save();
+    c.translate(fTx+bW*fScale/2,fTy+bH*fScale/2);c.rotate(rotRad);c.translate(-(fTx+bW*fScale/2),-(fTy+bH*fScale/2));
+    c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(beforeAlpha+.35,.82);
     c.strokeStyle='rgba(190,20,20,.95)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bW,lm[a].y*bH);c.lineTo(lm[b].x*bW,lm[b].y*bH);c.stroke()});
     const pr=Math.max(6,bW*.009);
@@ -858,7 +915,7 @@ function redrawOL(tid){
   });
 }
 
-function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1};redrawOL(tid);toast('보정 초기화')}
+function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,crop:{t:0,b:0,l:0,r:0}};redrawOL(tid);toast('보정 초기화')}
 
 function autoAlign(srcPose,dstPose,sW,sH,dW,dH){
   if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
@@ -888,9 +945,44 @@ function autoAlign(srcPose,dstPose,sW,sH,dW,dH){
 }
 
 // ─ DRAG-TO-FIT ─
-let dragTid2=null, dragTx2=0,dragTy2=0,dragScale2=1;
+let dragTid2=null, dragTx2=0,dragTy2=0,dragScale2=1,dragRot2=0,dragCrop2={t:0,b:0,l:0,r:0},_dragMode='move';
 let _dragPointers={},_pinchDist0=0,_pinchScale0=1,_dragOrigin={x:0,y:0,tx:0,ty:0};
 
+function setDragMode(m){
+  _dragMode=m;
+  ['move','rotate','crop'].forEach(x=>{
+    const btn=document.getElementById('dragMode'+x.charAt(0).toUpperCase()+x.slice(1));
+    if(btn){btn.style.background=x===m?'#2a2a2a':'#111';btn.style.color=x===m?'#fff':'#888'}
+  });
+  const hints={move:'한손가락=이동 · 두손가락=크기 조절',rotate:'슬라이더로 회전 각도 조절',crop:'슬라이더로 화각(잘라내기) 조절'};
+  const hint=document.getElementById('dragModeHint');if(hint)hint.textContent=hints[m]||'';
+  document.getElementById('rotateCtrls').style.display=m==='rotate'?'flex':'none';
+  document.getElementById('cropCtrls').style.display=m==='crop'?'flex':'none';
+}
+function onDragRotate(v){
+  dragRot2=parseFloat(v)||0;
+  document.getElementById('dragRotateV').textContent=v+'°';
+  applyDragTransform();
+}
+function applyDragCrop(){
+  const t=parseInt(document.getElementById('dragCropT').value);
+  const b=parseInt(document.getElementById('dragCropB').value);
+  const l=parseInt(document.getElementById('dragCropL').value);
+  const r=parseInt(document.getElementById('dragCropR').value);
+  dragCrop2={t,b,l,r};
+  document.getElementById('dragCropTV').textContent=t+'%';
+  document.getElementById('dragCropBV').textContent=b+'%';
+  document.getElementById('dragCropLV').textContent=l+'%';
+  document.getElementById('dragCropRV').textContent=r+'%';
+  applyDragTransform();
+}
+function applyDragTransform(){
+  const bi=document.getElementById('dragBeforeImg');if(!bi)return;
+  bi.style.transform=`rotate(${dragRot2}deg)`;
+  // apply crop via clip-path
+  const {t,b,l,r}=dragCrop2;
+  bi.style.clipPath=`inset(${t}% ${r}% ${b}% ${l}%)`;
+}
 function openDrag(tid){
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
   dragTid2=tid;
@@ -915,7 +1007,12 @@ function openDrag(tid){
   const bH2=bS.canvas.height*dragScale2*viewScale;
   const offX=(wW-cW)/2+dragTx2*viewScale;
   const offY=(wH-cH)/2+dragTy2*viewScale;
-  bi.style.cssText=`position:absolute;left:${offX}px;top:${offY}px;width:${bW2}px;height:${bH2}px;opacity:${parseInt(document.getElementById('dragAlpha').value)/100};transform-origin:top left`;
+  bi.style.cssText=`position:absolute;left:${offX}px;top:${offY}px;width:${bW2}px;height:${bH2}px;opacity:${parseInt(document.getElementById('dragAlpha').value)/100};transform-origin:center center;transform:rotate(0deg)`;
+  dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};
+  const dr=document.getElementById('dragRotate');if(dr)dr.value=0;
+  const drv=document.getElementById('dragRotateV');if(drv)drv.textContent='0°';
+  ['T','B','L','R'].forEach(x=>{const el=document.getElementById('dragCrop'+x);if(el)el.value=0;const lbl=document.getElementById('dragCrop'+x+'V');if(lbl)lbl.textContent='0%'});
+  setDragMode('move');
   document.getElementById('dragOv').classList.add('show');
   setupDragEvents();
 }
@@ -997,6 +1094,8 @@ function applyDrag(){
   m.tx=(newTx-auto.tx);
   m.ty=(newTy-auto.ty);
   m.scale=newScale/auto.scale;
+  m.rotate=dragRot2;
+  m.crop=Object.assign({},dragCrop2);
   document.getElementById('dragOv').classList.remove('show');
   const wrap=document.getElementById('dragWrap');
   wrap.removeEventListener('pointerdown',onDragDown);
@@ -1079,8 +1178,7 @@ function onFsCtrl(){
   if(!fsTestId)return;
   const av=document.getElementById('fsAlpha').value;
   const sv=document.getElementById('fsScale').value;
-  document.getElementById('fsAlphaV').textContent=av+'%';
-  document.getElementById('fsScaleV').textContent=sv+'%';
+  if(document.getElementById('fsScaleV'))document.getElementById('fsScaleV').textContent=sv+'%';
   const a=document.getElementById('alpha_'+fsTestId);if(a)a.value=av;
   const m=getOLM(fsTestId);m.scale=parseInt(sv)/100;
   redrawOL(fsTestId);setTimeout(drawFS,40);
@@ -1178,7 +1276,12 @@ ${chkSummary||'체크리스트 미입력'}
     }
   }catch(e){
     const aiEl=document.getElementById('aiClin_'+tid);
-    if(aiEl)aiEl.innerHTML='<p style="font-size:11px;color:var(--tx3)">AI 분석 연결 실패. 인터넷 연결을 확인하세요.</p>';
+    const isApiErr=e.message&&(e.message.includes('fetch')||e.message.includes('CORS')||e.message.includes('Failed'));
+    if(aiEl)aiEl.innerHTML=`<div style="padding:10px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
+      <div style="font-size:12px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 설정 필요</div>
+      <div style="font-size:11px;color:#555;margin-bottom:8px">GitHub Pages에서 직접 API 호출이 차단됩니다.<br>아래 버튼으로 API 키를 다시 확인하거나, 로컬에서 파일을 열어주세요.</div>
+      <button onclick="localStorage.removeItem('ng_api_key');buildClinical('${tid}')" style="padding:6px 12px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer">API 키 재설정</button>
+    </div>`;
   }
 }
 
@@ -1266,6 +1369,7 @@ ${allFindings.join('\n')}
   if(!_key2){_key2=prompt('Anthropic API 키 입력:');if(!_key2)return;localStorage.setItem('ng_api_key',_key2.trim())}
   const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
+      mode:'cors',
       headers:{'Content-Type':'application/json','x-api-key':_key2,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
     });
@@ -1279,7 +1383,14 @@ ${allFindings.join('\n')}
     }).join('');
     toast('AI 리포트 생성 완료');
   }catch(e){
-    el.innerHTML='<p style="font-size:12px;color:var(--tx3)">AI 연결 실패. 인터넷 연결을 확인하세요.</p>';
+    el.innerHTML=`<div style="padding:12px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
+      <div style="font-size:13px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 설정 필요</div>
+      <div style="font-size:12px;color:#555;margin-bottom:10px">GitHub Pages 환경에서는 Anthropic API 직접 호출이 CORS 정책으로 차단됩니다.<br><br>
+      해결 방법:<br>
+      1. 로컬에서 index.html 파일을 직접 열기 (가장 간단)<br>
+      2. API 키 재설정 후 재시도</div>
+      <button onclick="localStorage.removeItem('ng_api_key');genAIReport()" style="padding:8px 16px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">API 키 재설정 후 재시도</button>
+    </div>`;
   }
 }
 
