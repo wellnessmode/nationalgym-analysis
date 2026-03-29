@@ -270,26 +270,20 @@ input[type=range]{accent-color:var(--green)}
         <button onclick="document.getElementById('dragRotate').value=0;onDragRotate(0)" style="padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#888;font-size:10px;cursor:pointer">초기화</button>
       </div>
     </div>
-    <div id="cropCtrls" style="display:none;width:100%;gap:4px;flex-direction:column">
+    <div id="cropCtrls" style="display:none;width:100%;gap:5px;flex-direction:column">
+      <div style="font-size:10px;color:#888;margin-bottom:2px">카메라 각도 차이로 인한 원근 왜곡 보정</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <label style="font-size:10px;color:#888;min-width:36px">위</label>
-        <input type="range" id="dragCropT" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
-        <span id="dragCropTV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+        <label style="font-size:10px;color:#888;min-width:52px">좌우 기울기</label>
+        <input type="range" id="dragPerspH" min="-40" max="40" value="0" oninput="applyDragPersp()" style="flex:1;accent-color:#00a878">
+        <span id="dragPerspHV" style="font-size:10px;color:#ccc;min-width:28px">0°</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <label style="font-size:10px;color:#888;min-width:36px">아래</label>
-        <input type="range" id="dragCropB" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
-        <span id="dragCropBV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+        <label style="font-size:10px;color:#888;min-width:52px">상하 기울기</label>
+        <input type="range" id="dragPerspV" min="-40" max="40" value="0" oninput="applyDragPersp()" style="flex:1;accent-color:#00a878">
+        <span id="dragPerspVV" style="font-size:10px;color:#ccc;min-width:28px">0°</span>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <label style="font-size:10px;color:#888;min-width:36px">왼쪽</label>
-        <input type="range" id="dragCropL" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
-        <span id="dragCropLV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <label style="font-size:10px;color:#888;min-width:36px">오른쪽</label>
-        <input type="range" id="dragCropR" min="0" max="40" value="0" oninput="applyDragCrop()" style="flex:1;accent-color:#00a878">
-        <span id="dragCropRV" style="font-size:10px;color:#ccc;min-width:22px">0%</span>
+      <div style="display:flex;justify-content:flex-end">
+        <button onclick="document.getElementById('dragPerspH').value=0;document.getElementById('dragPerspV').value=0;applyDragPersp()" style="padding:4px 10px;border-radius:6px;border:1px solid #444;background:#222;color:#888;font-size:10px;cursor:pointer;font-family:inherit">초기화</button>
       </div>
     </div>
     <div class="drag-alpha-row">
@@ -846,7 +840,7 @@ function initOL(tid){
 }
 
 const OL_MANUAL = {};
-function getOLM(tid){if(!OL_MANUAL[tid])OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,crop:{t:0,b:0,l:0,r:0}};return OL_MANUAL[tid]}
+function getOLM(tid){if(!OL_MANUAL[tid])OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,perspH:0,perspV:0};return OL_MANUAL[tid]}
 
 function redrawOL(tid){
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
@@ -877,7 +871,10 @@ function redrawOL(tid){
   if(bS.pose){
     const lm=bS.pose;
     c.save();
-    c.translate(fTx+bW*fScale/2,fTy+bH*fScale/2);c.rotate(rotRad);c.translate(-(fTx+bW*fScale/2),-(fTy+bH*fScale/2));
+    const cx2=fTx+bW*fScale/2,cy2=fTy+bH*fScale/2;
+    c.translate(cx2,cy2);c.rotate(rotRad);
+    c.transform(Math.cos(perspH),Math.sin(perspV)*0.3,Math.sin(perspH)*0.3,Math.cos(perspV),0,0);
+    c.translate(-cx2,-cy2);
     c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(beforeAlpha+.35,.82);
     c.strokeStyle='rgba(190,20,20,.95)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bW,lm[a].y*bH);c.lineTo(lm[b].x*bW,lm[b].y*bH);c.stroke()});
@@ -915,7 +912,7 @@ function redrawOL(tid){
   });
 }
 
-function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,crop:{t:0,b:0,l:0,r:0}};redrawOL(tid);toast('보정 초기화')}
+function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,perspH:0,perspV:0};redrawOL(tid);toast('보정 초기화')}
 
 function autoAlign(srcPose,dstPose,sW,sH,dW,dH){
   if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
@@ -964,24 +961,19 @@ function onDragRotate(v){
   document.getElementById('dragRotateV').textContent=v+'°';
   applyDragTransform();
 }
-function applyDragCrop(){
-  const t=parseInt(document.getElementById('dragCropT').value);
-  const b=parseInt(document.getElementById('dragCropB').value);
-  const l=parseInt(document.getElementById('dragCropL').value);
-  const r=parseInt(document.getElementById('dragCropR').value);
-  dragCrop2={t,b,l,r};
-  document.getElementById('dragCropTV').textContent=t+'%';
-  document.getElementById('dragCropBV').textContent=b+'%';
-  document.getElementById('dragCropLV').textContent=l+'%';
-  document.getElementById('dragCropRV').textContent=r+'%';
+let dragPerspH2=0,dragPerspV2=0;
+function applyDragPersp(){
+  dragPerspH2=parseInt(document.getElementById('dragPerspH').value)||0;
+  dragPerspV2=parseInt(document.getElementById('dragPerspV').value)||0;
+  document.getElementById('dragPerspHV').textContent=dragPerspH2+'°';
+  document.getElementById('dragPerspVV').textContent=dragPerspV2+'°';
   applyDragTransform();
 }
 function applyDragTransform(){
   const bi=document.getElementById('dragBeforeImg');if(!bi)return;
-  bi.style.transform=`rotate(${dragRot2}deg)`;
-  // apply crop via clip-path
-  const {t,b,l,r}=dragCrop2;
-  bi.style.clipPath=`inset(${t}% ${r}% ${b}% ${l}%)`;
+  // perspective: 800px depth, rotateY for left/right, rotateX for up/down
+  bi.style.transform=`perspective(800px) rotateY(${dragPerspH2}deg) rotateX(${dragPerspV2}deg) rotate(${dragRot2}deg)`;
+  bi.style.clipPath='';
 }
 function openDrag(tid){
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
@@ -1011,7 +1003,7 @@ function openDrag(tid){
   dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};
   const dr=document.getElementById('dragRotate');if(dr)dr.value=0;
   const drv=document.getElementById('dragRotateV');if(drv)drv.textContent='0°';
-  ['T','B','L','R'].forEach(x=>{const el=document.getElementById('dragCrop'+x);if(el)el.value=0;const lbl=document.getElementById('dragCrop'+x+'V');if(lbl)lbl.textContent='0%'});
+  dragPerspH2=0;dragPerspV2=0;const ph=document.getElementById('dragPerspH');if(ph)ph.value=0;const pv=document.getElementById('dragPerspV');if(pv)pv.value=0;const phv=document.getElementById('dragPerspHV');if(phv)phv.textContent='0°';const pvv=document.getElementById('dragPerspVV');if(pvv)pvv.textContent='0°';
   setDragMode('move');
   document.getElementById('dragOv').classList.add('show');
   setupDragEvents();
@@ -1095,7 +1087,8 @@ function applyDrag(){
   m.ty=(newTy-auto.ty);
   m.scale=newScale/auto.scale;
   m.rotate=dragRot2;
-  m.crop=Object.assign({},dragCrop2);
+  m.perspH=dragPerspH2;
+  m.perspV=dragPerspV2;
   document.getElementById('dragOv').classList.remove('show');
   const wrap=document.getElementById('dragWrap');
   wrap.removeEventListener('pointerdown',onDragDown);
@@ -1276,11 +1269,12 @@ ${chkSummary||'체크리스트 미입력'}
     }
   }catch(e){
     const aiEl=document.getElementById('aiClin_'+tid);
-    const isApiErr=e.message&&(e.message.includes('fetch')||e.message.includes('CORS')||e.message.includes('Failed'));
+    const errMsg=e?.message||String(e);
     if(aiEl)aiEl.innerHTML=`<div style="padding:10px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
-      <div style="font-size:12px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 설정 필요</div>
-      <div style="font-size:11px;color:#555;margin-bottom:8px">GitHub Pages에서 직접 API 호출이 차단됩니다.<br>아래 버튼으로 API 키를 다시 확인하거나, 로컬에서 파일을 열어주세요.</div>
-      <button onclick="localStorage.removeItem('ng_api_key');buildClinical('${tid}')" style="padding:6px 12px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer">API 키 재설정</button>
+      <div style="font-size:12px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 오류</div>
+      <div style="font-size:11px;color:#555;margin-bottom:6px">오류: ${errMsg}</div>
+      <div style="font-size:11px;color:#555;margin-bottom:8px">Safari에서 로컬 파일을 열 때 외부 API 호출이 차단될 수 있습니다.<br>Safari 설정 → 개발자 메뉴 → CORS 비활성화 또는 Chrome으로 열어주세요.</div>
+      <button onclick="localStorage.removeItem('ng_api_key');buildClinical('${tid}')" style="padding:6px 12px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">API 키 재설정</button>
     </div>`;
   }
 }
@@ -1383,12 +1377,16 @@ ${allFindings.join('\n')}
     }).join('');
     toast('AI 리포트 생성 완료');
   }catch(e){
+    const errMsg2=e?.message||String(e);
     el.innerHTML=`<div style="padding:12px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
-      <div style="font-size:13px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 설정 필요</div>
-      <div style="font-size:12px;color:#555;margin-bottom:10px">GitHub Pages 환경에서는 Anthropic API 직접 호출이 CORS 정책으로 차단됩니다.<br><br>
-      해결 방법:<br>
-      1. 로컬에서 index.html 파일을 직접 열기 (가장 간단)<br>
-      2. API 키 재설정 후 재시도</div>
+      <div style="font-size:13px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 오류</div>
+      <div style="font-size:12px;color:#555;margin-bottom:6px">오류 내용: ${errMsg2}</div>
+      <div style="font-size:12px;color:#555;margin-bottom:10px">
+      <b>Safari에서 로컬 파일 실행 시 해결 방법:</b><br>
+      1. Chrome 또는 Firefox로 파일 열기 (권장)<br>
+      2. Safari → 환경설정 → 고급 → "개발자용 메뉴 보기" 활성화<br>
+         → 개발자 메뉴 → CORS 비활성화<br>
+      3. GitHub Pages에 올리고 Safari에서 https:// URL로 접속</div>
       <button onclick="localStorage.removeItem('ng_api_key');genAIReport()" style="padding:8px 16px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">API 키 재설정 후 재시도</button>
     </div>`;
   }
