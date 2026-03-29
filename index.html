@@ -320,6 +320,48 @@ input[type=range]{accent-color:var(--green)}
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+// ═══════════════════════════════════════════
+// API RATE LIMITER
+// ═══════════════════════════════════════════
+const RATE_LIMIT = {
+  DAILY_MAX: 30,        // 하루 최대 30회 (검사 12개 + 싱크 + 리포트 여유분)
+  SESSION_MAX: 50,      // 세션당 최대 50회
+  KEY: 'ng_api_usage',
+};
+
+function getRateData(){
+  try{
+    const raw=localStorage.getItem(RATE_LIMIT.KEY);
+    if(!raw) return {date:'',daily:0,session:0};
+    return JSON.parse(raw);
+  }catch(e){return {date:'',daily:0,session:0}}
+}
+
+function checkAndIncrement(label){
+  const today=new Date().toISOString().slice(0,10);
+  const d=getRateData();
+  if(d.date!==today){d.date=today;d.daily=0;} // 날짜 바뀌면 일일 리셋
+  if(d.daily>=RATE_LIMIT.DAILY_MAX){
+    toast(`일일 AI 분석 한도 초과 (${RATE_LIMIT.DAILY_MAX}회/일). 내일 다시 이용해주세요.`);
+    return false;
+  }
+  if(d.session>=RATE_LIMIT.SESSION_MAX){
+    toast(`세션 AI 분석 한도 초과 (${RATE_LIMIT.SESSION_MAX}회). 페이지를 새로고침하세요.`);
+    return false;
+  }
+  d.daily++;d.session++;
+  try{localStorage.setItem(RATE_LIMIT.KEY,JSON.stringify(d))}catch(e){}
+  console.log(`API 사용: ${label} | 일일 ${d.daily}/${RATE_LIMIT.DAILY_MAX} | 세션 ${d.session}/${RATE_LIMIT.SESSION_MAX}`);
+  return true;
+}
+
+function getRateStatus(){
+  const today=new Date().toISOString().slice(0,10);
+  const d=getRateData();
+  const daily=d.date===today?d.daily:0;
+  return {daily, dailyMax:RATE_LIMIT.DAILY_MAX, session:d.session||0, sessionMax:RATE_LIMIT.SESSION_MAX};
+}
+
 const IDB_NAME='ng_npt_v3',IDB_VER=1,IDB_STORE='photos';
 let _idb=null;
 function openIDB(){
@@ -782,142 +824,275 @@ function showRetakeMenu(tid,slot){
   setTimeout(()=>document.addEventListener('click',()=>{const m=document.getElementById('retakeMenu');if(m)m.remove()},{once:true}),50);
 }
 
-// ─ AI AUTO-FILL CHECKLIST FROM POSE ─
-function autoFillChecklist(tid, slot, lm, W, H){
-  if(!lm||!W||!H) return;
-  const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
-  const a2=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
-  const suggestions={}; // itemId -> optionIndex
+// ─ AI VISION CHECKLIST AUTO-FILL ─
+const CHK_PROMPTS = {
+  ant:`당신은 스포츠 물리치료사입니다. 아래 전면 자세 사진을 보고 체크리스트를 채우세요.
+각 항목에 대해 반드시 JSON 배열로만 응답하세요. 다른 텍스트 없이 JSON만.
 
-  // ─ Anterior ─
-  if(tid==='ant'){
-    if(v(11,12)){
-      const diff=Math.abs((lm[11].y-lm[12].y)*H);
-      suggestions['ant_sh'] = diff>15 ? (lm[11].y>lm[12].y?0:1) : 2;
-    }
-    if(v(23,24)){
-      const diff=Math.abs((lm[23].y-lm[24].y)*H);
-      suggestions['ant_pel'] = diff>15 ? (lm[23].y>lm[24].y?0:1) : 2;
-    }
-    if(v(25,26,23,24)){
-      const hw=Math.abs((lm[23].x-lm[24].x)*W);
-      const kw=Math.abs((lm[25].x-lm[26].x)*W);
-      if(hw>0){const r=kw/hw*100; suggestions['ant_knee']=r<82?0:r>118?1:2;}
-    }
-  }
-  // ─ Posterior ─
-  if(tid==='post'){
-    if(v(11,12)){
-      const diff=Math.abs((lm[11].y-lm[12].y)*H);
-      suggestions['post_scap'] = diff>15 ? (lm[11].y>lm[12].y?0:1) : 2;
-    }
-    if(v(23,24)){
-      const diff=Math.abs((lm[23].y-lm[24].y)*H);
-      suggestions['post_pel'] = diff>15 ? (lm[23].y>lm[24].y?0:1) : 2;
-    }
-  }
-  // ─ Lateral ─
-  if(tid==='lat'){
-    if(v(0,11,12)){
-      const headOff=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W);
-      if(headOff>30) suggestions['lat_cerv']=0; // 증가
-    }
-    if(v(11,12,23,24)){
-      const msX=(lm[11].x+lm[12].x)/2*W, msY=(lm[11].y+lm[12].y)/2*H;
-      const mhX=(lm[23].x+lm[24].x)/2*W, mhY=(lm[23].y+lm[24].y)/2*H;
-      const ang=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);
-      suggestions['lat_lumb'] = ang>8 ? 0 : 2;
-    }
-    if(v(25,26)){
-      const kneeAng=Math.abs(a2({x:lm[25].x*W,y:lm[25].y*H},{x:lm[26].x*W,y:lm[26].y*H}));
-      if(kneeAng<85) suggestions['lat_knee']=0; // 굴곡
-    }
-  }
-  // ─ OHS Backend ─
-  if(tid==='ohs_b'){
-    if(v(25,26,23,24)){
-      const hw=Math.abs((lm[23].x-lm[24].x)*W);
-      const kw=Math.abs((lm[25].x-lm[26].x)*W);
-      if(hw>0){const r=kw/hw*100; if(r<82) suggestions['ohsb_knee']=0; else if(r>118) suggestions['ohsb_knee']=1;}
-    }
-    if(v(23,24)){
-      const hipTilt=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[24].x*W,y:lm[24].y*H}));
-      if(hipTilt>6) suggestions['ohsb_pel'] = lm[23].y>lm[24].y?0:1;
-    }
-  }
-  // ─ OHS Lateral ─
-  if(tid==='ohs_l'){
-    if(v(11,12,23,24)){
-      const msX=(lm[11].x+lm[12].x)/2*W, msY=(lm[11].y+lm[12].y)/2*H;
-      const mhX=(lm[23].x+lm[24].x)/2*W, mhY=(lm[23].y+lm[24].y)/2*H;
-      const lean=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);
-      if(lean>15) suggestions['ohsl_trunk']=0;
-      if(lean>20) suggestions['ohsl_pelv']=0;
-      if(lean>25) suggestions['ohsl_tho']=0;
-    }
-  }
-  // ─ SKU ─
-  if(tid==='sku'){
-    if(v(23,24)){
-      const diff=Math.abs((lm[23].y-lm[24].y)*H);
-      if(diff>20) suggestions['sku_glut'] = lm[23].y>lm[24].y?0:1;
-    }
-  }
-  // ─ SLR ─
-  if(tid==='slr_l'||tid==='slr_r'){
-    if(v(23,27)){
-      const angle=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[27].x*W,y:lm[27].y*H})+90);
-      const chkId=tid==='slr_l'?'slrl_ham':'slrr_ham';
-      suggestions[chkId] = angle<60?0 : angle>85?2 : 1;
-    }
-  }
-  // ─ Trunk flexion posterior ─
-  if(tid==='trunk_b'){
-    if(v(11,12,23,24)){
-      const msX=(lm[11].x+lm[12].x)/2*W, mhX=(lm[23].x+lm[24].x)/2*W;
-      const shift=Math.abs(msX-mhX)/W*100;
-      if(shift>5) suggestions['tb_shift'] = msX>mhX?0:1;
-    }
-  }
-  // ─ Trunk flexion lateral ─
-  if(tid==='trunk_l'){
-    if(v(11,12,23,24)){
-      const msX=(lm[11].x+lm[12].x)/2, msY=(lm[11].y+lm[12].y)/2;
-      const mhX=(lm[23].x+lm[24].x)/2, mhY=(lm[23].y+lm[24].y)/2;
-      const dx=msX-mhX, dy=msY-mhY;
-      const angle=Math.abs(Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI);
-      suggestions['tl_rom'] = angle>=70?1 : 0;
-    }
+체크리스트 항목 (id: 선택지 배열):
+- ant_sh: ["Lt. 높음","Rt. 높음","동일"] → 어깨 좌우 높이
+- ant_pel: ["Lt. 높음","Rt. 높음","동일"] → 골반 좌우 높이
+- ant_knee: ["Genu varum(O형)","Genu valgum(X형)","정상"] → 무릎 정렬
+
+응답 형식 (예시):
+[{"id":"ant_sh","sel":1,"reason":"우측 어깨가 약 1cm 높음"},{"id":"ant_pel","sel":2,"reason":"골반 높이 대칭"},{"id":"ant_knee","sel":0,"reason":"무릎 내측 간격 넓음"}]`,
+
+  post:`당신은 스포츠 물리치료사입니다. 아래 후면 자세 사진을 보고 체크리스트를 채우세요.
+각 항목에 대해 반드시 JSON 배열로만 응답하세요.
+
+체크리스트 항목:
+- post_scol: ["흉추 우측만","흉추 좌측만","요추 우측만","요추 좌측만","없음"] → 척추측만
+- post_scap: ["Lt. 높음/날개","Rt. 높음/날개","정상"] → 견갑골 비대칭
+- post_pel: ["Lt. 높음","Rt. 높음","동일"] → 골반 고저
+- post_calc: ["Valgus(외반)","Varus(내반)","정상"] → 종골 각도
+
+응답 형식:
+[{"id":"post_scol","sel":4,"reason":"측만 없음"},{"id":"post_scap","sel":0,"reason":"좌측 견갑골 익상"}]`,
+
+  lat:`당신은 스포츠 물리치료사입니다. 아래 측면 자세 사진을 보고 체크리스트를 채우세요.
+각 항목에 대해 반드시 JSON 배열로만 응답하세요.
+
+체크리스트 항목:
+- lat_cerv: ["증가(전만 과다)","감소(전만 소실)","정상"] → 경추 전만
+- lat_thor: ["증가(후만 과다)","감소","정상"] → 흉추 후만
+- lat_lumb: ["증가(전방경사)","감소(후방경사)","정상"] → 요추 전만
+- lat_knee: ["굴곡","과신전","정상"] → 무릎 정렬
+
+응답 형식:
+[{"id":"lat_cerv","sel":0,"reason":"두부 전방이동 동반한 경추 전만 증가"},{"id":"lat_thor","sel":0,"reason":"흉추 후만각 증가 관찰"}]`,
+
+  sh_flex_l:`스포츠 물리치료사로서 좌측 어깨 거상(Shoulder Flexion) 동작 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- shfl_serr_l: ["약함","정상"] → Lt. Serratus Anterior 활성화 (견갑골 전인 패턴)
+- shfl_utrap_l: ["있음","없음"] → Lt. Upper Trap 보상 (어깨가 귀쪽으로 올라가는 패턴)
+- shfl_lat_l: ["있음","없음"] → Lt. Lat 단축 (팔꿈치 굴곡 또는 내회전 보상)
+- shfl_bic_l: ["있음","없음"] → Lt. Biceps 과활성 (팔꿈치 굴곡)
+
+응답 형식: [{"id":"shfl_utrap_l","sel":0,"reason":"거상 시 좌측 어깨 상승 패턴 관찰"}]`,
+
+  sh_flex_r:`스포츠 물리치료사로서 우측 어깨 거상(Shoulder Flexion) 동작 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- shfl_serr_r: ["약함","정상"] → Rt. Serratus Anterior
+- shfl_utrap_r: ["있음","없음"] → Rt. Upper Trap 보상
+- shfl_lat_r: ["있음","없음"] → Rt. Lat 단축
+- shfl_bic_r: ["있음","없음"] → Rt. Biceps 과활성
+
+응답 형식: [{"id":"shfl_utrap_r","sel":0,"reason":"우측 어깨 상승 보상 패턴"}]`,
+
+  trunk_b:`스포츠 물리치료사로서 체간 전굴(Trunk Flexion) 후면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- tb_scol: ["우측 편위","좌측 편위","없음"] → 전굴 시 척추 측만 여부
+- tb_tone: ["Lt. 증가","Rt. 증가","대칭"] → 척추기립근 좌우 근긴장도
+- tb_shift: ["우측","좌측","없음"] → 체간 측방 이동
+
+응답 형식: [{"id":"tb_scol","sel":2,"reason":"전굴 시 척추 측만 없음"}]`,
+
+  trunk_l:`스포츠 물리치료사로서 체간 전굴(Trunk Flexion) 측면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- tl_rom: ["제한(< 45°)","정상(45~90°)","우수(> 90°, 손바닥 바닥)"] → 전굴 ROM
+- tl_sep: ["흉추 우세","요추 우세","균등"] → 흉/요추 분리 패턴
+- tl_hip: ["과도한 요추 굴곡","정상 hip hinge"] → Hip hinge 패턴
+
+응답 형식: [{"id":"tl_rom","sel":1,"reason":"손끝이 발목 수준, 정상 ROM"}]`,
+
+  ohs_b:`스포츠 물리치료사로서 오버헤드 스쿼트(Overhead Squat) 후면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- ohsb_ank: ["Lt. 내번","Rt. 내번","없음"] → 발목 내번(Inversion)
+- ohsb_knee: ["Lt. 내측 collapse","Rt. 내측 collapse","양측","없음"] → 무릎 Valgus collapse
+- ohsb_pel: ["우측 전방","좌측 전방","없음"] → 골반 회전
+
+응답 형식: [{"id":"ohsb_knee","sel":2,"reason":"양측 무릎 내측 collapse 관찰"}]`,
+
+  ohs_l:`스포츠 물리치료사로서 오버헤드 스쿼트(Overhead Squat) 측면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- ohsl_trunk: ["과도(>45°)","정상"] → 상체 전경각
+- ohsl_arm: ["있음","없음"] → 팔 앞으로 쓰러짐
+- ohsl_tho: ["있음","없음"] → 흉추 가동성 제한
+- ohsl_lum: ["있음","없음"] → 요추 과전만
+- ohsl_pelv: ["있음","없음"] → 골반 전방경사
+- ohsl_ank: ["있음","없음"] → 발목 배측굴곡 제한
+
+응답 형식: [{"id":"ohsl_trunk","sel":0,"reason":"상체 전경각 50° 이상 관찰"},{"id":"ohsl_ank","sel":0,"reason":"발꿈치 들림 관찰"}]`,
+
+  sku:`스포츠 물리치료사로서 Standing Knee Up 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- sku_glut: ["Lt. 약함","Rt. 약함","양측","정상"] → Glutes 약화 (반대측 골반 drop)
+- sku_hf: ["Lt. 단축","Rt. 단축","양측","정상"] → Hip flexor 단축
+- sku_ank: ["Lt. 불안정","Rt. 불안정","양측","정상"] → 발목 불안정
+- sku_pel: ["Lt. drop","Rt. drop","없음"] → Pelvic drop 방향 (Trendelenburg)
+
+응답 형식: [{"id":"sku_pel","sel":0,"reason":"우측 무릎 거상 시 좌측 골반 drop"}]`,
+
+  slr_l:`스포츠 물리치료사로서 왼쪽 SLR(Straight Leg Raise) 측면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- slrl_ham: ["단축(< 60°)","정상(60~85°)","과가동(> 85°)"] → Lt. Hamstring 유연성
+- slrl_comp: ["후방경사 있음","없음"] → 골반 보상 움직임
+
+응답 형식: [{"id":"slrl_ham","sel":0,"reason":"다리 올림 각도 약 45°로 단축 의심"}]`,
+
+  slr_r:`스포츠 물리치료사로서 오른쪽 SLR(Straight Leg Raise) 측면 사진을 분석하세요.
+JSON 배열만 응답하세요.
+
+체크리스트 항목:
+- slrr_ham: ["단축(< 60°)","정상(60~85°)","과가동(> 85°)"] → Rt. Hamstring 유연성
+- slrr_comp: ["후방경사 있음","없음"] → 골반 보상 움직임
+
+응답 형식: [{"id":"slrr_ham","sel":1,"reason":"다리 올림 약 70°, 정상 범위"}]`,
+};
+
+async function autoFillChecklist(tid, slot, lm, W, H){
+  const s=SHOTS[tid]?.[slot];
+  if(!s?.canvas) return;
+  const prompt=CHK_PROMPTS[tid];
+  if(!prompt) return;
+
+  // Get API key
+  let _key=localStorage.getItem('ng_api_key');
+  if(!_key){
+    // No key - fall back to simple pose-based suggestion (less accurate)
+    autoFillChecklistFallback(tid,slot,lm,W,H);
+    return;
   }
 
-  if(Object.keys(suggestions).length===0) return;
+  // Show loading on checklist
+  const bd=document.getElementById(`cib_${tid}_${slot}`);
+  const hd=document.getElementById(`cih_${tid}_${slot}`);
+  if(hd&&bd){hd.classList.add('open');bd.classList.add('open')}
+  if(bd) bd.insertAdjacentHTML('afterbegin','<div id="chkLoadingIndicator" style="padding:8px;font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:8px"><div class="spin" style="width:16px;height:16px;border-width:2px"></div>AI가 사진을 분석하여 체크리스트를 채우는 중...</div>');
 
-  // Apply red-dashed AI suggestion UI
-  Object.entries(suggestions).forEach(([itemId, optIdx])=>{
-    // Try both slots B and A
-    ['B','A'].forEach(sl=>{
-      const el=document.getElementById(`cp_${itemId}_${sl}_${optIdx}`);
+  // Compress canvas to base64 for API
+  const tc=document.createElement('canvas');
+  const maxW=640;
+  const ratio=s.canvas.height/s.canvas.width;
+  tc.width=maxW; tc.height=Math.round(maxW*ratio);
+  tc.getContext('2d').drawImage(s.canvas,0,0,tc.width,tc.height);
+  const imgB64=tc.toDataURL('image/jpeg',.75).split(',')[1];
+
+  // Build pose data string for context
+  let poseCtx='';
+  if(lm&&W&&H){
+    const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
+    const pts=[];
+    if(v(11,12)) pts.push(`어깨높이차: ${Math.abs((lm[11].y-lm[12].y)*H).toFixed(0)}px (${lm[11].y>lm[12].y?'Rt.높음':'Lt.높음'})`);
+    if(v(23,24)) pts.push(`골반높이차: ${Math.abs((lm[23].y-lm[24].y)*H).toFixed(0)}px (${lm[23].y>lm[24].y?'Rt.높음':'Lt.높음'})`);
+    if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0)pts.push(`무릎/골반폭비율: ${(kw/hw*100).toFixed(0)}%`)}
+    if(v(0,11,12)) pts.push(`두부전방이동: ${Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W).toFixed(0)}px`);
+    if(v(23,27)){const ang=Math.abs(Math.atan2(Math.abs(lm[23].x*W-lm[27].x*W),Math.abs(lm[23].y*H-lm[27].y*H))*180/Math.PI);pts.push(`다리각도(SLR): ${ang.toFixed(0)}°`)}
+    if(pts.length) poseCtx='\n\nAI 포즈 수치 참고:\n'+pts.join('\n');
+  }
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      mode:'cors',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':_key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:600,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgB64}},
+            {type:'text',text:prompt+poseCtx+'\n\n반드시 유효한 JSON 배열만 응답. 다른 텍스트 없이.'}
+          ]
+        }]
+      })
+    });
+    const data=await res.json();
+    const text=(data.content?.[0]?.text||'').trim();
+
+    // Parse JSON
+    let results=[];
+    try{
+      const clean=text.replace(/```json|```/g,'').trim();
+      results=JSON.parse(clean);
+    }catch(pe){
+      console.warn('Checklist parse error:',pe,text);
+      // Remove loading and fall back
+      const li=document.getElementById('chkLoadingIndicator');if(li)li.remove();
+      autoFillChecklistFallback(tid,slot,lm,W,H);
+      return;
+    }
+
+    // Apply results as AI suggestions
+    const li=document.getElementById('chkLoadingIndicator');if(li)li.remove();
+    let appliedCount=0;
+    results.forEach(r=>{
+      if(r.id===undefined||r.sel===undefined) return;
+      const el=document.getElementById(`cp_${r.id}_${slot}_${r.sel}`);
       if(!el) return;
-      const k=itemId+'_'+sl;
-      if(!CHK[k]) CHK[k]={};
-      if(!CHK[k].sels) CHK[k].sels={};
-      if(CHK[k].sels[optIdx]) return; // already confirmed
-      // Mark as AI suggestion
+      const k=r.id+'_'+slot;
+      if(!CHK[k])CHK[k]={};
+      if(!CHK[k].sels)CHK[k].sels={};
+      if(CHK[k].sels[r.sel]) return; // already confirmed
       el.classList.add('ci-ai-sug');
       el.dataset.aiSug='1';
-      el.dataset.aiSlot=sl;
-      el.dataset.aiItemId=itemId;
-      el.dataset.aiOptIdx=optIdx;
+      el.title=r.reason||'';
+      appliedCount++;
     });
-  });
+    if(appliedCount>0) toast(`AI가 ${appliedCount}개 항목 초안 생성 — 빨간 항목 확인 후 클릭하여 확정`);
+    else toast('AI 분석 완료 (특이소견 없음)');
 
-  // Auto-open checklist
+  }catch(err){
+    const li=document.getElementById('chkLoadingIndicator');if(li)li.remove();
+    console.warn('Checklist AI error:',err);
+    // Fall back to pose-based
+    autoFillChecklistFallback(tid,slot,lm,W,H);
+  }
+}
+
+// Fallback: simple rule-based (when no API key)
+function autoFillChecklistFallback(tid,slot,lm,W,H){
+  if(!lm||!W||!H) return;
+  const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
+  const suggestions={};
+  // Only apply very conservative thresholds
+  if(tid==='ant'){
+    if(v(11,12)){const d=Math.abs((lm[11].y-lm[12].y)*H/H*100);if(d>3)suggestions['ant_sh']=lm[11].y>lm[12].y?0:1;else suggestions['ant_sh']=2;}
+    if(v(23,24)){const d=Math.abs((lm[23].y-lm[24].y)*H/H*100);if(d>3)suggestions['ant_pel']=lm[23].y>lm[24].y?0:1;else suggestions['ant_pel']=2;}
+    if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0){const r=kw/hw*100;suggestions['ant_knee']=r<80?0:r>120?1:2;}}
+  }
+  if(tid==='slr_l'&&v(23,27)){const a=Math.abs(Math.atan2(Math.abs(lm[23].x*W-lm[27].x*W),Math.abs(lm[23].y*H-lm[27].y*H))*180/Math.PI);suggestions['slrl_ham']=a<60?0:a>85?2:1;}
+  if(tid==='slr_r'&&v(23,27)){const a=Math.abs(Math.atan2(Math.abs(lm[23].x*W-lm[27].x*W),Math.abs(lm[23].y*H-lm[27].y*H))*180/Math.PI);suggestions['slrr_ham']=a<60?0:a>85?2:1;}
+
+  const items=TEST_CHECKLIST[tid]||[];
+  Object.entries(suggestions).forEach(([itemId,optIdx])=>{
+    const el=document.getElementById(`cp_${itemId}_${slot}_${optIdx}`);
+    if(!el) return;
+    const k=itemId+'_'+slot;
+    if(!CHK[k])CHK[k]={};
+    if(!CHK[k].sels)CHK[k].sels={};
+    if(CHK[k].sels[optIdx]) return;
+    el.classList.add('ci-ai-sug');
+    el.dataset.aiSug='1';
+    el.title='포즈 수치 기반 추정 (API 키 없음)';
+  });
   const hd=document.getElementById(`cih_${tid}_${slot}`);
   const bd=document.getElementById(`cib_${tid}_${slot}`);
-  if(hd&&bd){hd.classList.add('open');bd.classList.add('open')}
-
-  toast('AI 체크리스트 초안 생성 — 확인 후 항목을 눌러 확정하세요');
+  if(hd&&bd&&Object.keys(suggestions).length>0){hd.classList.add('open');bd.classList.add('open');toast('포즈 기반 초안 (API 연결 시 더 정확)')}
 }
+
 
 function updateSlotBadge(tid,slot){
   const n=document.getElementById(`tcn_${tid}_${slot}`);if(n)n.classList.add('done');
@@ -989,9 +1164,13 @@ function rebuildCompare(){
         </div>
       </div>
       <div class="oc-actions">
-        <button class="abtn primary" onclick="openDrag('${t.id}')">
+        <button class="abtn primary" id="aiSyncBtn_${t.id}" onclick="aiSyncImages('${t.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          AI 자동 싱크
+        </button>
+        <button class="abtn" onclick="openDrag('${t.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
-          Before 위치 직접 조정
+          수동 미세 조정
         </button>
         <button class="abtn" onclick="resetOL('${t.id}')">초기화</button>
       </div>
@@ -1107,6 +1286,126 @@ function redrawOL(tid){
     c.font=`bold ${Math.max(14,W*.02)}px -apple-system,sans-serif`;c.textAlign='center';
     c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-9);c.fillStyle='#0f46c8';c.fillText(dist+'px',mx,my-9);
   });
+}
+
+async function aiSyncImages(tid){
+  const bS=SHOTS[tid]?.B, aS=SHOTS[tid]?.A;
+  if(!bS?.canvas||!aS?.canvas){toast('Before/After 사진을 모두 업로드해주세요');return}
+
+  let _key=localStorage.getItem('ng_api_key');
+  if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
+
+  const btn=document.getElementById('aiSyncBtn_'+tid);
+  if(btn){btn.disabled=true;btn.textContent='AI 분석 중...'}
+  toast('AI가 두 사진의 신체 기준점을 분석합니다...');
+
+  // Compress both images
+  function compressImg(canvas, maxW=480){
+    const tc=document.createElement('canvas');
+    const r=canvas.height/canvas.width;
+    tc.width=maxW; tc.height=Math.round(maxW*r);
+    tc.getContext('2d').drawImage(canvas,0,0,tc.width,tc.height);
+    return {b64:tc.toDataURL('image/jpeg',.72).split(',')[1], w:tc.width, h:tc.height, origW:canvas.width, origH:canvas.height};
+  }
+
+  const bImg=compressImg(bS.canvas);
+  const aImg=compressImg(aS.canvas);
+
+  const prompt=`두 장의 체형 분석 사진 (Before/After)을 비교하여 정확한 오버랩 정렬을 위한 파라미터를 계산하세요.
+
+분석 방법:
+1. 각 사진에서 신체 기준점을 찾으세요: 머리 정수리, 발목/발바닥, 어깨 중앙, 골반 중앙
+2. Before 이미지를 After 이미지에 정렬시키기 위한 변환 파라미터를 계산하세요
+3. 이미지 좌표계: 좌상단이 (0,0), 우하단이 (width, height)
+
+Before 이미지 크기: ${bImg.w}×${bImg.h}px (원본: ${bImg.origW}×${bImg.origH}px)
+After 이미지 크기: ${aImg.w}×${aImg.h}px (원본: ${aImg.origW}×${aImg.origH}px)
+
+반드시 아래 JSON 형식만 응답하세요:
+{
+  "before_head": {"x": 숫자, "y": 숫자},
+  "before_feet": {"x": 숫자, "y": 숫자},
+  "after_head": {"x": 숫자, "y": 숫자},
+  "after_feet": {"x": 숫자, "y": 숫자},
+  "scale": 숫자,
+  "tx": 숫자,
+  "ty": 숫자,
+  "confidence": "high|medium|low",
+  "note": "간단한 설명"
+}
+
+scale: Before 이미지를 After 기준으로 확대/축소 비율 (After신장/Before신장)
+tx: After 좌표계에서 Before를 이동시킬 X 오프셋 (px, 원본 After 기준)
+ty: After 좌표계에서 Before를 이동시킬 Y 오프셋 (px, 원본 After 기준)
+
+계산 공식:
+- beforeBodyHeight = before_feet.y - before_head.y (압축된 좌표)
+- afterBodyHeight = after_feet.y - after_head.y (압축된 좌표)
+- scale = (afterBodyHeight/beforeBodyHeight) × (${bImg.origH}/${aImg.origH}) (원본 비율 보정)
+- tx = (after_head.x × ${aImg.origW}/${aImg.w}) - (before_head.x × ${bImg.origW}/${bImg.w} × scale)
+- ty = (after_head.y × ${aImg.origH}/${aImg.h}) - (before_head.y × ${bImg.origH}/${bImg.h} × scale)`;
+
+  if(!checkAndIncrement('AI 싱크: '+tid)) return;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',mode:'cors',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':_key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:400,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'text',text:'첫 번째 이미지가 Before, 두 번째 이미지가 After입니다.'},
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:bImg.b64}},
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:aImg.b64}},
+            {type:'text',text:prompt}
+          ]
+        }]
+      })
+    });
+    const data=await res.json();
+    const text=(data.content?.[0]?.text||'').trim();
+
+    let result;
+    try{
+      const clean=text.replace(/```json|```/g,'').trim();
+      result=JSON.parse(clean);
+    }catch(pe){
+      // Try to extract JSON
+      const m=text.match(/\{[\s\S]*\}/);
+      if(m) result=JSON.parse(m[0]);
+      else throw new Error('JSON 파싱 실패: '+text.slice(0,100));
+    }
+
+    // Apply result to OL_MANUAL
+    const m=getOLM(tid);
+    // We need to convert from auto-align base to manual offset
+    const auto=autoAlign(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,aS.canvas.width,aS.canvas.height);
+
+    if(result.scale&&result.tx!==undefined&&result.ty!==undefined){
+      // AI gave us absolute transform - convert to manual offset
+      m.scale = result.scale / auto.scale;
+      m.tx = result.tx - auto.tx;
+      m.ty = result.ty - auto.ty;
+      redrawOL(tid);
+      const conf=result.confidence==='high'?'높음':result.confidence==='medium'?'보통':'낮음';
+      toast(`AI 싱크 완료 (신뢰도: ${conf}) — ${result.note||''}`);
+    } else {
+      toast('AI가 기준점을 찾지 못했습니다. 수동 조정을 사용해주세요.');
+    }
+
+  }catch(err){
+    console.error('AI sync error:', err);
+    toast('AI 싱크 실패: '+err.message+' — 수동 조정을 사용해주세요.');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> AI 자동 싱크';}
+  }
 }
 
 function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,perspH:0,perspV:0};redrawOL(tid);toast('보정 초기화')}
@@ -1459,6 +1758,7 @@ ${chkSummary||'체크리스트 미입력'}
   try{
     let _key=localStorage.getItem('ng_api_key');
   if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com 에서 발급');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
+  if(!checkAndIncrement('임상분석: '+tid)) return;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':_key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
@@ -1565,6 +1865,7 @@ ${allFindings.join('\n')}
   try{
     let _key2=localStorage.getItem('ng_api_key');
   if(!_key2){_key2=prompt('Anthropic API 키 입력:');if(!_key2)return;localStorage.setItem('ng_api_key',_key2.trim())}
+  if(!checkAndIncrement('종합리포트')) return;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       mode:'cors',
@@ -1603,6 +1904,10 @@ function updateReport(){
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
   document.getElementById('rHeroName').textContent=name+' — NPT 리포트';
+  // Show API usage
+  const rs=getRateStatus();
+  const usageEl=document.getElementById('rUsageStatus');
+  if(usageEl) usageEl.innerHTML=`<span style="font-size:11px;color:#9de8c8">오늘 AI 사용: ${rs.daily}/${rs.dailyMax}회</span>`;
   document.getElementById('rHeroSub').textContent=trainer?'담당: '+trainer:'';
   const done=TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img).length;
   document.getElementById('rDone').textContent=done;
