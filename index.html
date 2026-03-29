@@ -400,9 +400,12 @@ const TEST_CHECKLIST = {
     {id:'ohsb_pel',  label:'Pelvic rotation',        opts:['우측 전방','좌측 전방','없음'], colors:['warn','warn','ok']},
   ],
   ohs_l: [
-    {id:'ohsl_trunk',label:'상체 전경각',             opts:['과도 (> 45°)','정상'], colors:['bad','ok']},
-    {id:'ohsl_arm',  label:'팔 앞으로 쓰러짐',        opts:['있음','없음'], colors:['bad','ok']},
-    {id:'ohsl_ank',  label:'발목 배측굴곡 제한',       opts:['있음','없음'], colors:['bad','ok']},
+    {id:'ohsl_trunk',label:'상체 전경각',                opts:['과도 (> 45°)','정상'], colors:['bad','ok']},
+    {id:'ohsl_arm',  label:'팔 앞으로 쓰러짐',           opts:['있음','없음'], colors:['bad','ok']},
+    {id:'ohsl_tho',  label:'흉추 가동성 제한',           opts:['있음','없음'], colors:['bad','ok']},
+    {id:'ohsl_lum',  label:'요추 과전만 (Lumbar hyperlordosis)', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'ohsl_pelv', label:'골반 전방경사 (Anterior pelvic tilt)', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'ohsl_ank',  label:'발목 배측굴곡 제한',         opts:['있음','없음'], colors:['bad','ok']},
   ],
   sku: [
     {id:'sku_glut',  label:'Glutes 약화 (Lt/Rt)',    opts:['Lt. 약함','Rt. 약함','양측','정상'], colors:['bad','bad','bad','ok']},
@@ -440,7 +443,7 @@ const NORMS = {
   shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하'},
   kneeAlign:{min:85,max:115,unit:'%',lbl:'정상 85~115%'},
   slrAngle:{min:60,max:85,unit:'°',lbl:'정상 60~85°'},
-  trunkFlex:{min:40,unit:'°',lbl:'정상 40~90° (전굴 시 요추+흉추 합산)'},
+  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준, 척추 수평에 가까울수록 양호)'},
 };
 
 // ═══════════════════════════════════════════
@@ -622,7 +625,7 @@ function selChk(itemId,slot,oi,cc){
     // select
     CHK[k].sels[oi]=cc;
     const el=document.getElementById(`cp_${itemId}_${slot}_${oi}`);
-    if(el){el.className=`ci-pill on-${cc}`;el.dataset.confirmed='1';delete el.dataset.aiSug}
+    if(el){el.className=`ci-pill on-${cc}`;el.dataset.confirmed='1';el.dataset.aiSug='';el.classList.remove('ci-ai-sug')}
   }
   autoSave();
 }
@@ -649,15 +652,35 @@ function snap(){
   const v=document.getElementById('camVid'),hc=document.getElementById('hc');
   hc.width=v.videoWidth;hc.height=v.videoHeight;
   hc.getContext('2d').drawImage(v,0,0);
-  loadImg(camTid,camSlot,hc.toDataURL('image/jpeg',.88));
-  closeCam();toast((camSlot==='B'?'Before':'After')+' 촬영 완료');
+  const snapData=hc.toDataURL('image/jpeg',.88);
+  loadImg(camTid,camSlot,snapData);
+  autoSaveToGallery(snapData,`${camTid}_${camSlot}`);
+  closeCam();
+  toast((camSlot==='B'?'Before':'After')+' 촬영 완료 (갤러리 자동저장)');
+}
+function autoSaveToGallery(dataUrl, filename){
+  try{
+    const a=document.createElement('a');
+    a.href=dataUrl;
+    a.download=`NPT_${filename}_${new Date().toISOString().slice(0,10)}.jpg`;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>document.body.removeChild(a),500);
+  }catch(e){console.warn('갤러리 저장 실패',e)}
 }
 function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show')}
 function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';const _sy=window.scrollY;f.click();setTimeout(()=>window.scrollTo(0,_sy),100)}
 document.getElementById('fi').addEventListener('click',function(e){e.stopPropagation()},{capture:true});
 document.getElementById('fi').addEventListener('change',function(e){
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=ev=>loadImg(pendUp.tid,pendUp.slot,ev.target.result);r.readAsDataURL(f);
+  const r=new FileReader();
+  r.onload=ev=>{
+    const src=ev.target.result;
+    loadImg(pendUp.tid,pendUp.slot,src);
+    // Don't auto-save gallery for uploads (user already has the original)
+  };
+  r.readAsDataURL(f);
 });
 
 // ═══════════════════════════════════════════
@@ -681,6 +704,29 @@ async function loadImg(tid,slot,src,skipSave){
   const _tid=tid,_slot=slot;
   rtBtn.onclick=(ev)=>{ev.stopPropagation();showRetakeMenu(_tid,_slot)};
   zone.appendChild(rtBtn);
+  // ─ Re-analyze skeleton button ─
+  const raBtn=document.createElement('button');
+  raBtn.className='photo-retake';
+  raBtn.style.cssText='right:100px;background:rgba(15,70,200,.75)';
+  raBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> 스켈레톤 재분석';
+  raBtn.onclick=async(ev)=>{
+    ev.stopPropagation();
+    if(!poseOk){toast('MediaPipe 로딩 중...'); return;}
+    const _s=SHOTS[_tid]?.[_slot];
+    if(!_s?.img){toast('사진을 먼저 업로드하세요'); return;}
+    raBtn.disabled=true; raBtn.textContent='분석 중...';
+    const lm=await runPose(_s.img);
+    raBtn.disabled=false;
+    raBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> 스켈레톤 재분석';
+    if(lm){
+      _s.pose=lm; redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
+      autoFillChecklist(_tid,_slot,lm,_s.canvas.width,_s.canvas.height);
+      toast('재분석 완료');
+    } else {
+      toast('포즈 감지 실패 — 전신이 잘 보이는 각도로 다시 시도해주세요');
+    }
+  };
+  zone.appendChild(raBtn);
   const img=new Image();
   img.onload=async()=>{
     canvas.width=img.width;canvas.height=img.height;
@@ -706,7 +752,12 @@ async function loadImg(tid,slot,src,skipSave){
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
       const lm=await runPose(img);loader.remove();
-      if(lm){SHOTS[tid][slot].pose=lm;redrawSlot(tid,slot);saveMarkers(tid,slot)}
+      if(lm){
+        SHOTS[tid][slot].pose=lm;
+        redrawSlot(tid,slot);
+        saveMarkers(tid,slot);
+        setTimeout(()=>autoFillChecklist(tid,slot,lm,img.width,img.height),400);
+      }
     }
     // add mode bar to compare panel if both loaded
     if(SHOTS[tid].B?.img&&SHOTS[tid].A?.img&&currentPhase==='compare'){
@@ -730,6 +781,144 @@ function showRetakeMenu(tid,slot){
   document.body.appendChild(menu);
   setTimeout(()=>document.addEventListener('click',()=>{const m=document.getElementById('retakeMenu');if(m)m.remove()},{once:true}),50);
 }
+
+// ─ AI AUTO-FILL CHECKLIST FROM POSE ─
+function autoFillChecklist(tid, slot, lm, W, H){
+  if(!lm||!W||!H) return;
+  const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
+  const a2=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  const suggestions={}; // itemId -> optionIndex
+
+  // ─ Anterior ─
+  if(tid==='ant'){
+    if(v(11,12)){
+      const diff=Math.abs((lm[11].y-lm[12].y)*H);
+      suggestions['ant_sh'] = diff>15 ? (lm[11].y>lm[12].y?0:1) : 2;
+    }
+    if(v(23,24)){
+      const diff=Math.abs((lm[23].y-lm[24].y)*H);
+      suggestions['ant_pel'] = diff>15 ? (lm[23].y>lm[24].y?0:1) : 2;
+    }
+    if(v(25,26,23,24)){
+      const hw=Math.abs((lm[23].x-lm[24].x)*W);
+      const kw=Math.abs((lm[25].x-lm[26].x)*W);
+      if(hw>0){const r=kw/hw*100; suggestions['ant_knee']=r<82?0:r>118?1:2;}
+    }
+  }
+  // ─ Posterior ─
+  if(tid==='post'){
+    if(v(11,12)){
+      const diff=Math.abs((lm[11].y-lm[12].y)*H);
+      suggestions['post_scap'] = diff>15 ? (lm[11].y>lm[12].y?0:1) : 2;
+    }
+    if(v(23,24)){
+      const diff=Math.abs((lm[23].y-lm[24].y)*H);
+      suggestions['post_pel'] = diff>15 ? (lm[23].y>lm[24].y?0:1) : 2;
+    }
+  }
+  // ─ Lateral ─
+  if(tid==='lat'){
+    if(v(0,11,12)){
+      const headOff=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W);
+      if(headOff>30) suggestions['lat_cerv']=0; // 증가
+    }
+    if(v(11,12,23,24)){
+      const msX=(lm[11].x+lm[12].x)/2*W, msY=(lm[11].y+lm[12].y)/2*H;
+      const mhX=(lm[23].x+lm[24].x)/2*W, mhY=(lm[23].y+lm[24].y)/2*H;
+      const ang=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);
+      suggestions['lat_lumb'] = ang>8 ? 0 : 2;
+    }
+    if(v(25,26)){
+      const kneeAng=Math.abs(a2({x:lm[25].x*W,y:lm[25].y*H},{x:lm[26].x*W,y:lm[26].y*H}));
+      if(kneeAng<85) suggestions['lat_knee']=0; // 굴곡
+    }
+  }
+  // ─ OHS Backend ─
+  if(tid==='ohs_b'){
+    if(v(25,26,23,24)){
+      const hw=Math.abs((lm[23].x-lm[24].x)*W);
+      const kw=Math.abs((lm[25].x-lm[26].x)*W);
+      if(hw>0){const r=kw/hw*100; if(r<82) suggestions['ohsb_knee']=0; else if(r>118) suggestions['ohsb_knee']=1;}
+    }
+    if(v(23,24)){
+      const hipTilt=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[24].x*W,y:lm[24].y*H}));
+      if(hipTilt>6) suggestions['ohsb_pel'] = lm[23].y>lm[24].y?0:1;
+    }
+  }
+  // ─ OHS Lateral ─
+  if(tid==='ohs_l'){
+    if(v(11,12,23,24)){
+      const msX=(lm[11].x+lm[12].x)/2*W, msY=(lm[11].y+lm[12].y)/2*H;
+      const mhX=(lm[23].x+lm[24].x)/2*W, mhY=(lm[23].y+lm[24].y)/2*H;
+      const lean=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);
+      if(lean>15) suggestions['ohsl_trunk']=0;
+      if(lean>20) suggestions['ohsl_pelv']=0;
+      if(lean>25) suggestions['ohsl_tho']=0;
+    }
+  }
+  // ─ SKU ─
+  if(tid==='sku'){
+    if(v(23,24)){
+      const diff=Math.abs((lm[23].y-lm[24].y)*H);
+      if(diff>20) suggestions['sku_glut'] = lm[23].y>lm[24].y?0:1;
+    }
+  }
+  // ─ SLR ─
+  if(tid==='slr_l'||tid==='slr_r'){
+    if(v(23,27)){
+      const angle=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[27].x*W,y:lm[27].y*H})+90);
+      const chkId=tid==='slr_l'?'slrl_ham':'slrr_ham';
+      suggestions[chkId] = angle<60?0 : angle>85?2 : 1;
+    }
+  }
+  // ─ Trunk flexion posterior ─
+  if(tid==='trunk_b'){
+    if(v(11,12,23,24)){
+      const msX=(lm[11].x+lm[12].x)/2*W, mhX=(lm[23].x+lm[24].x)/2*W;
+      const shift=Math.abs(msX-mhX)/W*100;
+      if(shift>5) suggestions['tb_shift'] = msX>mhX?0:1;
+    }
+  }
+  // ─ Trunk flexion lateral ─
+  if(tid==='trunk_l'){
+    if(v(11,12,23,24)){
+      const msX=(lm[11].x+lm[12].x)/2, msY=(lm[11].y+lm[12].y)/2;
+      const mhX=(lm[23].x+lm[24].x)/2, mhY=(lm[23].y+lm[24].y)/2;
+      const dx=msX-mhX, dy=msY-mhY;
+      const angle=Math.abs(Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI);
+      suggestions['tl_rom'] = angle>=70?1 : 0;
+    }
+  }
+
+  if(Object.keys(suggestions).length===0) return;
+
+  // Apply red-dashed AI suggestion UI
+  Object.entries(suggestions).forEach(([itemId, optIdx])=>{
+    // Try both slots B and A
+    ['B','A'].forEach(sl=>{
+      const el=document.getElementById(`cp_${itemId}_${sl}_${optIdx}`);
+      if(!el) return;
+      const k=itemId+'_'+sl;
+      if(!CHK[k]) CHK[k]={};
+      if(!CHK[k].sels) CHK[k].sels={};
+      if(CHK[k].sels[optIdx]) return; // already confirmed
+      // Mark as AI suggestion
+      el.classList.add('ci-ai-sug');
+      el.dataset.aiSug='1';
+      el.dataset.aiSlot=sl;
+      el.dataset.aiItemId=itemId;
+      el.dataset.aiOptIdx=optIdx;
+    });
+  });
+
+  // Auto-open checklist
+  const hd=document.getElementById(`cih_${tid}_${slot}`);
+  const bd=document.getElementById(`cib_${tid}_${slot}`);
+  if(hd&&bd){hd.classList.add('open');bd.classList.add('open')}
+
+  toast('AI 체크리스트 초안 생성 — 확인 후 항목을 눌러 확정하세요');
+}
+
 function updateSlotBadge(tid,slot){
   const n=document.getElementById(`tcn_${tid}_${slot}`);if(n)n.classList.add('done');
   const b=document.getElementById(`tcb_${tid}_${slot}`);if(b){b.textContent='완료';b.className='tc-badge done'}
@@ -1198,7 +1387,14 @@ function calcM(lm,W,H){
   if(v(0,11,12))m.headOffset=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W);
   if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0)m.kneeAlign=kw/hw*100}
   if(v(23,27))m.slrAngle=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[27].x*W,y:lm[27].y*H})+90);
-  if(v(11,12,23,24))m.trunkFlex=Math.abs(Math.atan2((lm[11].y+lm[12].y)/2-(lm[23].y+lm[24].y)/2,(lm[11].x+lm[12].x)/2-(lm[23].x+lm[24].x)/2)*180/Math.PI);
+  // Trunk flexion ROM: angle of spine vector from vertical (0=upright, 90=parallel to floor)
+  if(v(11,12,23,24)){
+    const msX=(lm[11].x+lm[12].x)/2,msY=(lm[11].y+lm[12].y)/2;
+    const mhX=(lm[23].x+lm[24].x)/2,mhY=(lm[23].y+lm[24].y)/2;
+    // angle from vertical: 0=standing straight, 90=fully bent horizontal
+    const dx=msX-mhX, dy=msY-mhY;
+    m.trunkFlex=Math.abs(Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI);
+  }
   return m;
 }
 
