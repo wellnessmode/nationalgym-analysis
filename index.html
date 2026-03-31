@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NationalGym — NPT 체형분석</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -208,7 +208,6 @@ input[type=range]{accent-color:var(--green)}
 </style>
 </head>
 <body>
-
 <div class="hdr">
   <div class="logo"><em>National</em>Gym <sup>NPT</sup></div>
   <div class="hdr-r">
@@ -315,9 +314,10 @@ input[type=range]{accent-color:var(--green)}
       <div id="camPoseLabel" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center"></div>
       <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.
 // ─ POSE GUIDE SVG DEFINITIONS ─
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+
 const POSE_GUIDES = {
   // ── STATIC POSTURE ──
   ant: {
@@ -2462,6 +2462,7 @@ async function clearAll(){
   try{localStorage.removeItem(LS+'_meta')}catch(e){}
   updateCompareCta();toast('초기화 완료');
 }
+
 
 </script>
 </body>
