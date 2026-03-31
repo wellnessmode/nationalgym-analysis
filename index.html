@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NationalGym — NPT 체형분석</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -305,25 +306,18 @@ input[type=range]{accent-color:var(--green)}
 <div class="cam-ov" id="camOv">
   <div class="cam-body">
     <video id="camVid" autoplay playsinline muted></video>
-    <div class="cam-guide">
-      <div class="gbox"></div><div class="gtip" id="camTip">전신이 가이드 안에 들어오도록</div>
-      <div class="gcv"></div><div class="gch" style="top:33%"></div><div class="gch" style="top:66%"></div>
-    </div>
-  </div>
-  <div class="cam-bar">
-    <div><div class="ct-name" id="ctName">촬영</div><div class="ct-sub" id="ctSub"></div><div class="ct-slot" id="ctSlot"></div></div>
-    <button class="shutter" onclick="snap()"></button>
-    <button class="cclose" onclick="closeCam()">닫기</button>
-  </div>
-</div>
-<input type="file" id="fi" accept="image/*" style="display:none">
-<canvas id="hc" style="display:none"></canvas>
-<div class="toast" id="toastEl"></div>
-
+    <div class="cam-guide" id="camGuideWrap">
+      <div class="gbox"></div>
+      <div class="gcv"></div>
+      <div class="gch" style="top:33%"></div>
+      <div class="gch" style="top:66%"></div>
+      <svg id="camGuideSvg" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+      <div id="camPoseLabel" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center"></div>
+      <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.
+// ─ POSE GUIDE SVG DEFINITIONS ─
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-// ─ POSE GUIDE SVG DEFINITIONS ─
 const POSE_GUIDES = {
   // ── STATIC POSTURE ──
   ant: {
@@ -2455,7 +2449,8 @@ async function clearAll(){
   for(const t of TESTS){
     for(const slot of ['B','A']){
       const zone=document.getElementById(`zone_${t.id}_${slot}`);
-      if(zone)zone.innerHTML=`<div class="photo-add" id="add_${t.id}_${slot}"><button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</button><button class="pa-btn" onclick="doUpload('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>갤러리 업로드</button></div>`;
+      if(zone)zone.innerHTML=`<div class="photo-add" id="add_${t.id}_${slot}"><button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>카메라로 촬영</button><button class="pa-btn" onclick="doUpload('${t.id}','${slot}')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 1
+6 10 5 21"/></svg>갤러리 업로드</button></div>`;
       const b=document.getElementById(`tcb_${t.id}_${slot}`);if(b){b.textContent='미촬영';b.className='tc-badge none'}
       const n=document.getElementById(`tcn_${t.id}_${slot}`);if(n)n.classList.remove('done');
       try{await idbDel(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
@@ -2467,6 +2462,7 @@ async function clearAll(){
   try{localStorage.removeItem(LS+'_meta')}catch(e){}
   updateCompareCta();toast('초기화 완료');
 }
+
 </script>
 </body>
 </html>
