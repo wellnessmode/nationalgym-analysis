@@ -198,6 +198,9 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .next-phase-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:250;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(0,168,120,.5);display:flex;align-items:center;gap:10px;border:none;white-space:nowrap;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
 .next-phase-btn.visible{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 .next-phase-btn:active{transform:translateX(-50%) scale(.94)}
+.cam-guide-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-warning{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;text-align:center;line-height:1.5}
+.cam-pose-label{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 input[type=range]{accent-color:var(--green)}
@@ -320,6 +323,286 @@ input[type=range]{accent-color:var(--green)}
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+// ─ POSE GUIDE SVG DEFINITIONS ─
+const POSE_GUIDES = {
+  // ── STATIC POSTURE ──
+  ant: {
+    label:'전면 자세 — 발 어깨너비, 팔 자연스럽게',
+    warning:'거울 앞 촬영 금지 · 카메라와 정면으로 마주보기',
+    svg:`
+      <!-- Head -->
+      <ellipse cx="50" cy="12" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Shoulders -->
+      <line x1="35" y1="22" x2="65" y2="22" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Arms -->
+      <line x1="35" y1="22" x2="30" y2="42" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="65" y1="22" x2="70" y2="42" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Torso -->
+      <line x1="42" y1="22" x2="42" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="58" y1="22" x2="58" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Hips -->
+      <line x1="40" y1="52" x2="60" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Legs -->
+      <line x1="44" y1="52" x2="42" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="56" y1="52" x2="58" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Feet -->
+      <line x1="42" y1="75" x2="38" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="58" y1="75" x2="62" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Foot width guides -->
+      <line x1="36" y1="82" x2="42" y2="82" stroke="#ffd700" stroke-width=".5" stroke-dasharray="1,1" opacity=".6"/>
+      <line x1="58" y1="82" x2="64" y2="82" stroke="#ffd700" stroke-width=".5" stroke-dasharray="1,1" opacity=".6"/>
+      <text x="50" y="87" text-anchor="middle" fill="#ffd700" font-size="3.5" opacity=".8">← 어깨너비 →</text>`
+  },
+  post: {
+    label:'후면 자세 — 발 어깨너비, 등이 카메라를 향하도록',
+    warning:'거울 앞 촬영 금지 · 후면 촬영',
+    svg:`
+      <ellipse cx="50" cy="12" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="65" y2="22" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="30" y2="42" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="65" y1="22" x2="70" y2="42" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <rect x="38" y="22" width="24" height="30" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Spine center line -->
+      <line x1="50" y1="22" x2="50" y2="52" stroke="#ffd700" stroke-width=".6" stroke-dasharray="2,1" opacity=".8"/>
+      <line x1="42" y1="52" x2="58" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="44" y1="52" x2="42" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="56" y1="52" x2="58" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="42" y1="75" x2="38" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="58" y1="75" x2="62" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <text x="53" y="38" fill="#ffd700" font-size="3" opacity=".8">척추</text>`
+  },
+  lat: {
+    label:'측면 자세 — 좌측면, 발 옆면이 카메라 방향',
+    warning:'발 엄지발가락 기준선 맞추기 · 팔 자연스럽게',
+    svg:`
+      <ellipse cx="50" cy="11" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Ear dot -->
+      <circle cx="53" cy="11" r="1" fill="#ffd700" opacity=".8"/>
+      <!-- Cervical -->
+      <line x1="50" y1="17" x2="50" y2="23" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Shoulder -->
+      <circle cx="50" cy="23" r="1.5" fill="none" stroke="#00e5a0" stroke-width=".7" opacity=".7"/>
+      <!-- Arm down -->
+      <line x1="50" y1="25" x2="48" y2="40" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Spine curve (thoracic kyphosis) -->
+      <path d="M50,23 Q46,35 50,52" fill="none" stroke="#ffd700" stroke-width=".7" stroke-dasharray="2,1" opacity=".8"/>
+      <!-- Hip -->
+      <circle cx="50" cy="52" r="1.5" fill="none" stroke="#00e5a0" stroke-width=".7" opacity=".7"/>
+      <!-- Thigh -->
+      <line x1="50" y1="54" x2="51" y2="68" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Knee -->
+      <circle cx="51" cy="68" r="1.5" fill="none" stroke="#00e5a0" stroke-width=".7" opacity=".7"/>
+      <!-- Lower leg -->
+      <line x1="51" y1="70" x2="50" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Plumb line -->
+      <line x1="50" y1="8" x2="50" y2="84" stroke="#ff6b6b" stroke-width=".4" stroke-dasharray="1.5,1" opacity=".5"/>
+      <text x="54" y="35" fill="#ffd700" font-size="3" opacity=".8">척추</text>
+      <text x="42" y="84" fill="#ff6b6b" font-size="3" opacity=".7">중력선</text>`
+  },
+  // ── SHOULDER FLEXION ──
+  sh_flex_l: {
+    label:'Lt. Shoulder Flexion — 좌측 팔 들어올리기',
+    warning:'전신이 보이도록 · 좌측 팔 최대 거상',
+    svg:`
+      <ellipse cx="50" cy="12" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="65" y2="22" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Left arm raised -->
+      <line x1="35" y1="22" x2="30" y2="5" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <text x="22" y="6" fill="#ffd700" font-size="3.5" opacity=".9">↑ Lt.</text>
+      <!-- Right arm natural -->
+      <line x1="65" y1="22" x2="70" y2="38" stroke="#00e5a0" stroke-width=".8" opacity=".6"/>
+      <line x1="45" y1="22" x2="45" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="55" y1="22" x2="55" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="43" y1="52" x2="57" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="45" y1="52" x2="43" y2="72" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="55" y1="52" x2="57" y2="72" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>`
+  },
+  sh_flex_r: {
+    label:'Rt. Shoulder Flexion — 우측 팔 들어올리기',
+    warning:'전신이 보이도록 · 우측 팔 최대 거상',
+    svg:`
+      <ellipse cx="50" cy="12" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="65" y2="22" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="30" y2="38" stroke="#00e5a0" stroke-width=".8" opacity=".6"/>
+      <!-- Right arm raised -->
+      <line x1="65" y1="22" x2="70" y2="5" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <text x="71" y="6" fill="#ffd700" font-size="3.5" opacity=".9">Rt. ↑</text>
+      <line x1="45" y1="22" x2="45" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="55" y1="22" x2="55" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="43" y1="52" x2="57" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="45" y1="52" x2="43" y2="72" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="55" y1="52" x2="57" y2="72" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>`
+  },
+  // ── TRUNK FLEXION ──
+  trunk_b: {
+    label:'Trunk Flexion 후면 — 등이 카메라 향하도록',
+    warning:'발 어깨너비 · 천천히 최대한 숙이기',
+    svg:`
+      <!-- bent figure rear view -->
+      <ellipse cx="50" cy="28" rx="5" ry="5" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="40" y1="33" x2="60" y2="33" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- spine bent forward -->
+      <path d="M50,33 Q50,50 50,58" fill="none" stroke="#ffd700" stroke-width=".8" stroke-dasharray="2,1" opacity=".8"/>
+      <!-- arms hanging -->
+      <line x1="40" y1="33" x2="35" y2="55" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="60" y1="33" x2="65" y2="55" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- hips -->
+      <line x1="42" y1="58" x2="58" y2="58" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- legs straight -->
+      <line x1="44" y1="58" x2="43" y2="78" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="56" y1="58" x2="57" y2="78" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <text x="52" y="50" fill="#ffd700" font-size="3" opacity=".8">척추</text>`
+  },
+  trunk_l: {
+    label:'Trunk Flexion 측면 — 좌측면 · 무릎 펴고',
+    warning:'무릎 최대한 펴기 · 손 발쪽으로',
+    svg:`
+      <!-- bent side view -->
+      <ellipse cx="52" cy="20" rx="4" ry="5" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- spine arc -->
+      <path d="M50,25 Q42,38 40,52" fill="none" stroke="#ffd700" stroke-width="1" opacity=".8"/>
+      <!-- hips -->
+      <circle cx="40" cy="52" r="2" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- legs straight -->
+      <line x1="40" y1="54" x2="41" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- arms hanging to feet -->
+      <line x1="48" y1="28" x2="38" y2="60" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- angle indicator -->
+      <path d="M40,52 L40,42 M40,52 L33,46" fill="none" stroke="#ff6b6b" stroke-width=".5" opacity=".7"/>
+      <text x="28" y="42" fill="#ff6b6b" font-size="3.5" opacity=".8">ROM</text>
+      <text x="43" y="48" fill="#ffd700" font-size="3" opacity=".8">척추</text>`
+  },
+  // ── OHS ──
+  ohs_b: {
+    label:'Overhead Squat 후면 — 바 들고 쪼그려 앉기',
+    warning:'발 어깨너비·발끝 약간 외회전 · 등이 카메라 향하도록',
+    svg:`
+      <ellipse cx="50" cy="20" rx="5" ry="5" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Arms overhead -->
+      <line x1="35" y1="28" x2="25" y2="14" stroke="#ffd700" stroke-width="1" opacity=".9"/>
+      <line x1="65" y1="28" x2="75" y2="14" stroke="#ffd700" stroke-width="1" opacity=".9"/>
+      <!-- Bar -->
+      <line x1="22" y1="13" x2="78" y2="13" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <text x="50" y="11" text-anchor="middle" fill="#ffd700" font-size="3" opacity=".8">바(팔)</text>
+      <!-- Shoulders -->
+      <line x1="35" y1="28" x2="65" y2="28" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Squat torso -->
+      <line x1="42" y1="28" x2="42" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="58" y1="28" x2="58" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Hips low -->
+      <line x1="40" y1="52" x2="60" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Thighs angled -->
+      <line x1="43" y1="52" x2="36" y2="68" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="57" y1="52" x2="64" y2="68" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Feet -->
+      <line x1="36" y1="68" x2="32" y2="73" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="64" y1="68" x2="68" y2="73" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Knee alignment guide -->
+      <line x1="36" y1="60" x2="36" y2="75" stroke="#ff6b6b" stroke-width=".4" stroke-dasharray="1,1" opacity=".7"/>
+      <line x1="64" y1="60" x2="64" y2="75" stroke="#ff6b6b" stroke-width=".4" stroke-dasharray="1,1" opacity=".7"/>
+      <text x="50" y="77" text-anchor="middle" fill="#ff6b6b" font-size="3" opacity=".7">무릎 수직선</text>`
+  },
+  ohs_l: {
+    label:'Overhead Squat 측면 — 바 들고 쪼그려 앉기',
+    warning:'좌측면 촬영 · 발꿈치 바닥에 닿도록',
+    svg:`
+      <ellipse cx="50" cy="18" rx="5" ry="5" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Arm overhead -->
+      <line x1="50" y1="23" x2="54" y2="10" stroke="#ffd700" stroke-width="1" opacity=".9"/>
+      <!-- Bar -->
+      <line x1="46" y1="9" x2="62" y2="9" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <!-- Torso leaned forward -->
+      <path d="M50,23 Q47,35 45,48" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Hip -->
+      <circle cx="45" cy="48" r="2" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Thigh horizontal -->
+      <line x1="45" y1="50" x2="42" y2="62" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Lower leg vertical -->
+      <line x1="42" y1="62" x2="43" y2="76" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Plumb line through mid-foot -->
+      <line x1="43" y1="8" x2="43" y2="80" stroke="#ff6b6b" stroke-width=".4" stroke-dasharray="1.5,1" opacity=".6"/>
+      <text x="32" y="42" fill="#ff6b6b" font-size="3" opacity=".7">수직선</text>
+      <!-- Forward lean angle -->
+      <path d="M45,48 L45,35 M45,48 L38,38" fill="none" stroke="#ffd700" stroke-width=".5" opacity=".7"/>
+      <text x="28" y="37" fill="#ffd700" font-size="3" opacity=".8">전경각</text>`
+  },
+  // ── STANDING KNEE UP ──
+  sku: {
+    label:'Standing Knee Up — 무릎 최대 거상',
+    warning:'단색 배경 권장 · 지지발이 흔들리지 않도록',
+    svg:`
+      <ellipse cx="50" cy="12" rx="5" ry="6" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="65" y2="22" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="35" y1="22" x2="32" y2="40" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="65" y1="22" x2="68" y2="40" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="43" y1="22" x2="43" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="57" y1="22" x2="57" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="41" y1="52" x2="59" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Raised knee (left) -->
+      <line x1="44" y1="52" x2="40" y2="65" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <line x1="40" y1="65" x2="44" y2="72" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <text x="28" y="68" fill="#ffd700" font-size="3.5" opacity=".9">↑ 무릎</text>
+      <!-- Standing leg (right) -->
+      <line x1="56" y1="52" x2="57" y2="75" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="57" y1="75" x2="56" y2="80" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Pelvic level guide -->
+      <line x1="35" y1="52" x2="65" y2="52" stroke="#ff6b6b" stroke-width=".4" stroke-dasharray="1,1" opacity=".7"/>
+      <text x="50" y="56" text-anchor="middle" fill="#ff6b6b" font-size="3" opacity=".7">골반 수평선</text>`
+  },
+  // ── SLR ──
+  slr_l: {
+    label:'Lt. SLR — 누운 자세 왼쪽 다리 올리기',
+    warning:'침대·매트에 바로 누운 자세 · 무릎 펴고',
+    svg:`
+      <!-- Lying figure side view -->
+      <ellipse cx="15" cy="52" rx="5" ry="4" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Torso horizontal -->
+      <line x1="20" y1="52" x2="55" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <!-- Raised leg -->
+      <line x1="55" y1="52" x2="72" y2="28" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <!-- Foot -->
+      <line x1="72" y1="28" x2="76" y2="26" stroke="#ffd700" stroke-width="1" opacity=".9"/>
+      <!-- Flat leg -->
+      <line x1="55" y1="52" x2="80" y2="54" stroke="#00e5a0" stroke-width=".8" opacity=".6"/>
+      <!-- Angle arc -->
+      <path d="M55,52 L65,52 M55,52 L65,42" fill="none" stroke="#ff6b6b" stroke-width=".5" opacity=".7"/>
+      <text x="66" y="44" fill="#ffd700" font-size="3.5" opacity=".9">각도</text>
+      <text x="50" y="70" text-anchor="middle" fill="#00e5a0" font-size="3" opacity=".7">← 머리 방향</text>`
+  },
+  slr_r: {
+    label:'Rt. SLR — 누운 자세 오른쪽 다리 올리기',
+    warning:'침대·매트에 바로 누운 자세 · 무릎 펴고',
+    svg:`
+      <ellipse cx="15" cy="52" rx="5" ry="4" fill="none" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="20" y1="52" x2="55" y2="52" stroke="#00e5a0" stroke-width=".8" opacity=".7"/>
+      <line x1="55" y1="52" x2="72" y2="28" stroke="#ffd700" stroke-width="1.2" opacity=".9"/>
+      <line x1="72" y1="28" x2="76" y2="26" stroke="#ffd700" stroke-width="1" opacity=".9"/>
+      <line x1="55" y1="52" x2="80" y2="50" stroke="#00e5a0" stroke-width=".8" opacity=".6"/>
+      <path d="M55,52 L65,52 M55,52 L65,42" fill="none" stroke="#ff6b6b" stroke-width=".5" opacity=".7"/>
+      <text x="66" y="44" fill="#ffd700" font-size="3.5" opacity=".9">각도</text>
+      <text x="50" y="70" text-anchor="middle" fill="#00e5a0" font-size="3" opacity=".7">← 머리 방향</text>`
+  },
+};
+
+const DEFAULT_GUIDE = {
+  label:'전신이 가이드 박스 안에',
+  warning:'거울 앞 촬영 금지 · 단색 배경 권장',
+  svg:''
+};
+
+function updateCamGuide(tid){
+  const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
+  const svgEl=document.getElementById('camGuideSvg');
+  const labelEl=document.getElementById('camPoseLabel');
+  const warnEl=document.getElementById('camWarning');
+  const tipEl=document.getElementById('camTip');
+  if(svgEl) svgEl.innerHTML=g.svg||'';
+  if(labelEl) labelEl.textContent=g.label||'';
+  if(warnEl) warnEl.textContent='⚠️ '+g.warning;
+  if(tipEl) tipEl.style.display=g.label?'none':'block'; // hide default tip if we have label
+}
+
+
 // ═══════════════════════════════════════════
 // API RATE LIMITER
 // ═══════════════════════════════════════════
@@ -685,6 +968,7 @@ function openCam(tid,slot){
   document.getElementById('ctSub').textContent=t.tip||'';
   document.getElementById('ctSlot').textContent=slot==='B'?'▶ Before':'▶ After';
   document.getElementById('camTip').textContent=t.tip||'전신이 가이드 안에';
+  updateCamGuide(tid);
   document.getElementById('camOv').classList.add('show');
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
     .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
