@@ -312,9 +312,23 @@ input[type=range]{accent-color:var(--green)}
       <div class="gch" style="top:66%"></div>
       <svg id="camGuideSvg" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
       <div id="camPoseLabel" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center"></div>
-      <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.
-// ─ POSE GUIDE SVG DEFINITIONS ─
-
+      <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.5;max-width:90%">⚠️ 거울 앞 촬영 금지 · 단색 배경 권장</div>
+      <div id="camTip" style="display:none"></div>
+    </div>
+  </div>
+  <div class="cam-bar">
+    <div>
+      <div class="ct-name" id="ctName">촬영</div>
+      <div class="ct-sub" id="ctSub"></div>
+      <div class="ct-slot" id="ctSlot"></div>
+    </div>
+    <button class="shutter" onclick="snap()"></button>
+    <button class="cclose" onclick="closeCam()">닫기</button>
+  </div>
+</div>
+<input type="file" id="fi" accept="image/*" style="display:none">
+<canvas id="hc" style="display:none"></canvas>
+<div class="toast" id="toastEl"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script>
 
