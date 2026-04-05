@@ -189,6 +189,8 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 #dragAfterCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
 #dragBeforeImg{position:absolute;transform-origin:top left;cursor:grab;user-select:none;-webkit-user-select:none;image-rendering:auto}
 #dragBeforeImg.dragging{cursor:grabbing}
+.drag-remove-bg{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border:1px solid rgba(255,255,255,.3);padding:5px 12px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;z-index:10;font-family:inherit}
+.drag-remove-bg.on{background:var(--green);border-color:var(--green);color:#fff}
 .drag-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:5px 12px;border-radius:12px;white-space:nowrap;pointer-events:none}
 .drag-ctrl{background:#0d0d0d;padding:10px 16px;display:flex;gap:8px;align-items:center;flex-shrink:0;border-top:1px solid rgba(255,255,255,.08);flex-wrap:wrap}
 .drag-alpha-row{display:flex;align-items:center;gap:6px;width:100%}
@@ -209,7 +211,7 @@ input[type=range]{accent-color:var(--green)}
 </head>
 <body>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.4</span>
+  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.7</span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
@@ -256,6 +258,7 @@ input[type=range]{accent-color:var(--green)}
     </div>
   </div>
   <div class="drag-canvas-wrap" id="dragWrap">
+      <button class="drag-remove-bg" id="dragRemoveBgBtn" onclick="toggleDragBgRemove()" title="배경 제거 (밝은 배경 기준)">✂ 배경제거</button>
     <canvas id="dragAfterCanvas"></canvas>
     <img id="dragBeforeImg" src="" alt="" draggable="false">
     <div class="drag-hint">한 손가락 = 이동 · 두 손가락 = 크기</div>
@@ -333,368 +336,448 @@ input[type=range]{accent-color:var(--green)}
 <script>
 
 // ─ POSE GUIDE SVG DEFINITIONS ─
-// 사람 실루엣 기준: viewBox 0 0 100 180 (세로형)
-// 머리 y=10, 어깨 y=35, 허리 y=80, 골반 y=95, 무릎 y=130, 발목 y=160
+// Based on: adult male 170cm/70kg, 7.5 head proportions
+// ViewBox 100×220 for standing poses, 200×110 for supine
 const POSE_GUIDES = {
 
   ant: {
-    label:'전면 자세 — 정면으로 서기, 발 어깨너비',
-    warning:'거울 앞 촬영 금지 · 카메라와 정면으로',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}</style></defs>
-      <!-- Head -->
-      <ellipse class="gs" cx="50" cy="12" rx="9" ry="11"/>
-      <!-- Neck -->
-      <rect class="gs" x="46" y="22" width="8" height="8" rx="2"/>
-      <!-- Shoulders/Upper torso -->
-      <path class="gs" d="M22,32 Q30,28 46,30 L54,30 Q70,28 78,32 L74,55 Q65,50 54,52 L46,52 Q35,50 26,55 Z"/>
-      <!-- Arms L -->
-      <path class="gs" d="M26,35 Q18,55 16,75 Q15,80 18,82 Q22,84 24,80 L28,60 Q30,48 28,38 Z"/>
-      <!-- Arms R -->
-      <path class="gs" d="M74,35 Q82,55 84,75 Q85,80 82,82 Q78,84 76,80 L72,60 Q70,48 72,38 Z"/>
-      <!-- Lower torso -->
-      <path class="gs" d="M34,52 Q42,56 50,56 Q58,56 66,52 L68,80 Q60,84 50,84 Q40,84 32,80 Z"/>
-      <!-- Hip -->
-      <path class="gs" d="M32,80 Q40,86 50,86 Q60,86 68,80 L70,96 Q62,102 50,102 Q38,102 30,96 Z"/>
-      <!-- Thigh L -->
-      <path class="gs" d="M30,96 Q26,110 26,130 Q26,136 32,136 Q38,136 38,130 L40,110 Q42,100 36,96 Z"/>
-      <!-- Thigh R -->
-      <path class="gs" d="M70,96 Q74,110 74,130 Q74,136 68,136 Q62,136 62,130 L60,110 Q58,100 64,96 Z"/>
-      <!-- Lower leg L -->
-      <path class="gs" d="M26,130 Q24,148 25,160 Q26,165 32,165 Q37,165 38,160 L38,130 Q38,126 32,126 Z"/>
-      <!-- Lower leg R -->
-      <path class="gs" d="M62,130 Q62,126 68,126 Q74,126 74,130 L75,160 Q76,165 68,165 Q63,165 62,160 Z"/>
-      <!-- Foot L -->
-      <ellipse class="gs" cx="32" cy="168" rx="9" ry="4"/>
-      <!-- Foot R -->
-      <ellipse class="gs" cx="68" cy="168" rx="9" ry="4"/>
-      <!-- Shoulder width guide -->
-      <line x1="22" y1="178" x2="78" y2="178" stroke="#ffd700" stroke-width=".6" stroke-dasharray="2,2" opacity=".7"/>
-      <text x="50" y="185" text-anchor="middle" fill="#ffd700" font-size="5" opacity=".8">← 어깨너비 기준 →</text>`
+    label:'전면 자세 — 발 어깨너비, 발끝 정면',
+    warning:'거울 앞 촬영 금지 · 단색 배경 · 카메라 정면',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>
+        .bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}
+        .hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.2;stroke-dasharray:4,2.5}
+        .ln{fill:none;stroke:#ff6060;stroke-width:.7;stroke-dasharray:3,2;opacity:.65}
+        .tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}
+        .tn{fill:#00c890;font-size:4px;font-family:sans-serif}
+      </style>
+    </defs>
+    <!-- HEAD (y5-y33, cx50) -->
+    <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
+    <!-- NECK -->
+    <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
+    <!-- UPPER TORSO (shoulders y42, chest width 50) -->
+    <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
+    <!-- LEFT ARM (upper) -->
+    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
+    <!-- LEFT FOREARM -->
+    <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
+    <!-- RIGHT ARM (upper) -->
+    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
+    <!-- RIGHT FOREARM -->
+    <path class="bg" d="M80,77 Q83,90 81,100 Q80,105 76,105 Q72,104 72,99 L73,86 Q74,78 78,76 Z"/>
+    <!-- LOWER TORSO -->
+    <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
+    <!-- PELVIS/HIP -->
+    <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
+    <!-- LEFT THIGH -->
+    <path class="bg" d="M28,114 Q24,126 24,144 Q24,150 31,150 Q38,150 38,144 L40,126 Q42,116 35,114 Z"/>
+    <!-- RIGHT THIGH -->
+    <path class="bg" d="M72,114 Q76,126 76,144 Q76,150 69,150 Q62,150 62,144 L60,126 Q58,116 65,114 Z"/>
+    <!-- LEFT LOWER LEG -->
+    <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
+    <!-- RIGHT LOWER LEG -->
+    <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
+    <!-- LEFT FOOT -->
+    <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
+    <!-- RIGHT FOOT -->
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>
+    <!-- SHOULDER LEVEL LINE -->
+    <line class="ln" x1="15" y1="42" x2="85" y2="42"/>
+    <text class="tx" x="2" y="41">어깨선</text>
+    <!-- HIP LEVEL LINE -->
+    <line class="ln" x1="15" y1="104" x2="85" y2="104"/>
+    <text class="tx" x="2" y="103">골반선</text>
+    <!-- MIDLINE -->
+    <line x1="50" y1="5" x2="50" y2="215" stroke="rgba(255,255,255,.2)" stroke-width=".5" stroke-dasharray="3,3"/>
+    <!-- SHOULDER WIDTH GUIDE -->
+    <line x1="25" y1="208" x2="75" y2="208" stroke="#ffd700" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
+    <text class="tn" x="50" y="216" text-anchor="middle">← 어깨너비 기준 →</text>`
   },
 
   post: {
     label:'후면 자세 — 등이 카메라 향하도록',
     warning:'거울 앞 촬영 금지 · 후면 촬영',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}</style></defs>
-      <!-- Head (back) -->
-      <ellipse class="gs" cx="50" cy="12" rx="9" ry="11"/>
-      <!-- Neck -->
-      <rect class="gs" x="46" y="22" width="8" height="8" rx="2"/>
-      <!-- Upper back -->
-      <path class="gs" d="M22,32 Q30,28 46,30 L54,30 Q70,28 78,32 L74,55 Q65,50 54,52 L46,52 Q35,50 26,55 Z"/>
-      <!-- Spine center line -->
-      <line x1="50" y1="30" x2="50" y2="96" stroke="#ffd700" stroke-width=".8" stroke-dasharray="3,2" opacity=".85"/>
-      <!-- Arms L -->
-      <path class="gs" d="M26,35 Q18,55 16,75 Q15,80 18,82 Q22,84 24,80 L28,60 Q30,48 28,38 Z"/>
-      <!-- Arms R -->
-      <path class="gs" d="M74,35 Q82,55 84,75 Q85,80 82,82 Q78,84 76,80 L72,60 Q70,48 72,38 Z"/>
-      <!-- Lower back -->
-      <path class="gs" d="M34,52 Q42,56 50,56 Q58,56 66,52 L68,80 Q60,84 50,84 Q40,84 32,80 Z"/>
-      <!-- Hip -->
-      <path class="gs" d="M32,80 Q40,86 50,86 Q60,86 68,80 L70,96 Q62,102 50,102 Q38,102 30,96 Z"/>
-      <!-- Thigh L -->
-      <path class="gs" d="M30,96 Q26,110 26,130 Q26,136 32,136 Q38,136 38,130 L40,110 Q42,100 36,96 Z"/>
-      <!-- Thigh R -->
-      <path class="gs" d="M70,96 Q74,110 74,130 Q74,136 68,136 Q62,136 62,130 L60,110 Q58,100 64,96 Z"/>
-      <!-- Lower leg L -->
-      <path class="gs" d="M26,130 Q24,148 25,160 Q26,165 32,165 Q37,165 38,160 L38,130 Q38,126 32,126 Z"/>
-      <!-- Lower leg R -->
-      <path class="gs" d="M62,130 Q62,126 68,126 Q74,126 74,130 L75,160 Q76,165 68,165 Q63,165 62,160 Z"/>
-      <!-- Foot L -->
-      <ellipse class="gs" cx="32" cy="168" rx="9" ry="4"/>
-      <!-- Foot R -->
-      <ellipse class="gs" cx="68" cy="168" rx="9" ry="4"/>
-      <!-- Spine label -->
-      <text x="54" y="65" fill="#ffd700" font-size="4.5" opacity=".85">척추</text>`
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.ln{fill:none;stroke:#ff6060;stroke-width:.7;stroke-dasharray:3,2;opacity:.65}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
+    <!-- NECK -->
+    <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
+    <!-- UPPER BACK -->
+    <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
+    <!-- SPINE LINE (visible from back) -->
+    <line x1="50" y1="42" x2="50" y2="114" stroke="#ffd700" stroke-width=".9" stroke-dasharray="3,2" opacity=".8"/>
+    <text x="53" y="80" fill="#ffd700" font-size="4" font-family="sans-serif" opacity=".85">척추</text>
+    <!-- LEFT ARM -->
+    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
+    <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
+    <!-- RIGHT ARM -->
+    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
+    <path class="bg" d="M80,77 Q83,90 81,100 Q80,105 76,105 Q72,104 72,99 L73,86 Q74,78 78,76 Z"/>
+    <!-- LOWER BACK -->
+    <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
+    <!-- GLUTES/HIP -->
+    <path class="bg" d="M29,96 Q38,106 50,106 Q62,106 71,96 L72,114 Q63,122 50,122 Q37,122 28,114 Z"/>
+    <!-- LEGS same as anterior -->
+    <path class="bg" d="M28,114 Q24,126 24,144 Q24,150 31,150 Q38,150 38,144 L40,126 Q42,116 35,114 Z"/>
+    <path class="bg" d="M72,114 Q76,126 76,144 Q76,150 69,150 Q62,150 62,144 L60,126 Q58,116 65,114 Z"/>
+    <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
+    <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
+    <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>
+    <!-- SHOULDER LINE -->
+    <line class="ln" x1="15" y1="42" x2="85" y2="42"/>
+    <text class="tx" x="2" y="41">어깨선</text>
+    <!-- PELVIS LINE -->
+    <line class="ln" x1="15" y1="106" x2="85" y2="106"/>
+    <text class="tx" x="2" y="105">골반선</text>`
   },
 
   lat: {
-    label:'측면 자세 — 좌측면, 귀-어깨-골반-발목 수직',
+    label:'측면 자세 — 좌측면, 귀-어깨-대전자-발목 수직',
     warning:'발 옆면 기준 · 팔 자연스럽게',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}</style></defs>
-      <!-- Head side -->
-      <ellipse class="gs" cx="52" cy="12" rx="8" ry="10"/>
-      <!-- Neck -->
-      <rect class="gs" x="48" y="21" width="7" height="9" rx="2"/>
-      <!-- Ear dot -->
-      <circle cx="57" cy="11" r="2" fill="#ffd700" opacity=".9"/>
-      <!-- Shoulder/chest -->
-      <path class="gs" d="M40,30 Q45,27 54,28 L58,28 Q64,30 66,38 L64,55 Q58,58 52,58 Q46,58 42,55 L40,38 Z"/>
-      <!-- Arm (forward, natural hang) -->
-      <path class="gs" d="M40,34 Q36,50 36,68 Q36,74 40,75 Q44,75 45,70 L46,54 Q47,42 44,36 Z"/>
-      <!-- Abdomen -->
-      <path class="gs" d="M40,55 Q42,60 50,62 Q56,62 62,58 L64,80 Q58,84 50,84 Q43,82 40,78 Z"/>
-      <!-- Hip/Glute -->
-      <path class="gs" d="M40,78 Q42,86 50,88 Q58,88 65,84 L66,98 Q60,104 50,104 Q41,102 38,96 Z"/>
-      <!-- Thigh -->
-      <path class="gs" d="M38,96 Q36,112 37,132 Q38,138 44,138 Q50,138 50,132 L50,112 Q52,100 46,96 Z"/>
-      <!-- Lower leg (slight forward tilt) -->
-      <path class="gs" d="M37,132 Q36,150 38,162 Q39,167 44,167 Q49,167 50,162 L50,132 Q50,128 44,128 Z"/>
-      <!-- Foot -->
-      <path class="gs" d="M36,164 Q36,170 44,171 Q52,171 56,168 Q58,166 56,163 L38,163 Z"/>
-      <!-- Plumb line -->
-      <line x1="52" y1="5" x2="44" y2="175" stroke="#ff6b6b" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
-      <text x="60" y="60" fill="#ff6b6b" font-size="4" opacity=".7">중력선</text>
-      <!-- Spine S-curve -->
-      <path d="M52,22 Q58,35 54,55 Q50,72 54,90" fill="none" stroke="#ffd700" stroke-width=".9" stroke-dasharray="2,2" opacity=".75"/>
-      <text x="62" y="42" fill="#ffd700" font-size="4" opacity=".8">척추</text>`
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD (slightly forward from midline) -->
+    <ellipse class="bg" cx="52" cy="19" rx="10" ry="13"/>
+    <!-- EAR dot -->
+    <circle cx="58" cy="16" r="2.2" fill="#ffd700" opacity=".9"/>
+    <!-- NECK -->
+    <path class="bg" d="M48,31 Q49,40 49,43 L55,43 Q56,40 57,31 Z"/>
+    <!-- CHEST/THORAX (anterior lean of shoulders) -->
+    <path class="bg" d="M42,43 Q46,40 54,41 L58,43 Q62,50 62,65 L58,72 Q54,75 50,75 Q44,73 40,69 L40,52 Z"/>
+    <!-- SHOULDER ACROMION dot -->
+    <circle cx="60" cy="43" r="2.5" fill="none" stroke="#ff6060" stroke-width="1"/>
+    <!-- UPPER ARM (natural hang, slightly forward) -->
+    <path class="bg" d="M42,46 Q37,58 37,74 Q37,80 41,81 Q45,81 46,77 L48,60 Q49,50 46,47 Z"/>
+    <!-- FOREARM -->
+    <path class="bg" d="M39,79 Q37,92 39,101 Q40,106 44,106 Q48,105 48,100 L47,88 Q46,80 41,78 Z"/>
+    <!-- ABDOMEN (slight protrusion) -->
+    <path class="bg" d="M40,72 Q42,78 50,80 Q58,80 63,75 L64,94 Q58,98 50,98 Q43,96 40,90 Z"/>
+    <!-- GLUTEAL (posterior) -->
+    <path class="bg" d="M40,90 Q42,100 50,104 Q60,104 66,98 L67,114 Q60,120 50,120 Q41,118 38,110 Z"/>
+    <!-- HIP JOINT dot -->
+    <circle cx="52" cy="110" r="2.5" fill="none" stroke="#ff6060" stroke-width="1"/>
+    <!-- THIGH (slight anterior tilt) -->
+    <path class="bg" d="M38,112 Q36,126 37,144 Q37,150 43,150 Q49,150 50,144 L51,126 Q52,114 46,111 Z"/>
+    <!-- KNEE dot -->
+    <circle cx="44" cy="148" r="2.5" fill="none" stroke="#ff6060" stroke-width="1"/>
+    <!-- LOWER LEG (perpendicular) -->
+    <path class="bg" d="M37,144 Q36,160 38,173 Q39,178 44,178 Q49,178 50,173 L51,145 Q51,141 44,140 Z"/>
+    <!-- FOOT -->
+    <path class="bg" d="M35,175 Q34,182 44,183 Q54,183 58,179 Q60,176 57,174 L37,174 Z"/>
+    <!-- ANKLE dot -->
+    <circle cx="42" cy="174" r="2" fill="none" stroke="#ff6060" stroke-width="1"/>
+    <!-- PLUMB LINE (ideal) -->
+    <line x1="52" y1="5" x2="44" y2="183" stroke="#ff6060" stroke-width=".6" stroke-dasharray="2,2" opacity=".55"/>
+    <text x="62" y="96" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".7">중력선</text>
+    <!-- SPINE S-CURVE -->
+    <path d="M52,31 Q58,46 54,64 Q50,80 54,96 Q56,104 52,112" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
+    <text class="tx" x="63" y="55">척추</text>
+    <!-- Key landmark labels -->
+    <text x="61" y="16" fill="#ffd700" font-size="3.5" font-family="sans-serif">귀</text>
+    <text x="63" y="44" fill="#ff6060" font-size="3.5" font-family="sans-serif">견봉</text>
+    <text x="68" y="112" fill="#ff6060" font-size="3.5" font-family="sans-serif">대전자</text>`
   },
 
   sh_flex_l: {
-    label:'Lt. Shoulder Flex — 좌측 팔 최대 거상',
-    warning:'전신 보이도록 · 좌측 팔 귀 옆까지',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <ellipse class="gs" cx="50" cy="12" rx="9" ry="11"/>
-      <rect class="gs" x="46" y="22" width="8" height="8" rx="2"/>
-      <path class="gs" d="M22,32 Q30,28 46,30 L54,30 Q70,28 78,32 L74,55 Q65,50 54,52 L46,52 Q35,50 26,55 Z"/>
-      <!-- Left arm RAISED - highlighted gold -->
-      <path class="ga" d="M26,35 Q20,22 18,8 Q17,3 22,2 Q27,2 28,7 L30,22 Q32,34 30,38 Z"/>
-      <!-- Left hand -->
-      <ellipse class="ga" cx="20" cy="4" rx="5" ry="3"/>
-      <text x="8" y="8" fill="#ffd700" font-size="5" font-weight="700" opacity=".95">↑ Lt.</text>
-      <!-- Right arm natural -->
-      <path class="gs" d="M74,35 Q82,55 84,75 Q85,80 82,82 Q78,84 76,80 L72,60 Q70,48 72,38 Z"/>
-      <path class="gs" d="M34,52 Q42,56 50,56 Q58,56 66,52 L68,80 Q60,84 50,84 Q40,84 32,80 Z"/>
-      <path class="gs" d="M32,80 Q40,86 50,86 Q60,86 68,80 L70,96 Q62,102 50,102 Q38,102 30,96 Z"/>
-      <path class="gs" d="M30,96 Q26,110 26,130 Q26,136 32,136 Q38,136 38,130 L40,110 Q42,100 36,96 Z"/>
-      <path class="gs" d="M70,96 Q74,110 74,130 Q74,136 68,136 Q62,136 62,130 L60,110 Q58,100 64,96 Z"/>
-      <path class="gs" d="M26,130 Q24,148 25,160 Q26,165 32,165 Q37,165 38,160 L38,130 Q38,126 32,126 Z"/>
-      <path class="gs" d="M62,130 Q62,126 68,126 Q74,126 74,130 L75,160 Q76,165 68,165 Q63,165 62,160 Z"/>
-      <ellipse class="gs" cx="32" cy="168" rx="9" ry="4"/>
-      <ellipse class="gs" cx="68" cy="168" rx="9" ry="4"/>`
+    label:'Lt. Shoulder Flex — 좌측 팔 귀 옆까지 거상',
+    warning:'전신 보이도록 · 좌측 팔 최대 거상',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
+    <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
+    <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
+    <!-- LEFT ARM RAISED - GOLD -->
+    <path class="hi" d="M27,44 Q20,30 17,14 Q15,7 21,6 Q27,5 28,12 L31,28 Q33,40 31,46 Z"/>
+    <ellipse class="hi" cx="17" cy="8" rx="7" ry="4" transform="rotate(-20 17 8)"/>
+    <text class="tx" x="4" y="12">↑ Lt.</text>
+    <!-- RIGHT ARM NATURAL -->
+    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
+    <path class="bg" d="M80,77 Q83,90 81,100 Q80,105 76,105 Q72,104 72,99 L73,86 Q74,78 78,76 Z"/>
+    <!-- BODY -->
+    <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
+    <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
+    <path class="bg" d="M28,114 Q24,126 24,144 Q24,150 31,150 Q38,150 38,144 L40,126 Q42,116 35,114 Z"/>
+    <path class="bg" d="M72,114 Q76,126 76,144 Q76,150 69,150 Q62,150 62,144 L60,126 Q58,116 65,114 Z"/>
+    <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
+    <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
+    <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>`
   },
 
   sh_flex_r: {
-    label:'Rt. Shoulder Flex — 우측 팔 최대 거상',
-    warning:'전신 보이도록 · 우측 팔 귀 옆까지',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <ellipse class="gs" cx="50" cy="12" rx="9" ry="11"/>
-      <rect class="gs" x="46" y="22" width="8" height="8" rx="2"/>
-      <path class="gs" d="M22,32 Q30,28 46,30 L54,30 Q70,28 78,32 L74,55 Q65,50 54,52 L46,52 Q35,50 26,55 Z"/>
-      <!-- Left arm natural -->
-      <path class="gs" d="M26,35 Q18,55 16,75 Q15,80 18,82 Q22,84 24,80 L28,60 Q30,48 28,38 Z"/>
-      <!-- Right arm RAISED -->
-      <path class="ga" d="M74,35 Q80,22 82,8 Q83,3 78,2 Q73,2 72,7 L70,22 Q68,34 70,38 Z"/>
-      <ellipse class="ga" cx="80" cy="4" rx="5" ry="3"/>
-      <text x="82" y="8" fill="#ffd700" font-size="5" font-weight="700" opacity=".95">Rt. ↑</text>
-      <path class="gs" d="M34,52 Q42,56 50,56 Q58,56 66,52 L68,80 Q60,84 50,84 Q40,84 32,80 Z"/>
-      <path class="gs" d="M32,80 Q40,86 50,86 Q60,86 68,80 L70,96 Q62,102 50,102 Q38,102 30,96 Z"/>
-      <path class="gs" d="M30,96 Q26,110 26,130 Q26,136 32,136 Q38,136 38,130 L40,110 Q42,100 36,96 Z"/>
-      <path class="gs" d="M70,96 Q74,110 74,130 Q74,136 68,136 Q62,136 62,130 L60,110 Q58,100 64,96 Z"/>
-      <path class="gs" d="M26,130 Q24,148 25,160 Q26,165 32,165 Q37,165 38,160 L38,130 Q38,126 32,126 Z"/>
-      <path class="gs" d="M62,130 Q62,126 68,126 Q74,126 74,130 L75,160 Q76,165 68,165 Q63,165 62,160 Z"/>
-      <ellipse class="gs" cx="32" cy="168" rx="9" ry="4"/>
-      <ellipse class="gs" cx="68" cy="168" rx="9" ry="4"/>`
+    label:'Rt. Shoulder Flex — 우측 팔 귀 옆까지 거상',
+    warning:'전신 보이도록 · 우측 팔 최대 거상',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
+    <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
+    <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
+    <!-- LEFT ARM NATURAL -->
+    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
+    <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
+    <!-- RIGHT ARM RAISED - GOLD -->
+    <path class="hi" d="M73,44 Q80,30 83,14 Q85,7 79,6 Q73,5 72,12 L69,28 Q67,40 69,46 Z"/>
+    <ellipse class="hi" cx="83" cy="8" rx="7" ry="4" transform="rotate(20 83 8)"/>
+    <text class="tx" x="86" y="12">Rt. ↑</text>
+    <!-- BODY -->
+    <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
+    <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
+    <path class="bg" d="M28,114 Q24,126 24,144 Q24,150 31,150 Q38,150 38,144 L40,126 Q42,116 35,114 Z"/>
+    <path class="bg" d="M72,114 Q76,126 76,144 Q76,150 69,150 Q62,150 62,144 L60,126 Q58,116 65,114 Z"/>
+    <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
+    <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
+    <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>`
   },
 
   trunk_b: {
     label:'Trunk Flexion 후면 — 무릎 펴고 최대 전굴',
-    warning:'발 어깨너비 · 천천히 최대한 숙이기',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}</style></defs>
-      <!-- Head hanging down -->
-      <ellipse class="gs" cx="50" cy="42" rx="9" ry="10"/>
-      <!-- Neck -->
-      <rect class="gs" x="46" y="51" width="8" height="7" rx="2"/>
-      <!-- Upper back (bent forward) -->
-      <path class="gs" d="M28,58 Q38,54 46,57 L54,57 Q62,54 72,58 L70,72 Q62,68 54,70 L46,70 Q38,68 30,72 Z"/>
-      <!-- Arms hanging -->
-      <path class="gs" d="M30,62 Q22,80 20,100 Q20,106 24,107 Q28,108 30,103 L32,84 Q34,70 32,64 Z"/>
-      <path class="gs" d="M70,62 Q78,80 80,100 Q80,106 76,107 Q72,108 70,103 L68,84 Q66,70 68,64 Z"/>
-      <!-- Spine bent -->
-      <path class="gs" d="M34,70 Q42,74 50,74 Q58,74 66,70 L68,88 Q60,92 50,92 Q40,92 32,88 Z"/>
-      <!-- Hips (highest point) -->
-      <path class="gs" d="M32,88 Q40,94 50,94 Q60,94 68,88 L70,102 Q62,108 50,108 Q38,108 30,102 Z"/>
-      <!-- Legs straight down -->
-      <path class="gs" d="M30,102 Q26,118 26,142 Q26,148 32,148 Q38,148 38,142 L40,118 Q42,106 36,102 Z"/>
-      <path class="gs" d="M70,102 Q74,118 74,142 Q74,148 68,148 Q62,148 62,142 L60,118 Q58,106 64,102 Z"/>
-      <path class="gs" d="M26,142 Q24,156 25,165 Q26,170 32,170 Q37,170 38,165 L38,142 Q38,138 32,138 Z"/>
-      <path class="gs" d="M62,142 Q62,138 68,138 Q74,138 74,142 L75,165 Q76,170 68,170 Q63,170 62,165 Z"/>
-      <ellipse class="gs" cx="32" cy="173" rx="9" ry="4"/>
-      <ellipse class="gs" cx="68" cy="173" rx="9" ry="4"/>
-      <!-- Spine line -->
-      <path d="M50,57 Q50,72 50,92" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".85"/>
-      <text x="53" y="78" fill="#ffd700" font-size="4" opacity=".85">척추</text>`
+    warning:'발 어깨너비 · 최대한 아래로 숙이기',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD hanging down, rotated -->
+    <ellipse class="bg" cx="50" cy="50" rx="11" ry="13" transform="rotate(15 50 50)"/>
+    <!-- NECK bent -->
+    <path class="bg" d="M45,60 Q47,67 48,70 L54,68 Q55,65 56,58 Z"/>
+    <!-- UPPER BACK (bent ~90°) -->
+    <path class="bg" d="M28,68 Q37,63 48,66 L54,66 Q65,63 72,68 L70,84 Q62,80 54,82 L48,82 Q38,80 30,84 Z"/>
+    <!-- LEFT ARM HANGING -->
+    <path class="bg" d="M30,70 Q22,84 20,100 Q19,107 24,108 Q29,108 30,102 L32,86 Q34,76 32,72 Z"/>
+    <path class="bg" d="M22,106 Q20,118 22,128 Q23,133 27,133 Q31,132 32,127 L31,116 Q30,108 24,106 Z"/>
+    <!-- RIGHT ARM HANGING -->
+    <path class="bg" d="M70,70 Q78,84 80,100 Q81,107 76,108 Q71,108 70,102 L68,86 Q66,76 68,72 Z"/>
+    <path class="bg" d="M78,106 Q80,118 78,128 Q77,133 73,133 Q69,132 68,127 L69,116 Q70,108 76,106 Z"/>
+    <!-- LOWER BACK -->
+    <path class="bg" d="M34,82 Q42,86 50,86 Q58,86 66,82 L68,100 Q60,104 50,104 Q40,104 32,100 Z"/>
+    <!-- HIPS (highest point) -->
+    <path class="bg" d="M32,100 Q40,108 50,108 Q60,108 68,100 L70,116 Q62,124 50,124 Q38,124 30,116 Z"/>
+    <!-- LEGS STRAIGHT DOWN -->
+    <path class="bg" d="M30,116 Q26,130 26,150 Q26,157 32,157 Q38,157 39,150 L41,130 Q43,118 37,116 Z"/>
+    <path class="bg" d="M70,116 Q74,130 74,150 Q74,157 68,157 Q62,157 61,150 L59,130 Q57,118 63,116 Z"/>
+    <path class="bg" d="M26,150 Q24,165 25,176 Q26,181 32,181 Q37,181 38,176 L39,150 Q39,146 32,146 Z"/>
+    <path class="bg" d="M61,150 Q61,146 68,146 Q75,146 74,150 L76,176 Q77,181 68,181 Q63,181 61,176 Z"/>
+    <path class="bg" d="M22,177 Q21,184 32,185 Q41,185 43,181 L40,177 Z"/>
+    <path class="bg" d="M57,181 Q59,185 68,185 Q79,184 78,177 L59,177 Z"/>
+    <!-- SPINE LINE -->
+    <path d="M50,68 Q50,82 50,104" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".85"/>
+    <text class="tx" x="53" y="90">척추</text>`
   },
 
   trunk_l: {
-    label:'Trunk Flexion 측면 — 무릎 펴고 전굴',
-    warning:'좌측면 촬영 · 손끝 발쪽으로',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}</style></defs>
-      <!-- Head hanging -->
-      <ellipse class="gs" cx="35" cy="38" rx="8" ry="10"/>
-      <!-- Torso bent ~90° -->
-      <path class="gs" d="M40,46 Q48,42 56,44 L60,48 Q58,62 54,68 L44,66 Q40,60 38,52 Z"/>
-      <!-- Arms hanging to floor -->
-      <path class="gs" d="M42,52 Q36,70 34,88 Q33,94 37,95 Q41,96 42,91 L46,72 Q47,60 46,54 Z"/>
-      <!-- Hip point -->
-      <path class="gs" d="M54,66 Q58,70 62,72 Q68,74 70,80 L68,96 Q62,100 56,98 Q50,96 48,90 L50,74 Z"/>
-      <!-- Legs straight down -->
-      <path class="gs" d="M56,96 Q54,114 55,138 Q56,144 61,144 Q66,144 66,138 L65,114 Q66,102 62,96 Z"/>
-      <path class="gs" d="M55,138 Q54,154 56,165 Q57,170 62,170 Q67,170 67,165 L66,138 Q66,134 61,134 Z"/>
-      <!-- Foot -->
-      <path class="gs" d="M53,163 Q53,170 62,171 Q70,171 74,168 Q76,166 74,163 L55,163 Z"/>
-      <!-- ROM angle indicator -->
-      <path d="M62,90 L62,72 M62,90 L45,76" fill="none" stroke="#ff6b6b" stroke-width=".8" opacity=".8"/>
-      <text x="30" y="72" fill="#ff6b6b" font-size="4.5" opacity=".9">ROM↗</text>
-      <!-- Spine arc -->
-      <path d="M50,46 Q45,55 48,68 Q52,82 62,90" fill="none" stroke="#ffd700" stroke-width=".9" stroke-dasharray="2,2" opacity=".8"/>`
+    label:'Trunk Flexion 측면 — 좌측면, 무릎 완전히 펴기',
+    warning:'무릎 완전히 펴기 · 손이 발 방향으로',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD down-forward -->
+    <ellipse class="bg" cx="36" cy="44" rx="10" ry="12" transform="rotate(35 36 44)"/>
+    <!-- NECK -->
+    <path class="bg" d="M40,52 Q44,58 46,62 L52,60 Q52,55 50,49 Z"/>
+    <!-- TORSO BENT ~80° -->
+    <path class="bg" d="M44,60 Q52,56 58,58 L62,62 Q62,76 58,84 L52,86 Q46,84 42,78 L40,68 Z"/>
+    <!-- ARMS HANGING TO FLOOR -->
+    <path class="bg" d="M42,66 Q36,80 32,96 Q31,103 35,104 Q39,105 41,99 L45,83 Q47,72 45,68 Z"/>
+    <path class="bg" d="M34,102 Q31,115 33,126 Q34,131 38,131 Q42,130 43,125 L42,113 Q41,104 36,101 Z"/>
+    <!-- HIP JOINT -->
+    <path class="bg" d="M56,84 Q62,88 68,90 Q74,92 76,98 L74,114 Q66,118 58,116 Q50,114 48,108 L50,96 Z"/>
+    <circle cx="64" cy="106" r="3" fill="none" stroke="#ff6060" stroke-width="1.2"/>
+    <!-- THIGH/LEG STRAIGHT DOWN -->
+    <path class="bg" d="M58,114 Q56,130 57,150 Q58,156 63,156 Q68,156 69,150 L68,130 Q68,116 64,113 Z"/>
+    <path class="bg" d="M57,150 Q56,166 58,177 Q59,182 64,182 Q69,182 69,177 L68,150 Q68,146 63,146 Z"/>
+    <!-- FOOT -->
+    <path class="bg" d="M54,178 Q53,185 64,186 Q73,186 77,182 Q79,179 76,177 L56,177 Z"/>
+    <!-- ROM ARC -->
+    <path d="M64,106 L64,84 M64,106 L44,90" fill="none" stroke="#ff6060" stroke-width=".8" opacity=".75"/>
+    <text x="26" y="80" fill="#ff6060" font-size="4.5" font-family="sans-serif" opacity=".85">ROM↗</text>
+    <!-- SPINE CURVE -->
+    <path d="M50,60 Q46,70 50,84 Q54,96 64,106" fill="none" stroke="#ffd700" stroke-width=".9" stroke-dasharray="3,2" opacity=".8"/>
+    <text class="tx" x="54" y="78">척추</text>`
   },
 
   ohs_b: {
-    label:'OHS 후면 — 바 overhead, 최저점 유지',
-    warning:'발 어깨너비·외회전 · 등이 카메라',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <!-- Head -->
-      <ellipse class="gs" cx="50" cy="14" rx="8" ry="9"/>
-      <!-- Bar overhead -->
-      <rect class="ga" x="10" y="6" width="80" height="5" rx="2"/>
-      <text x="50" y="5" text-anchor="middle" fill="#ffd700" font-size="4" opacity=".9">바 (Barbell)</text>
-      <!-- Arms up -->
-      <path class="ga" d="M22,8 Q24,16 26,28 Q27,34 30,36 L34,36 Q36,32 35,26 L32,14 Q28,8 24,8 Z"/>
-      <path class="ga" d="M78,8 Q76,16 74,28 Q73,34 70,36 L66,36 Q64,32 65,26 L68,14 Q72,8 76,8 Z"/>
-      <!-- Shoulders -->
-      <path class="gs" d="M30,36 Q38,32 46,34 L54,34 Q62,32 70,36 L68,52 Q60,48 54,50 L46,50 Q40,48 32,52 Z"/>
-      <!-- Torso (squat - shorter) -->
-      <path class="gs" d="M34,50 Q42,54 50,54 Q58,54 66,50 L68,70 Q60,74 50,74 Q40,74 32,70 Z"/>
-      <!-- Hip low -->
-      <path class="gs" d="M32,70 Q40,76 50,76 Q60,76 68,70 L70,84 Q62,92 50,92 Q38,92 30,84 Z"/>
-      <!-- Thighs angled out -->
-      <path class="gs" d="M30,84 Q22,98 20,114 Q20,120 26,121 Q32,122 34,116 L38,100 Q40,90 36,84 Z"/>
-      <path class="gs" d="M70,84 Q78,98 80,114 Q80,120 74,121 Q68,122 66,116 L62,100 Q60,90 64,84 Z"/>
-      <!-- Lower legs -->
-      <path class="gs" d="M20,114 Q19,130 21,142 Q22,147 27,147 Q32,147 33,142 L34,116 Q34,112 27,112 Z"/>
-      <path class="gs" d="M66,116 Q67,112 73,112 Q80,112 80,116 L79,142 Q80,147 74,147 Q69,147 67,142 Z"/>
-      <!-- Feet angled -->
-      <path class="gs" d="M16,143 Q15,150 26,151 Q34,151 36,147 L33,143 Z"/>
-      <path class="gs" d="M64,147 Q66,151 74,151 Q84,150 84,143 L67,143 Z"/>
-      <!-- Knee alignment guide -->
-      <line x1="26" y1="112" x2="24" y2="152" stroke="#ff6b6b" stroke-width=".6" stroke-dasharray="2,2" opacity=".7"/>
-      <line x1="74" y1="112" x2="76" y2="152" stroke="#ff6b6b" stroke-width=".6" stroke-dasharray="2,2" opacity=".7"/>
-      <text x="50" y="160" text-anchor="middle" fill="#ff6b6b" font-size="4" opacity=".7">무릎 수직선</text>`
+    label:'OHS 후면 — 팔 overhead, 최저점 유지',
+    warning:'발 어깨너비·끝 약간 외회전 · 등이 카메라',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="50" cy="22" rx="10" ry="12"/>
+    <!-- ARMS OVERHEAD (wide grip) - GOLD -->
+    <path class="hi" d="M24,34 Q18,22 14,10 Q12,4 18,3 Q24,3 26,9 L28,22 Q30,34 28,38 Z"/>
+    <path class="hi" d="M76,34 Q82,22 86,10 Q88,4 82,3 Q76,3 74,9 L72,22 Q70,34 72,38 Z"/>
+    <!-- BAR OVERHEAD -->
+    <rect class="hi" x="9" y="2" width="82" height="6" rx="3"/>
+    <text class="tx" x="50" y="1" text-anchor="middle">Barbell</text>
+    <!-- SHOULDERS/UPPER TORSO -->
+    <path class="bg" d="M26,38 Q32,35 47,36 L53,36 Q68,35 74,38 L72,60 Q64,56 53,58 L47,58 Q36,56 28,60 Z"/>
+    <!-- TORSO (squat, shorter) -->
+    <path class="bg" d="M32,58 Q40,62 50,62 Q60,62 68,58 L70,80 Q62,84 50,84 Q38,84 30,80 Z"/>
+    <!-- HIP (low squat position) -->
+    <path class="bg" d="M30,80 Q38,88 50,88 Q62,88 70,80 L72,98 Q64,108 50,108 Q36,108 28,98 Z"/>
+    <!-- THIGHS ANGLED OUT -->
+    <path class="bg" d="M28,98 Q20,112 18,130 Q18,137 25,138 Q32,138 34,130 L38,112 Q40,100 35,98 Z"/>
+    <path class="bg" d="M72,98 Q80,112 82,130 Q82,137 75,138 Q68,138 66,130 L62,112 Q60,100 65,98 Z"/>
+    <!-- LOWER LEGS (vertical) -->
+    <path class="bg" d="M18,130 Q17,146 18,158 Q19,163 25,163 Q31,163 32,158 L34,130 Q34,126 25,126 Z"/>
+    <path class="bg" d="M66,130 Q66,126 75,126 Q82,126 82,130 L81,158 Q82,163 75,163 Q69,163 67,158 Z"/>
+    <!-- FEET ANGLED OUT -->
+    <path class="bg" d="M13,155 Q12,163 24,164 Q33,164 35,160 L32,156 Z"/>
+    <path class="bg" d="M65,160 Q67,164 76,164 Q87,163 87,155 L67,156 Z"/>
+    <!-- KNEE ALIGNMENT GUIDES -->
+    <line x1="25" y1="126" x2="21" y2="165" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
+    <line x1="75" y1="126" x2="79" y2="165" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
+    <text x="50" y="175" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">무릎 수직선 체크</text>`
   },
 
   ohs_l: {
-    label:'OHS 측면 — 상체 최대한 세우기',
-    warning:'좌측면 · 발꿈치 바닥 닿도록',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <!-- Head -->
-      <ellipse class="gs" cx="50" cy="14" rx="8" ry="9"/>
-      <!-- Bar overhead -->
-      <rect class="ga" x="42" y="5" width="28" height="5" rx="2"/>
-      <!-- Arm up -->
-      <path class="ga" d="M56,8 Q58,14 58,26 Q58,32 54,34 L50,34 Q48,30 49,24 L50,12 Z"/>
-      <!-- Torso upright (ideal) -->
-      <path class="gs" d="M42,34 Q46,30 54,32 L58,34 Q60,48 58,62 L50,64 Q44,62 42,50 Z"/>
-      <!-- Hip -->
-      <path class="gs" d="M42,62 Q44,70 52,72 Q60,72 64,68 L66,82 Q60,88 52,88 Q44,86 40,80 Z"/>
-      <!-- Thigh horizontal -->
-      <path class="gs" d="M40,80 Q36,94 38,110 Q38,116 44,117 Q50,118 51,112 L52,96 Q54,86 48,80 Z"/>
-      <!-- Lower leg vertical -->
-      <path class="gs" d="M38,110 Q36,128 38,142 Q39,148 44,148 Q49,148 50,142 L51,110 Q51,106 44,106 Z"/>
-      <!-- Foot -->
-      <path class="gs" d="M35,142 Q35,150 44,151 Q52,151 56,148 Q58,146 56,142 L37,142 Z"/>
-      <!-- Vertical plumb line -->
-      <line x1="46" y1="5" x2="46" y2="155" stroke="#ff6b6b" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
-      <text x="30" y="95" fill="#ff6b6b" font-size="4" opacity=".7">수직선</text>
-      <!-- Lean angle note -->
-      <path d="M52,64 L52,48 M52,64 L40,56" fill="none" stroke="#ffd700" stroke-width=".7" opacity=".8"/>
-      <text x="22" y="50" fill="#ffd700" font-size="4" opacity=".85">전경각</text>`
+    label:'OHS 측면 — 상체 세우기, 발꿈치 바닥',
+    warning:'좌측면 · 발꿈치 들리지 않도록',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="50" cy="20" rx="10" ry="12"/>
+    <!-- ARM UP + BAR -->
+    <path class="hi" d="M54,32 Q56,20 58,8 Q59,3 54,3 Q50,3 50,8 L50,22 Q50,30 52,34 Z"/>
+    <rect class="hi" x="44" y="2" width="20" height="5" rx="2"/>
+    <!-- TORSO UPRIGHT (ideal) -->
+    <path class="bg" d="M40,34 Q46,30 54,32 L58,34 Q60,50 58,66 L52,68 Q46,67 43,62 L40,48 Z"/>
+    <!-- HIP -->
+    <path class="bg" d="M42,66 Q46,74 54,76 Q62,76 66,70 L68,86 Q62,92 52,92 Q44,90 40,84 Z"/>
+    <!-- THIGH -->
+    <path class="bg" d="M40,84 Q36,100 37,118 Q38,124 44,125 Q50,125 51,118 L52,100 Q54,88 48,84 Z"/>
+    <!-- LOWER LEG (vertical - ideal) -->
+    <path class="bg" d="M37,118 Q36,134 38,148 Q39,154 44,154 Q49,154 50,148 L51,118 Q51,114 44,114 Z"/>
+    <!-- FOOT -->
+    <path class="bg" d="M34,149 Q34,157 44,158 Q53,158 57,154 Q59,151 57,149 L36,149 Z"/>
+    <!-- VERTICAL PLUMB LINE -->
+    <line x1="50" y1="5" x2="46" y2="162" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".55"/>
+    <text x="36" y="100" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".7">수직선</text>
+    <!-- TRUNK LEAN ANGLE INDICATOR -->
+    <path d="M52,66 L52,50 M52,66 L42,56" fill="none" stroke="#ffd700" stroke-width=".8" opacity=".8"/>
+    <text class="tx" x="24" y="52">전경각</text>
+    <!-- IDEAL ALIGNMENT LABELS -->
+    <text x="62" y="22" fill="#00c890" font-size="3.5" font-family="sans-serif">바 위치</text>
+    <text x="60" y="70" fill="#00c890" font-size="3.5" font-family="sans-serif">수직 유지</text>`
   },
 
   sku: {
     label:'Standing Knee Up — 한쪽 무릎 최대 거상',
-    warning:'단색 배경 · 지지발 흔들리지 않도록',
-    viewBox:'0 0 100 200',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <ellipse class="gs" cx="50" cy="12" rx="9" ry="11"/>
-      <rect class="gs" x="46" y="22" width="8" height="8" rx="2"/>
-      <path class="gs" d="M22,32 Q30,28 46,30 L54,30 Q70,28 78,32 L74,55 Q65,50 54,52 L46,52 Q35,50 26,55 Z"/>
-      <path class="gs" d="M26,35 Q18,55 16,75 Q15,80 18,82 Q22,84 24,80 L28,60 Q30,48 28,38 Z"/>
-      <path class="gs" d="M74,35 Q82,55 84,75 Q85,80 82,82 Q78,84 76,80 L72,60 Q70,48 72,38 Z"/>
-      <path class="gs" d="M34,52 Q42,56 50,56 Q58,56 66,52 L68,80 Q60,84 50,84 Q40,84 32,80 Z"/>
-      <path class="gs" d="M32,80 Q40,86 50,86 Q60,86 68,80 L70,96 Q62,102 50,102 Q38,102 30,96 Z"/>
-      <!-- Raised knee (left) - gold -->
-      <path class="ga" d="M30,96 Q24,104 22,114 Q20,120 26,122 Q32,124 34,118 L38,108 Q40,100 36,96 Z"/>
-      <path class="ga" d="M22,120 Q20,132 22,142 Q24,148 30,148 Q36,148 36,142 L34,120 Q34,116 28,116 Z"/>
-      <text x="8" y="110" fill="#ffd700" font-size="5" font-weight="700">↑ 무릎</text>
-      <!-- Standing leg (right) -->
-      <path class="gs" d="M70,96 Q74,110 74,138 Q74,144 68,144 Q62,144 62,138 L62,110 Q60,100 64,96 Z"/>
-      <path class="gs" d="M62,138 Q62,134 68,134 Q74,134 74,138 L74,162 Q74,168 68,168 Q63,168 62,162 Z"/>
-      <ellipse class="gs" cx="68" cy="171" rx="9" ry="4"/>
-      <!-- Pelvic level line -->
-      <line x1="25" y1="96" x2="75" y2="96" stroke="#ff6b6b" stroke-width=".7" stroke-dasharray="2,2" opacity=".75"/>
-      <text x="50" y="92" text-anchor="middle" fill="#ff6b6b" font-size="4" opacity=".8">골반 수평선</text>`
+    warning:'단색 배경 · 지지발 안정 유지',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
+    <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
+    <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
+    <!-- ARMS -->
+    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
+    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
+    <!-- TORSO + HIP -->
+    <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
+    <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
+    <!-- RAISED LEFT KNEE - GOLD -->
+    <path class="hi" d="M28,114 Q22,124 20,136 Q19,143 26,144 Q33,145 35,138 L39,126 Q41,115 36,113 Z"/>
+    <path class="hi" d="M20,140 Q18,152 20,162 Q22,168 28,168 Q34,168 35,162 L36,142 Q36,138 28,138 Z"/>
+    <text class="tx" x="6" y="130">↑ 무릎</text>
+    <!-- STANDING RIGHT LEG -->
+    <path class="bg" d="M72,114 Q76,128 76,148 Q76,155 69,155 Q62,155 62,148 L62,128 Q60,116 65,113 Z"/>
+    <path class="bg" d="M62,148 Q62,144 69,144 Q76,144 76,148 L76,170 Q76,176 69,176 Q63,176 62,170 Z"/>
+    <path class="bg" d="M59,171 Q58,179 69,180 Q79,180 80,172 L62,172 Z"/>
+    <!-- PELVIC LEVEL LINE -->
+    <line x1="20" y1="114" x2="80" y2="114" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
+    <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>`
   },
 
   slr_l: {
     label:'Lt. SLR — 바로 누워 왼쪽 다리 올리기',
-    warning:'침대·매트 · 무릎 완전히 펴기',
-    viewBox:'0 0 200 100',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <!-- Floor/mat -->
-      <rect x="5" y="72" width="190" height="4" rx="2" fill="rgba(0,229,160,.15)" stroke="#00e5a0" stroke-width=".6"/>
-      <!-- Head (left side) -->
-      <ellipse class="gs" cx="18" cy="62" rx="11" ry="9"/>
-      <!-- Torso lying -->
-      <path class="gs" d="M28,58 Q50,55 75,56 L78,60 Q78,66 75,68 Q50,69 28,68 Z"/>
-      <!-- Right arm on floor -->
-      <path class="gs" d="M30,68 Q28,75 40,75 Q52,75 55,72 L55,68 Z"/>
-      <!-- Hip -->
-      <path class="gs" d="M72,56 Q80,55 86,57 L88,68 Q82,70 75,69 L72,68 Z"/>
-      <!-- Raised left leg - GOLD -->
-      <path class="ga" d="M84,58 Q100,40 118,22 Q122,18 126,20 Q130,22 128,26 L112,44 Q96,62 88,68 Z"/>
-      <!-- Raised foot -->
-      <ellipse class="ga" cx="128" cy="21" rx="8" ry="5" transform="rotate(-45 128 21)"/>
-      <!-- Flat right leg -->
-      <path class="gs" d="M86,67 Q110,68 140,69 Q150,70 155,73 L155,77 Q150,77 140,76 Q110,75 86,74 Z"/>
-      <!-- Flat foot -->
-      <path class="gs" d="M153,68 Q158,68 162,72 Q163,76 158,77 L153,77 Z"/>
-      <!-- Angle arc -->
-      <path d="M88,62 Q96,62 100,56" fill="none" stroke="#ff6b6b" stroke-width=".8" opacity=".9"/>
-      <path d="M88,62 L110,62" fill="none" stroke="#ff6b6b" stroke-width=".6" stroke-dasharray="2,1" opacity=".6"/>
-      <text x="105" y="42" fill="#ffd700" font-size="6" font-weight="700">60~85°</text>
-      <text x="12" y="92" fill="#00e5a0" font-size="5" opacity=".8">← 머리</text>`
+    warning:'침대/매트 · 무릎 완전히 펴기',
+    viewBox:'0 0 200 110',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- MAT -->
+    <rect x="5" y="78" width="190" height="5" rx="2" fill="rgba(0,180,120,.15)" stroke="#00c890" stroke-width=".7"/>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="20" cy="67" rx="13" ry="10"/>
+    <!-- TORSO -->
+    <path class="bg" d="M32,61 Q55,57 82,58 L85,63 Q85,70 82,72 Q55,73 32,73 Z"/>
+    <!-- NEAR ARM (resting) -->
+    <path class="bg" d="M35,72 Q33,79 46,80 Q57,80 60,76 L60,72 Z"/>
+    <!-- HIP JOINT -->
+    <path class="bg" d="M78,58 Q86,57 92,59 L94,70 Q88,72 82,72 L78,72 Z"/>
+    <circle cx="88" cy="65" r="3" fill="none" stroke="#ff6060" stroke-width="1.2"/>
+    <!-- RAISED LEFT LEG (70° angle) - GOLD -->
+    <path class="hi" d="M86,60 Q100,44 118,28 Q123,23 128,26 Q133,29 130,34 L112,50 Q98,66 90,70 Z"/>
+    <!-- RAISED FOOT -->
+    <ellipse class="hi" cx="131" cy="28" rx="9" ry="5" transform="rotate(-40 131 28)"/>
+    <!-- FLAT RIGHT LEG -->
+    <path class="bg" d="M88,68 Q112,69 145,70 Q155,71 160,74 L160,79 Q155,79 145,77 Q112,76 88,76 Z"/>
+    <!-- FLAT FOOT -->
+    <path class="bg" d="M157,70 Q162,70 166,74 Q167,78 162,79 L157,79 Z"/>
+    <!-- ANGLE INDICATOR -->
+    <path d="M90,65 Q98,65 103,58" fill="none" stroke="#ff6060" stroke-width=".9" opacity=".85"/>
+    <line x1="90" y1="65" x2="115" y2="65" stroke="#ff6060" stroke-width=".6" stroke-dasharray="2,1" opacity=".55"/>
+    <text class="tx" x="108" y="46">60~85°</text>
+    <text x="8" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">← 머리</text>
+    <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
 
   slr_r: {
     label:'Rt. SLR — 바로 누워 오른쪽 다리 올리기',
-    warning:'침대·매트 · 무릎 완전히 펴기',
-    viewBox:'0 0 200 100',
-    svg:`<defs><style>.gs{fill:rgba(0,229,160,.12);stroke:#00e5a0;stroke-width:1.2;stroke-dasharray:3,2}.ga{fill:rgba(255,215,0,.15);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:3,2}</style></defs>
-      <!-- Floor/mat -->
-      <rect x="5" y="72" width="190" height="4" rx="2" fill="rgba(0,229,160,.15)" stroke="#00e5a0" stroke-width=".6"/>
-      <!-- Head -->
-      <ellipse class="gs" cx="18" cy="62" rx="11" ry="9"/>
-      <!-- Torso -->
-      <path class="gs" d="M28,58 Q50,55 75,56 L78,60 Q78,66 75,68 Q50,69 28,68 Z"/>
-      <path class="gs" d="M30,68 Q28,75 40,75 Q52,75 55,72 L55,68 Z"/>
-      <path class="gs" d="M72,56 Q80,55 86,57 L88,68 Q82,70 75,69 L72,68 Z"/>
-      <!-- Raised right leg - GOLD -->
-      <path class="ga" d="M84,58 Q100,40 118,22 Q122,18 126,20 Q130,22 128,26 L112,44 Q96,62 88,68 Z"/>
-      <ellipse class="ga" cx="128" cy="21" rx="8" ry="5" transform="rotate(-45 128 21)"/>
-      <!-- Flat left leg -->
-      <path class="gs" d="M86,67 Q110,68 140,69 Q150,70 155,73 L155,77 Q150,77 140,76 Q110,75 86,74 Z"/>
-      <path class="gs" d="M153,68 Q158,68 162,72 Q163,76 158,77 L153,77 Z"/>
-      <path d="M88,62 Q96,62 100,56" fill="none" stroke="#ff6b6b" stroke-width=".8" opacity=".9"/>
-      <path d="M88,62 L110,62" fill="none" stroke="#ff6b6b" stroke-width=".6" stroke-dasharray="2,1" opacity=".6"/>
-      <text x="105" y="42" fill="#ffd700" font-size="6" font-weight="700">60~85°</text>
-      <text x="12" y="92" fill="#00e5a0" font-size="5" opacity=".8">← 머리</text>`
+    warning:'침대/매트 · 무릎 완전히 펴기',
+    viewBox:'0 0 200 110',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5.5px;font-family:sans-serif}</style>
+    </defs>
+    <!-- MAT -->
+    <rect x="5" y="78" width="190" height="5" rx="2" fill="rgba(0,180,120,.15)" stroke="#00c890" stroke-width=".7"/>
+    <!-- HEAD -->
+    <ellipse class="bg" cx="20" cy="67" rx="13" ry="10"/>
+    <!-- TORSO -->
+    <path class="bg" d="M32,61 Q55,57 82,58 L85,63 Q85,70 82,72 Q55,73 32,73 Z"/>
+    <path class="bg" d="M35,72 Q33,79 46,80 Q57,80 60,76 L60,72 Z"/>
+    <path class="bg" d="M78,58 Q86,57 92,59 L94,70 Q88,72 82,72 L78,72 Z"/>
+    <circle cx="88" cy="65" r="3" fill="none" stroke="#ff6060" stroke-width="1.2"/>
+    <!-- RAISED RIGHT LEG - GOLD -->
+    <path class="hi" d="M86,60 Q100,44 118,28 Q123,23 128,26 Q133,29 130,34 L112,50 Q98,66 90,70 Z"/>
+    <ellipse class="hi" cx="131" cy="28" rx="9" ry="5" transform="rotate(-40 131 28)"/>
+    <!-- FLAT LEFT LEG -->
+    <path class="bg" d="M88,68 Q112,69 145,70 Q155,71 160,74 L160,79 Q155,79 145,77 Q112,76 88,76 Z"/>
+    <path class="bg" d="M157,70 Q162,70 166,74 Q167,78 162,79 L157,79 Z"/>
+    <!-- ANGLE INDICATOR -->
+    <path d="M90,65 Q98,65 103,58" fill="none" stroke="#ff6060" stroke-width=".9" opacity=".85"/>
+    <line x1="90" y1="65" x2="115" y2="65" stroke="#ff6060" stroke-width=".6" stroke-dasharray="2,1" opacity=".55"/>
+    <text class="tx" x="108" y="46">60~85°</text>
+    <text x="8" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">← 머리</text>
+    <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
 };
 
 const DEFAULT_GUIDE = {
   label:'전신이 가이드 박스 안에',
   warning:'거울 앞 촬영 금지 · 단색 배경 권장',
-  viewBox:'0 0 100 200',
+  viewBox:'0 0 100 220',
   svg:''
 };
 
@@ -1221,141 +1304,204 @@ function showRetakeMenu(tid,slot){
 
 // ─ AI VISION CHECKLIST AUTO-FILL ─
 const CHK_PROMPTS = {
-  ant:`당신은 스포츠 물리치료사입니다. 아래 전면 자세 사진을 보고 체크리스트를 채우세요.
-각 항목에 대해 반드시 JSON 배열로만 응답하세요. 다른 텍스트 없이 JSON만.
+  ant:`당신은 근거중심(Evidence-Based) 스포츠 물리치료사입니다. 아래 전면(Anterior View) 자세 사진을 임상 기준에 따라 분석하세요.
 
-체크리스트 항목 (id: 선택지 배열):
-- ant_sh: ["Lt. 높음","Rt. 높음","동일"] → 어깨 좌우 높이
-- ant_pel: ["Lt. 높음","Rt. 높음","동일"] → 골반 좌우 높이
-- ant_knee: ["Genu varum(O형)","Genu valgum(X형)","정상"] → 무릎 정렬
+[임상 판단 기준 - Kendall's Posture & Pain / NASM 기준]
+1. 어깨 높이: 좌우 견봉(acromion) 높이 비교. 정상 = 1cm 미만 차이. 옷주름에 속지 말고 실제 어깨뼈 위치 기준.
+2. 골반 높이: 장골능(iliac crest) 좌우 높이 차이. 확실한 차이(1cm+)만 이상으로 판정.
+3. 무릎 정렬: Genu varum(O형)=무릎 사이 공간 큼. Genu valgum(X형)=발목 사이 공간 큼.
 
-응답 형식 (예시):
-[{"id":"ant_sh","sel":1,"reason":"우측 어깨가 약 1cm 높음"},{"id":"ant_pel","sel":2,"reason":"골반 높이 대칭"},{"id":"ant_knee","sel":0,"reason":"무릎 내측 간격 넓음"}]`,
+반드시 JSON 배열만. 불확실하면 정상 선택.
+항목:
+- ant_sh: [0="Lt. 높음", 1="Rt. 높음", 2="동일"]
+- ant_pel: [0="Lt. 높음", 1="Rt. 높음", 2="동일"]
+- ant_knee: [0="Genu varum(O형)", 1="Genu valgum(X형)", 2="정상"]
+예시: [{"id":"ant_sh","sel":1,"reason":"우측 견봉 약 1.5cm 높음"},{"id":"ant_pel","sel":2,"reason":"골반 대칭"},{"id":"ant_knee","sel":2,"reason":"무릎 정렬 정상"}]`,
 
-  post:`당신은 스포츠 물리치료사입니다. 아래 후면 자세 사진을 보고 체크리스트를 채우세요.
-각 항목에 대해 반드시 JSON 배열로만 응답하세요.
+  post:`당신은 근거중심 스포츠 물리치료사입니다. 후면(Posterior View) 자세 사진을 분석하세요.
 
-체크리스트 항목:
-- post_scol: ["흉추 우측만","흉추 좌측만","요추 우측만","요추 좌측만","없음"] → 척추측만
-- post_scap: ["Lt. 높음/날개","Rt. 높음/날개","정상"] → 견갑골 비대칭
-- post_pel: ["Lt. 높음","Rt. 높음","동일"] → 골반 고저
-- post_calc: ["Valgus(외반)","Varus(내반)","정상"] → 종골 각도
+[임상 판단 기준]
+1. Scoliosis: 척추 극돌기 라인이 좌우로 편위. Rib hump = 구조성 측만.
+2. 견갑골: 좌우 높이 차이 또는 익상견갑(scapular winging = 견갑골 내측연 돌출).
+3. 골반: PSIS 기준 좌우 높이. 1cm 이상만 이상.
+4. 종골: 아킬레스건-종골 선. Valgus=안쪽 기울어짐(편평족), Varus=바깥쪽.
 
-응답 형식:
-[{"id":"post_scol","sel":4,"reason":"측만 없음"},{"id":"post_scap","sel":0,"reason":"좌측 견갑골 익상"}]`,
+JSON만.
+항목:
+- post_scol: [0="흉추 우측만", 1="흉추 좌측만", 2="요추 우측만", 3="요추 좌측만", 4="없음"]
+- post_scap: [0="Lt. 높음/날개", 1="Rt. 높음/날개", 2="정상"]
+- post_pel: [0="Lt. 높음", 1="Rt. 높음", 2="동일"]
+- post_calc: [0="Valgus(외반)", 1="Varus(내반)", 2="정상"]`,
 
-  lat:`당신은 스포츠 물리치료사입니다. 아래 측면 자세 사진을 보고 체크리스트를 채우세요.
-각 항목에 대해 반드시 JSON 배열로만 응답하세요.
+  lat:`당신은 근거중심 스포츠 물리치료사입니다. 측면(Lateral View) 자세 사진을 분석하세요.
 
-체크리스트 항목:
-- lat_cerv: ["증가(전만 과다)","감소(전만 소실)","정상"] → 경추 전만
-- lat_thor: ["증가(후만 과다)","감소","정상"] → 흉추 후만
-- lat_lumb: ["증가(전방경사)","감소(후방경사)","정상"] → 요추 전만
-- lat_knee: ["굴곡","과신전","정상"] → 무릎 정렬
+[Kendall 이상적 측면 정렬: 귀→견봉→대전자→슬관절 약간 전방→외측복사뼈]
+1. 경추 전만: 귀(외이도)가 견봉보다 2cm 이상 전방 = FHP(Forward Head Posture) = 증가.
+2. 흉추 후만: 상배부 과도하게 굽어있음(Rounded shoulders). 정상 후만각 20-40°.
+3. 요추 전만: 허리 과도하게 들어감(anterior pelvic tilt)=증가. 허리 일자(flat back)=감소.
+4. 무릎: 굴곡=슬관절 구부러짐. 과신전(genu recurvatum)=무릎이 뒤로 꺾임.
 
-응답 형식:
-[{"id":"lat_cerv","sel":0,"reason":"두부 전방이동 동반한 경추 전만 증가"},{"id":"lat_thor","sel":0,"reason":"흉추 후만각 증가 관찰"}]`,
+JSON만.
+항목:
+- lat_cerv: [0="증가(FHP/전만 과다)", 1="감소(전만 소실)", 2="정상"]
+- lat_thor: [0="증가(라운드숄더)", 1="감소", 2="정상"]
+- lat_lumb: [0="증가(전방경사)", 1="감소(Flat back)", 2="정상"]
+- lat_knee: [0="굴곡", 1="과신전(Recurvatum)", 2="정상"]`,
 
-  sh_flex_l:`스포츠 물리치료사로서 좌측 어깨 거상(Shoulder Flexion) 동작 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  sh_flex_l:`당신은 근거중심 스포츠 물리치료사입니다. 좌측 Shoulder Flexion 사진 분석.
 
-체크리스트 항목:
-- shfl_serr_l: ["약함","정상"] → Lt. Serratus Anterior 활성화 (견갑골 전인 패턴)
-- shfl_utrap_l: ["있음","없음"] → Lt. Upper Trap 보상 (어깨가 귀쪽으로 올라가는 패턴)
-- shfl_lat_l: ["있음","없음"] → Lt. Lat 단축 (팔꿈치 굴곡 또는 내회전 보상)
-- shfl_bic_l: ["있음","없음"] → Lt. Biceps 과활성 (팔꿈치 굴곡)
+[Janda Upper Crossed Syndrome 보상 패턴]
+1. Serratus Anterior 약화: 거상 시 견갑골 익상(winging) 또는 protraction 불량.
+2. Upper Trapezius 보상: 팔 거상 시 어깨가 귀 방향 shrug. 90° 이상에서 현저하면 양성.
+3. Lat 단축: 팔꿈치 굴곡 또는 180° 완전 거상 불가.
+4. Biceps 과활성: 거상 시 팔꿈치 굴곡.
 
-응답 형식: [{"id":"shfl_utrap_l","sel":0,"reason":"거상 시 좌측 어깨 상승 패턴 관찰"}]`,
+JSON만.
+항목:
+- shfl_serr_l: [0="약함", 1="정상"]
+- shfl_utrap_l: [0="있음(shrug)", 1="없음"]
+- shfl_lat_l: [0="있음", 1="없음"]
+- shfl_bic_l: [0="있음", 1="없음"]`,
 
-  sh_flex_r:`스포츠 물리치료사로서 우측 어깨 거상(Shoulder Flexion) 동작 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  sh_flex_r:`당신은 근거중심 스포츠 물리치료사입니다. 우측 Shoulder Flexion 사진 분석.
 
-체크리스트 항목:
-- shfl_serr_r: ["약함","정상"] → Rt. Serratus Anterior
-- shfl_utrap_r: ["있음","없음"] → Rt. Upper Trap 보상
-- shfl_lat_r: ["있음","없음"] → Rt. Lat 단축
-- shfl_bic_r: ["있음","없음"] → Rt. Biceps 과활성
+[동일 기준 적용]
+1. Serratus Anterior 약화: 견갑골 winging/protraction 불량.
+2. Upper Trapezius 보상: 어깨 shrug.
+3. Lat 단축: 완전 거상 불가/팔꿈치 굴곡.
+4. Biceps 과활성: 팔꿈치 굴곡.
 
-응답 형식: [{"id":"shfl_utrap_r","sel":0,"reason":"우측 어깨 상승 보상 패턴"}]`,
+JSON만.
+항목:
+- shfl_serr_r: [0="약함", 1="정상"]
+- shfl_utrap_r: [0="있음", 1="없음"]
+- shfl_lat_r: [0="있음", 1="없음"]
+- shfl_bic_r: [0="있음", 1="없음"]`,
 
-  trunk_b:`스포츠 물리치료사로서 체간 전굴(Trunk Flexion) 후면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  trunk_b:`당신은 근거중심 스포츠 물리치료사입니다. 체간 전굴 후면 사진 분석.
 
-체크리스트 항목:
-- tb_scol: ["우측 편위","좌측 편위","없음"] → 전굴 시 척추 측만 여부
-- tb_tone: ["Lt. 증가","Rt. 증가","대칭"] → 척추기립근 좌우 근긴장도
-- tb_shift: ["우측","좌측","없음"] → 체간 측방 이동
+[임상 기준]
+1. Scoliosis in motion: 전굴 시 척추 편위. Rib hump = 구조성.
+2. Muscle tone 비대칭: 척추기립근 좌우 두께 차이. 과활성측 더 두껍고 돌출.
+3. 체간 측방 이동: 상체가 좌/우로 명확히 치우침.
 
-응답 형식: [{"id":"tb_scol","sel":2,"reason":"전굴 시 척추 측만 없음"}]`,
+JSON만.
+항목:
+- tb_scol: [0="우측 편위", 1="좌측 편위", 2="없음"]
+- tb_tone: [0="Lt. 증가", 1="Rt. 증가", 2="대칭"]
+- tb_shift: [0="우측", 1="좌측", 2="없음"]`,
 
-  trunk_l:`스포츠 물리치료사로서 체간 전굴(Trunk Flexion) 측면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  trunk_l:`당신은 근거중심 스포츠 물리치료사입니다. 체간 전굴 측면 사진 분석.
 
-체크리스트 항목:
-- tl_rom: ["제한(< 45°)","정상(45~90°)","우수(> 90°, 손바닥 바닥)"] → 전굴 ROM
-- tl_sep: ["흉추 우세","요추 우세","균등"] → 흉/요추 분리 패턴
-- tl_hip: ["과도한 요추 굴곡","정상 hip hinge"] → Hip hinge 패턴
+[임상 기준]
+ROM: 제한(<45°)=손 무릎이하, 정상(45~90°)=손 발근처, 우수(90°+)=손바닥 바닥.
+흉/요추 분리: 흉추우세=등 위쪽 주로 굴곡, 요추우세=허리만 굴곡.
+Hip hinge: 정상=골반 전굴+고관절 접힘. 과도한 요추굴곡=요추만 굽힘.
 
-응답 형식: [{"id":"tl_rom","sel":1,"reason":"손끝이 발목 수준, 정상 ROM"}]`,
+JSON만.
+항목:
+- tl_rom: [0="제한(<45°)", 1="정상(45~90°)", 2="우수(90°+)"]
+- tl_sep: [0="흉추 우세", 1="요추 우세", 2="균등"]
+- tl_hip: [0="과도한 요추 굴곡", 1="정상 hip hinge"]`,
 
-  ohs_b:`스포츠 물리치료사로서 오버헤드 스쿼트(Overhead Squat) 후면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  ohs_b:`당신은 근거중심 스포츠 물리치료사입니다. OHS 후면 사진 분석(NASM OPT 기준).
 
-체크리스트 항목:
-- ohsb_ank: ["Lt. 내번","Rt. 내번","없음"] → 발목 내번(Inversion)
-- ohsb_knee: ["Lt. 내측 collapse","Rt. 내측 collapse","양측","없음"] → 무릎 Valgus collapse
-- ohsb_pel: ["우측 전방","좌측 전방","없음"] → 골반 회전
+[NASM Overhead Squat Assessment]
+1. 발목 내번: 스쿼트 시 발 내측 회전/발꿈치 들림. 비복근·가자미근 단축 지표.
+2. 무릎 Valgus: 무릎 안쪽 collapse(knee caving). 중둔근 약화·TFL 과활성.
+3. 골반 회전: 한쪽 골반 전방 회전.
 
-응답 형식: [{"id":"ohsb_knee","sel":2,"reason":"양측 무릎 내측 collapse 관찰"}]`,
+JSON만.
+항목:
+- ohsb_ank: [0="Lt. 내번", 1="Rt. 내번", 2="없음"]
+- ohsb_knee: [0="Lt. 내측 valgus", 1="Rt. 내측 valgus", 2="양측", 3="없음"]
+- ohsb_pel: [0="우측 전방", 1="좌측 전방", 2="없음"]`,
 
-  ohs_l:`스포츠 물리치료사로서 오버헤드 스쿼트(Overhead Squat) 측면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  ohs_l:`당신은 근거중심 스포츠 물리치료사입니다. OHS 측면 사진 분석(NASM 기준).
 
-체크리스트 항목:
-- ohsl_trunk: ["과도(>45°)","정상"] → 상체 전경각
-- ohsl_arm: ["있음","없음"] → 팔 앞으로 쓰러짐
-- ohsl_tho: ["있음","없음"] → 흉추 가동성 제한
-- ohsl_lum: ["있음","없음"] → 요추 과전만
-- ohsl_pelv: ["있음","없음"] → 골반 전방경사
-- ohsl_ank: ["있음","없음"] → 발목 배측굴곡 제한
+[NASM Lateral OHS Assessment]
+1. 상체 전경각: 이상=직립. 과도(>45°)=흉추 가동성 제한 또는 발목 dorsiflexion 부족.
+2. 팔 앞 쏟아짐: 흉추 신전 가동성 제한.
+3. 흉추 가동성 제한: 상배부 경직.
+4. 요추 과전만: 스쿼트 최저점 허리 과도하게 들어감.
+5. 골반 전방경사: 골반 전면 하강.
+6. 발목 dorsiflexion 제한: 발꿈치 들림.
 
-응답 형식: [{"id":"ohsl_trunk","sel":0,"reason":"상체 전경각 50° 이상 관찰"},{"id":"ohsl_ank","sel":0,"reason":"발꿈치 들림 관찰"}]`,
+JSON만.
+항목:
+- ohsl_trunk: [0="과도(>45°)", 1="정상"]
+- ohsl_arm: [0="있음", 1="없음"]
+- ohsl_tho: [0="있음", 1="없음"]
+- ohsl_lum: [0="있음", 1="없음"]
+- ohsl_pelv: [0="있음", 1="없음"]
+- ohsl_ank: [0="있음(발꿈치 들림)", 1="없음"]`,
 
-  sku:`스포츠 물리치료사로서 Standing Knee Up 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  sku:`당신은 근거중심 스포츠 물리치료사입니다. Standing Knee Up 사진 분석.
 
-체크리스트 항목:
-- sku_glut: ["Lt. 약함","Rt. 약함","양측","정상"] → Glutes 약화 (반대측 골반 drop)
-- sku_hf: ["Lt. 단축","Rt. 단축","양측","정상"] → Hip flexor 단축
-- sku_ank: ["Lt. 불안정","Rt. 불안정","양측","정상"] → 발목 불안정
-- sku_pel: ["Lt. drop","Rt. drop","없음"] → Pelvic drop 방향 (Trendelenburg)
+[임상 기준]
+1. Trendelenburg Sign: 무릎 들 때 반대측 골반 하강. 지지측 중둔근 약화.
+   예: 우측 무릎 들 때 좌측 골반 처짐 → 우측 지지 불안정.
+2. Hip flexor 단축: 무릎 올릴 때 상체 후방 기울거나 요추 과전만.
+3. 발목 불안정: 지지발 흔들림·외반·내반.
+4. Pelvic drop 방향.
 
-응답 형식: [{"id":"sku_pel","sel":0,"reason":"우측 무릎 거상 시 좌측 골반 drop"}]`,
+JSON만.
+항목:
+- sku_glut: [0="Lt. 약함", 1="Rt. 약함", 2="양측", 3="정상"]
+- sku_hf: [0="Lt. 단축", 1="Rt. 단축", 2="양측", 3="정상"]
+- sku_ank: [0="Lt. 불안정", 1="Rt. 불안정", 2="양측", 3="정상"]
+- sku_pel: [0="Lt. drop", 1="Rt. drop", 2="없음"]`,
 
-  slr_l:`스포츠 물리치료사로서 왼쪽 SLR(Straight Leg Raise) 측면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  slr_l:`당신은 근거중심 스포츠 물리치료사입니다. 왼쪽 SLR 사진 분석.
 
-체크리스트 항목:
-- slrl_ham: ["단축(< 60°)","정상(60~85°)","과가동(> 85°)"] → Lt. Hamstring 유연성
-- slrl_comp: ["후방경사 있음","없음"] → 골반 보상 움직임
+[임상 기준: 다수 연구 기반]
+SLR 정상값: 60~85°. 단축:<60°(슬굴곡근 단축/신경긴장). 과가동:>85°.
+골반 보상: 요추-골반 후방경사 동반 시 실제 ROM 과대평가.
+사진에서 다리와 바닥 사이 각도를 추정하여 판정.
 
-응답 형식: [{"id":"slrl_ham","sel":0,"reason":"다리 올림 각도 약 45°로 단축 의심"}]`,
+JSON만.
+항목:
+- slrl_ham: [0="단축(<60°)", 1="정상(60~85°)", 2="과가동(>85°)"]
+- slrl_comp: [0="골반 보상 있음", 1="없음"]`,
 
-  slr_r:`스포츠 물리치료사로서 오른쪽 SLR(Straight Leg Raise) 측면 사진을 분석하세요.
-JSON 배열만 응답하세요.
+  slr_r:`당신은 근거중심 스포츠 물리치료사입니다. 오른쪽 SLR 사진 분석.
 
-체크리스트 항목:
-- slrr_ham: ["단축(< 60°)","정상(60~85°)","과가동(> 85°)"] → Rt. Hamstring 유연성
-- slrr_comp: ["후방경사 있음","없음"] → 골반 보상 움직임
+[임상 기준] SLR 정상: 60~85°. 단축:<60°. 과가동:>85°.
+골반 보상: 요추-골반 후방경사 확인.
 
-응답 형식: [{"id":"slrr_ham","sel":1,"reason":"다리 올림 약 70°, 정상 범위"}]`,
-};
+JSON만.
+항목:
+- slrr_ham: [0="단축(<60°)", 1="정상(60~85°)", 2="과가동(>85°)"]
+- slrr_comp: [0="골반 보상 있음", 1="없음"]`,
+}
+
+// ─ POSE GUIDE SVG DEFINITIONS ─
+// Based on: adult male 170cm/70kg, 7.5 head proportions
+// ViewBox 100×220 for standing poses, 200×110 for supine
+
+function updateCamGuide(tid){
+  const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
+  const svgEl=document.getElementById('camGuideSvg');
+  const labelEl=document.getElementById('camPoseLabel');
+  const warnEl=document.getElementById('camWarning');
+  const tipEl=document.getElementById('camTip');
+  if(svgEl){
+    svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
+    svgEl.innerHTML=g.svg||'';
+  }
+  if(labelEl) labelEl.textContent=g.label||'';
+  if(warnEl) warnEl.textContent='⚠️ '+g.warning;
+  if(tipEl) tipEl.style.display='none';
+}
+
+
+
 
 async function autoFillChecklist(tid, slot, lm, W, H){
   const s=SHOTS[tid]?.[slot];
   if(!s?.canvas) return;
-  const prompt=CHK_PROMPTS[tid];
-  if(!prompt) return;
+  const aiPrompt=CHK_PROMPTS[tid];
+  if(!aiPrompt) return;
 
   // Get API key
   let _key=localStorage.getItem('ng_api_key');
@@ -1373,11 +1519,11 @@ async function autoFillChecklist(tid, slot, lm, W, H){
 
   // Compress canvas to base64 for API
   const tc=document.createElement('canvas');
-  const maxW=640;
+  const maxW=800;
   const ratio=s.canvas.height/s.canvas.width;
   tc.width=maxW; tc.height=Math.round(maxW*ratio);
   tc.getContext('2d').drawImage(s.canvas,0,0,tc.width,tc.height);
-  const imgB64=tc.toDataURL('image/jpeg',.75).split(',')[1];
+  const imgB64=tc.toDataURL('image/jpeg',.85).split(',')[1];
 
   // Build pose data string for context
   let poseCtx='';
@@ -1409,7 +1555,7 @@ async function autoFillChecklist(tid, slot, lm, W, H){
           role:'user',
           content:[
             {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgB64}},
-            {type:'text',text:prompt+poseCtx+'\n\n반드시 유효한 JSON 배열만 응답. 다른 텍스트 없이.'}
+            {type:'text',text:aiPrompt+poseCtx+'\n\n반드시 유효한 JSON 배열만 응답. 다른 텍스트 없이.'}
           ]
         }]
       })
@@ -1628,10 +1774,15 @@ function redrawOL(tid){
   // After background
   c.globalAlpha=afterAlpha;c.drawImage(aS.img,0,0,W,H);c.globalAlpha=1;
   // Before: compute auto-align then apply manual offset
-  const auto=autoAlign(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,W,H);
-  const fScale=auto.scale*m.scale;
-  const fTx=auto.tx+m.tx;
-  const fTy=auto.ty+m.ty;
+  let fScale,fTx,fTy;
+  if(m.absMode){
+    fScale=m.absScale||1;fTx=m.absTx||0;fTy=m.absTy||0;
+  } else {
+    const auto=autoAlign(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,W,H);
+    fScale=auto.scale*(m.scale||1);
+    fTx=auto.tx+(m.tx||0);
+    fTy=auto.ty+(m.ty||0);
+  }
   const bW=bS.canvas.width,bH=bS.canvas.height;
   // draw before grayscale
   c.save();c.globalAlpha=beforeAlpha;c.filter='grayscale(100%) brightness(1.05)';
@@ -1706,7 +1857,7 @@ async function aiSyncImages(tid){
   const bImg=compressImg(bS.canvas);
   const aImg=compressImg(aS.canvas);
 
-  const prompt=`두 장의 체형 분석 사진 (Before/After)을 비교하여 정확한 오버랩 정렬을 위한 파라미터를 계산하세요.
+  const aiPrompt=`두 장의 체형 분석 사진 (Before/After)을 비교하여 정확한 오버랩 정렬을 위한 파라미터를 계산하세요.
 
 분석 방법:
 1. 각 사진에서 신체 기준점을 찾으세요: 머리 정수리, 발목/발바닥, 어깨 중앙, 골반 중앙
@@ -1759,7 +1910,7 @@ ty: After 좌표계에서 Before를 이동시킬 Y 오프셋 (px, 원본 After �
             {type:'text',text:'첫 번째 이미지가 Before, 두 번째 이미지가 After입니다.'},
             {type:'image',source:{type:'base64',media_type:'image/jpeg',data:bImg.b64}},
             {type:'image',source:{type:'base64',media_type:'image/jpeg',data:aImg.b64}},
-            {type:'text',text:prompt}
+            {type:'text',text:aiPrompt}
           ]
         }]
       })
@@ -1803,7 +1954,7 @@ ty: After 좌표계에서 Before를 이동시킬 Y 오프셋 (px, 원본 After �
   }
 }
 
-function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,perspH:0,perspV:0};redrawOL(tid);toast('보정 초기화')}
+function resetOL(tid){OL_MANUAL[tid]={tx:0,ty:0,scale:1,rotate:0,perspH:0,perspV:0,absMode:false};redrawOL(tid);toast('보정 초기화')}
 
 function autoAlign(srcPose,dstPose,sW,sH,dW,dH){
   if(!srcPose||!dstPose)return{tx:0,ty:0,scale:1};
@@ -1866,6 +2017,26 @@ function applyDragTransform(){
   bi.style.transform=`perspective(800px) rotateY(${dragPerspH2}deg) rotateX(${dragPerspV2}deg) rotate(${dragRot2}deg)`;
   bi.style.clipPath='';
 }
+let _dragBgRemove = false;
+function toggleDragBgRemove(){
+  _dragBgRemove = !_dragBgRemove;
+  const btn = document.getElementById('dragRemoveBgBtn');
+  const bi = document.getElementById('dragBeforeImg');
+  if(btn) btn.classList.toggle('on', _dragBgRemove);
+  if(bi){
+    if(_dragBgRemove){
+      // multiply blend removes white/light background
+      // darken blend preserves person against light BG
+      bi.style.mixBlendMode = 'multiply';
+      bi.style.filter = 'contrast(1.4) saturate(1.2)';
+      toast('배경제거 ON — 밝은 배경에서 효과적입니다');
+    } else {
+      bi.style.mixBlendMode = 'normal';
+      bi.style.filter = 'none';
+      toast('배경제거 OFF');
+    }
+  }
+}
 function openDrag(tid){
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;if(!bS?.img||!aS?.img)return;
   dragTid2=tid;
@@ -1891,7 +2062,7 @@ function openDrag(tid){
   const offX=(wW-cW)/2+dragTx2*viewScale;
   const offY=(wH-cH)/2+dragTy2*viewScale;
   bi.style.cssText=`position:absolute;left:${offX}px;top:${offY}px;width:${bW2}px;height:${bH2}px;opacity:${parseInt(document.getElementById('dragAlpha').value)/100};transform-origin:center center;transform:rotate(0deg)`;
-  dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};
+  dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};const _m=getOLM(tid);_m.absMode=false;_dragBgRemove=false;const _bgBtn=document.getElementById('dragRemoveBgBtn');if(_bgBtn)_bgBtn.classList.remove('on');
   const dr=document.getElementById('dragRotate');if(dr)dr.value=0;
   const drv=document.getElementById('dragRotateV');if(drv)drv.textContent='0°';
   dragPerspH2=0;dragPerspV2=0;const ph=document.getElementById('dragPerspH');if(ph)ph.value=0;const pv=document.getElementById('dragPerspV');if(pv)pv.value=0;const phv=document.getElementById('dragPerspHV');if(phv)phv.textContent='0°';const pvv=document.getElementById('dragPerspVV');if(pvv)pvv.textContent='0°';
@@ -1961,25 +2132,35 @@ function applyDrag(){
   const bi=document.getElementById('dragBeforeImg');
   const ac=document.getElementById('dragAfterCanvas');
   const aS=SHOTS[dragTid2]?.A;if(!aS?.canvas)return;
-  const viewScale=ac.width/aS.canvas.width;
-  const offX=(document.getElementById('dragWrap').offsetWidth-ac.width)/2;
-  const offY=(document.getElementById('dragWrap').offsetHeight-ac.height)/2;
+  const wW=document.getElementById('dragWrap').offsetWidth;
+  const wH=document.getElementById('dragWrap').offsetHeight;
+  // ac displayed size
+  const acDispW=parseFloat(ac.style.width)||ac.width;
+  const acDispH=parseFloat(ac.style.height)||ac.height;
+  const offX=(wW-acDispW)/2;
+  const offY=(wH-acDispH)/2;
+  // viewScale: canvas pixels per screen pixel for After canvas
+  const viewScale=acDispW/aS.canvas.width;
   const biL=parseFloat(bi.style.left)||0;
   const biT=parseFloat(bi.style.top)||0;
   const biW=parseFloat(bi.style.width)||100;
   const origBW=SHOTS[dragTid2].B.canvas.width;
-  const newScale=(biW/viewScale)/origBW;
-  const newTx=(biL-offX)/viewScale;
-  const newTy=(biT-offY)/viewScale;
-  const bS=SHOTS[dragTid2].B;
-  const auto=autoAlign(bS.pose,aS.pose,bS.canvas.width,bS.canvas.height,aS.canvas.width,aS.canvas.height);
+  // Convert screen coords back to After canvas coords
+  const absTx=(biL-offX)/viewScale;
+  const absTy=(biT-offY)/viewScale;
+  const absScale=(biW/viewScale)/origBW;
+  // Store as ABSOLUTE transform (bypass auto-align)
   const m=getOLM(dragTid2);
-  m.tx=(newTx-auto.tx);
-  m.ty=(newTy-auto.ty);
-  m.scale=newScale/auto.scale;
+  m.absMode=true; // flag: use absolute transform, skip auto
+  m.absTx=absTx;
+  m.absTy=absTy;
+  m.absScale=absScale;
   m.rotate=dragRot2;
   m.perspH=dragPerspH2;
   m.perspV=dragPerspV2;
+  const _bi2=document.getElementById('dragBeforeImg');
+  if(_bi2){_bi2.style.mixBlendMode='normal';_bi2.style.filter='none';}
+  _dragBgRemove=false;
   document.getElementById('dragOv').classList.remove('show');
   const wrap=document.getElementById('dragWrap');
   wrap.removeEventListener('pointerdown',onDragDown);
@@ -2131,25 +2312,28 @@ async function buildClinical(tid){
   // Then call AI
   const ctx=TEST_CONTEXT[tid]||'일반 체형 평가';
   const chkSummary=getChkSummary(tid);
-  const prompt=`당신은 16년 경력의 전문 스포츠 물리치료사이자 움직임 분석 전문가입니다.
+  const aiPrompt=`당신은 16년 경력의 스포츠 물리치료사이자 움직임 분석 전문가입니다.
 
-검사: ${TESTS.find(t=>t.id===tid)?.title}
-평가 맥락: ${ctx}
+검사: ${TESTS.find(t=>t.id===tid)?.title||tid}
+평가 맥락: ${TEST_CONTEXT[tid]||'일반 체형 평가'}
 
-AI 포즈 감지 측정값 (Before → After):
-${Object.entries(bm).map(([k,v])=>{const av=am[k];const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''} → ${typeof av==='number'?av.toFixed(1):''}${n?.unit||''} (정상기준: ${n?.lbl||'참고'})`}).join('\n')}
+포즈 측정값 (MediaPipe, 원본크기 기준):
+${Object.entries(bm).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''} (정상기준: ${n?.lbl||'-'})`}).join('\n')}
 
-인라인 체크리스트 결과:
-${chkSummary||'체크리스트 미입력'}
+→ After 측정값:
+${Object.entries(am).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''}`}).join('\n')}
 
-위 데이터를 기반으로 아래 형식으로 임상 분석을 작성하세요.
-반드시 이 검사에 해당하는 항목만 분석하고, 관련 없는 항목(예: 이 검사가 SLR인데 FHP 언급)은 절대 포함하지 마세요.
+체크리스트 결과:
+${chkSummary||'미입력'}
 
-1. 주요 소견 (2~3가지, 임상 용어 사용, 수치 포함)
-2. 의심되는 근기능 불균형 패턴
-3. 운동 처방 권고 (2~3가지, 구체적 운동명 포함)
+이 데이터를 기반으로 아래 형식으로만 응답하세요.
+반드시 이 검사(${tid})와 관련된 항목만 분석하고 관련 없는 항목은 절대 포함하지 마세요.
 
-한국어로 작성. 간결하고 전문적으로. 불필요한 인사말 없이 바로 내용 시작.`;
+**주요 소견** (2~3개, 수치 포함)
+**근기능 불균형** (관련 근육명 포함)
+**운동 처방** (구체적 운동명 2~3개)
+
+한국어, 간결하게, 인사말 없이.`;
   try{
     let _key=localStorage.getItem('ng_api_key');
   if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com 에서 발급');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
@@ -2235,7 +2419,7 @@ async function genAIReport(){
     const chk=getChkSummary(t.id);
     allFindings.push(`\n[${t.title}]\n측정값: ${JSON.stringify(Object.fromEntries(Object.entries(bm).map(([k,v])=>[k,typeof v==='number'?v.toFixed(1):v])))}\n→After: ${JSON.stringify(Object.fromEntries(Object.entries(am).map(([k,v])=>[k,typeof v==='number'?v.toFixed(1):v])))}\n체크리스트: ${chk||'미입력'}`);
   });
-  const prompt=`당신은 스포츠의학·재활 전문 물리치료사 + 움직임 분석가입니다.
+  const aiPrompt=`당신은 스포츠의학·재활 전문 물리치료사 + 움직임 분석가입니다.
 아래는 NationalGym에서 ${name} 회원에게 실시한 NPT(Neuromuscular Pattern Test) 전체 결과입니다.
 
 ${allFindings.join('\n')}
@@ -2265,7 +2449,7 @@ ${allFindings.join('\n')}
       method:'POST',
       mode:'cors',
       headers:{'Content-Type':'application/json','x-api-key':_key2,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:aiPrompt}]})
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'생성 실패';
