@@ -201,7 +201,7 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .next-phase-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:250;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(0,168,120,.5);display:flex;align-items:center;gap:10px;border:none;white-space:nowrap;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
 .next-phase-btn.visible{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 .next-phase-btn:active{transform:translateX(-50%) scale(.94)}
-.cam-guide-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-guide-svg{position:absolute;top:6%;bottom:4%;left:16%;right:16%;pointer-events:none;overflow:visible}
 .cam-warning{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;text-align:center;line-height:1.5}
 .cam-pose-label{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:92vw;text-align:center}
@@ -211,7 +211,7 @@ input[type=range]{accent-color:var(--green)}
 </head>
 <body>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.7</span>
+  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.8</span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
@@ -313,7 +313,7 @@ input[type=range]{accent-color:var(--green)}
       <div class="gcv"></div>
       <div class="gch" style="top:33%"></div>
       <div class="gch" style="top:66%"></div>
-      <svg id="camGuideSvg" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+      <svg id="camGuideSvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;pointer-events:none"></svg>
       <div id="camPoseLabel" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center"></div>
       <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.5;max-width:90%">⚠️ 거울 앞 촬영 금지 · 단색 배경 권장</div>
       <div id="camTip" style="display:none"></div>
@@ -1004,7 +1004,7 @@ window.addEventListener('load', () => {
   },{passive:true});
   if(typeof Pose!=='undefined'){
     poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
-    poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
+    poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
     poseEng.onResults(()=>{});
     poseEng.initialize().then(()=>{poseOk=true}).catch(()=>{});
   }
@@ -1235,12 +1235,14 @@ async function loadImg(tid,slot,src,skipSave){
     const _s=SHOTS[_tid]?.[_slot];
     if(!_s?.img){toast('사진을 먼저 업로드하세요'); return;}
     raBtn.disabled=true; raBtn.textContent='분석 중...';
-    const lm=await runPose(_s.img);
+    const poseR=await runPose(_s.img);
     raBtn.disabled=false;
     raBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> 스켈레톤 재분석';
-    if(lm){
-      _s.pose=lm; redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
-      autoFillChecklist(_tid,_slot,lm,_s.canvas.width,_s.canvas.height);
+    if(poseR?.landmarks){
+      _s.pose=poseR.landmarks;
+      if(poseR.segMask){const mc2=document.createElement('canvas');mc2.width=_s.canvas.width;mc2.height=_s.canvas.height;mc2.getContext('2d').drawImage(poseR.segMask,0,0,mc2.width,mc2.height);_s.segMask=mc2;}
+      redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
+      autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
       toast('재분석 완료');
     } else {
       toast('포즈 감지 실패 — 전신이 잘 보이는 각도로 다시 시도해주세요');
@@ -1271,12 +1273,19 @@ async function loadImg(tid,slot,src,skipSave){
       const loader=document.createElement('div');loader.className='pload';
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
-      const lm=await runPose(img);loader.remove();
-      if(lm){
-        SHOTS[tid][slot].pose=lm;
+      const poseResult=await runPose(img);loader.remove();
+      if(poseResult?.landmarks){
+        SHOTS[tid][slot].pose=poseResult.landmarks;
+        // Save segmentation mask
+        if(poseResult.segMask){
+          const mc=document.createElement('canvas');
+          mc.width=img.width;mc.height=img.height;
+          mc.getContext('2d').drawImage(poseResult.segMask,0,0,mc.width,mc.height);
+          SHOTS[tid][slot].segMask=mc;
+        }
         redrawSlot(tid,slot);
         saveMarkers(tid,slot);
-        setTimeout(()=>autoFillChecklist(tid,slot,lm,img.width,img.height),400);
+        setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,img.width,img.height),400);
       }
     }
     // add mode bar to compare panel if both loaded
@@ -1520,9 +1529,9 @@ async function autoFillChecklist(tid, slot, lm, W, H){
   // Compress canvas to base64 for API
   const tc=document.createElement('canvas');
   const maxW=800;
-  const ratio=s.canvas.height/s.canvas.width;
+  const ratio=s.img.height/s.img.width;
   tc.width=maxW; tc.height=Math.round(maxW*ratio);
-  tc.getContext('2d').drawImage(s.canvas,0,0,tc.width,tc.height);
+  tc.getContext('2d').drawImage(s.img,0,0,tc.width,tc.height); // Use original image, no skeleton overlay
   const imgB64=tc.toDataURL('image/jpeg',.85).split(',')[1];
 
   // Build pose data string for context
@@ -1642,7 +1651,15 @@ function updateSlotBadge(tid,slot){
 
 async function runPose(imgEl){
   if(!poseOk||!poseEng)return null;
-  return new Promise(res=>{poseEng.onResults(r=>res(r.poseLandmarks||null));poseEng.send({image:imgEl}).catch(()=>res(null))});
+  return new Promise(res=>{
+    poseEng.onResults(r=>{
+      res({
+        landmarks: r.poseLandmarks||null,
+        segMask: r.segmentationMask||null
+      });
+    });
+    poseEng.send({image:imgEl}).catch(()=>res(null));
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -2018,23 +2035,75 @@ function applyDragTransform(){
   bi.style.clipPath='';
 }
 let _dragBgRemove = false;
-function toggleDragBgRemove(){
+let _dragOrigSrc = '';
+
+function applySegMask(imgCanvas, maskCanvas){
+  const out = document.createElement('canvas');
+  out.width = imgCanvas.width; out.height = imgCanvas.height;
+  const ctx = out.getContext('2d');
+  ctx.drawImage(imgCanvas, 0, 0);
+  const imgData = ctx.getImageData(0, 0, out.width, out.height);
+  // Resize mask to match image
+  const mc = document.createElement('canvas');
+  mc.width = out.width; mc.height = out.height;
+  mc.getContext('2d').drawImage(maskCanvas, 0, 0, mc.width, mc.height);
+  const maskData = mc.getContext('2d').getImageData(0, 0, mc.width, mc.height);
+  // Apply mask as alpha (R channel of grayscale mask = person probability)
+  for(let i = 0; i < imgData.data.length; i += 4){
+    imgData.data[i+3] = maskData.data[i]; // white=person(255), black=background(0)
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return out;
+}
+
+async function toggleDragBgRemove(){
   _dragBgRemove = !_dragBgRemove;
   const btn = document.getElementById('dragRemoveBgBtn');
   const bi = document.getElementById('dragBeforeImg');
-  if(btn) btn.classList.toggle('on', _dragBgRemove);
-  if(bi){
-    if(_dragBgRemove){
-      // multiply blend removes white/light background
-      // darken blend preserves person against light BG
-      bi.style.mixBlendMode = 'multiply';
-      bi.style.filter = 'contrast(1.4) saturate(1.2)';
-      toast('배경제거 ON — 밝은 배경에서 효과적입니다');
-    } else {
-      bi.style.mixBlendMode = 'normal';
-      bi.style.filter = 'none';
-      toast('배경제거 OFF');
+  if(!bi || !dragTid2) return;
+
+  if(!_dragBgRemove){
+    // Restore original
+    if(_dragOrigSrc) bi.src = _dragOrigSrc;
+    bi.style.mixBlendMode = 'normal';
+    bi.style.filter = 'none';
+    if(btn) btn.classList.remove('on');
+    toast('배경제거 OFF');
+    return;
+  }
+
+  // Apply segmentation
+  if(btn) btn.classList.add('on');
+  const bS = SHOTS[dragTid2]?.B;
+  if(!bS?.img || !bS?.canvas) return;
+
+  // Save original src for restoration
+  _dragOrigSrc = bi.src;
+
+  let maskCanvas = bS.segMask;
+  if(!maskCanvas && poseOk){
+    // Run segmentation now if not yet done
+    btn.textContent = '분석 중...';
+    const pR = await runPose(bS.img);
+    if(pR?.segMask){
+      const mc = document.createElement('canvas');
+      mc.width = bS.canvas.width; mc.height = bS.canvas.height;
+      mc.getContext('2d').drawImage(pR.segMask, 0, 0, mc.width, mc.height);
+      bS.segMask = mc;
+      maskCanvas = mc;
+      if(pR.landmarks && !bS.pose) bS.pose = pR.landmarks;
     }
+    btn.innerHTML = '✂ 배경제거';
+  }
+
+  if(maskCanvas){
+    const masked = applySegMask(bS.canvas, maskCanvas);
+    bi.src = masked.toDataURL('image/png');
+    toast('배경제거 ON — MediaPipe 세그멘테이션 적용');
+  } else {
+    toast('세그멘테이션 데이터 없음 — 스켈레톤 재분석 먼저 실행해주세요');
+    _dragBgRemove = false;
+    if(btn) btn.classList.remove('on');
   }
 }
 function openDrag(tid){
@@ -2062,7 +2131,7 @@ function openDrag(tid){
   const offX=(wW-cW)/2+dragTx2*viewScale;
   const offY=(wH-cH)/2+dragTy2*viewScale;
   bi.style.cssText=`position:absolute;left:${offX}px;top:${offY}px;width:${bW2}px;height:${bH2}px;opacity:${parseInt(document.getElementById('dragAlpha').value)/100};transform-origin:center center;transform:rotate(0deg)`;
-  dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};const _m=getOLM(tid);_m.absMode=false;_dragBgRemove=false;const _bgBtn=document.getElementById('dragRemoveBgBtn');if(_bgBtn)_bgBtn.classList.remove('on');
+  dragRot2=0;dragCrop2={t:0,b:0,l:0,r:0};const _m=getOLM(tid);_m.absMode=false;_dragBgRemove=false;_dragOrigSrc='';const _bgBtn=document.getElementById('dragRemoveBgBtn');if(_bgBtn)_bgBtn.classList.remove('on');
   const dr=document.getElementById('dragRotate');if(dr)dr.value=0;
   const drv=document.getElementById('dragRotateV');if(drv)drv.textContent='0°';
   dragPerspH2=0;dragPerspV2=0;const ph=document.getElementById('dragPerspH');if(ph)ph.value=0;const pv=document.getElementById('dragPerspV');if(pv)pv.value=0;const phv=document.getElementById('dragPerspHV');if(phv)phv.textContent='0°';const pvv=document.getElementById('dragPerspVV');if(pvv)pvv.textContent='0°';
@@ -2158,9 +2227,11 @@ function applyDrag(){
   m.rotate=dragRot2;
   m.perspH=dragPerspH2;
   m.perspV=dragPerspV2;
+  // Restore original Before image if BG removal was active
   const _bi2=document.getElementById('dragBeforeImg');
+  if(_bi2 && _dragBgRemove && _dragOrigSrc){_bi2.src=_dragOrigSrc;}
   if(_bi2){_bi2.style.mixBlendMode='normal';_bi2.style.filter='none';}
-  _dragBgRemove=false;
+  _dragBgRemove=false;_dragOrigSrc='';
   document.getElementById('dragOv').classList.remove('show');
   const wrap=document.getElementById('dragWrap');
   wrap.removeEventListener('pointerdown',onDragDown);
