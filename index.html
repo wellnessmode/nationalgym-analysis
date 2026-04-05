@@ -211,7 +211,7 @@ input[type=range]{accent-color:var(--green)}
 </head>
 <body>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.8</span>
+  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.9</span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
@@ -547,38 +547,37 @@ const POSE_GUIDES = {
     label:'Trunk Flexion 후면 — 무릎 펴고 최대 전굴',
     warning:'발 어깨너비 · 최대한 아래로 숙이기',
     viewBox:'0 0 100 220',
-    svg:`<defs>
-      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
-    </defs>
-    <!-- HEAD hanging down, rotated -->
-    <ellipse class="bg" cx="50" cy="50" rx="11" ry="13" transform="rotate(15 50 50)"/>
-    <!-- NECK bent -->
-    <path class="bg" d="M45,60 Q47,67 48,70 L54,68 Q55,65 56,58 Z"/>
-    <!-- UPPER BACK (bent ~90°) -->
-    <path class="bg" d="M28,68 Q37,63 48,66 L54,66 Q65,63 72,68 L70,84 Q62,80 54,82 L48,82 Q38,80 30,84 Z"/>
-    <!-- LEFT ARM HANGING -->
-    <path class="bg" d="M30,70 Q22,84 20,100 Q19,107 24,108 Q29,108 30,102 L32,86 Q34,76 32,72 Z"/>
-    <path class="bg" d="M22,106 Q20,118 22,128 Q23,133 27,133 Q31,132 32,127 L31,116 Q30,108 24,106 Z"/>
-    <!-- RIGHT ARM HANGING -->
-    <path class="bg" d="M70,70 Q78,84 80,100 Q81,107 76,108 Q71,108 70,102 L68,86 Q66,76 68,72 Z"/>
-    <path class="bg" d="M78,106 Q80,118 78,128 Q77,133 73,133 Q69,132 68,127 L69,116 Q70,108 76,106 Z"/>
-    <!-- LOWER BACK -->
-    <path class="bg" d="M34,82 Q42,86 50,86 Q58,86 66,82 L68,100 Q60,104 50,104 Q40,104 32,100 Z"/>
-    <!-- HIPS (highest point) -->
-    <path class="bg" d="M32,100 Q40,108 50,108 Q60,108 68,100 L70,116 Q62,124 50,124 Q38,124 30,116 Z"/>
-    <!-- LEGS STRAIGHT DOWN -->
-    <path class="bg" d="M30,116 Q26,130 26,150 Q26,157 32,157 Q38,157 39,150 L41,130 Q43,118 37,116 Z"/>
-    <path class="bg" d="M70,116 Q74,130 74,150 Q74,157 68,157 Q62,157 61,150 L59,130 Q57,118 63,116 Z"/>
-    <path class="bg" d="M26,150 Q24,165 25,176 Q26,181 32,181 Q37,181 38,176 L39,150 Q39,146 32,146 Z"/>
-    <path class="bg" d="M61,150 Q61,146 68,146 Q75,146 74,150 L76,176 Q77,181 68,181 Q63,181 61,176 Z"/>
-    <path class="bg" d="M22,177 Q21,184 32,185 Q41,185 43,181 L40,177 Z"/>
-    <path class="bg" d="M57,181 Q59,185 68,185 Q79,184 78,177 L59,177 Z"/>
-    <!-- SPINE LINE -->
-    <path d="M50,68 Q50,82 50,104" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".85"/>
-    <text class="tx" x="53" y="90">척추</text>`
+    svg:`<defs><style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style></defs>
+    <!-- BENT-OVER POSTERIOR VIEW: camera sees from behind while person bends forward -->
+    <!-- HIPS/GLUTES - highest point when bent over (TOP of frame) -->
+    <path class="bg" d="M28,8 Q38,2 50,2 Q62,2 72,8 L74,26 Q64,34 50,34 Q36,34 26,26 Z"/>
+    <!-- LEFT LEG (straight, going down from hip) -->
+    <path class="bg" d="M28,24 Q24,40 24,70 Q24,80 30,80 Q36,80 37,70 L38,40 Q40,26 34,22 Z"/>
+    <path class="bg" d="M24,70 Q22,100 23,128 Q24,134 30,134 Q36,134 37,128 L38,70 Q38,66 30,66 Z"/>
+    <path class="bg" d="M21,130 Q20,148 22,160 Q23,166 30,167 Q37,167 38,160 L38,130 Q38,126 30,124 Z"/>
+    <!-- RIGHT LEG (straight, going down from hip) -->
+    <path class="bg" d="M72,24 Q76,26 66,40 L62,70 Q62,80 68,80 Q74,80 76,70 Q76,40 72,24 Z"/>
+    <path class="bg" d="M62,70 Q62,66 70,66 Q76,66 76,70 L77,128 Q78,134 70,134 Q64,134 62,128 Z"/>
+    <path class="bg" d="M62,130 Q62,126 70,124 Q76,124 77,130 L78,160 Q79,166 70,167 Q63,167 62,160 Z"/>
+    <!-- LEFT FOOT -->
+    <path class="bg" d="M19,162 Q18,170 30,171 Q39,171 41,167 L38,162 Z"/>
+    <!-- RIGHT FOOT -->
+    <path class="bg" d="M59,167 Q61,171 70,171 Q81,170 81,162 L62,162 Z"/>
+    <!-- TORSO/BACK (narrowing as goes forward = downward in frame) -->
+    <path class="bg" d="M32,26 Q38,32 47,36 L53,36 Q62,32 68,26 L66,60 Q58,66 50,66 Q42,66 34,60 Z"/>
+    <!-- SPINE going DOWN from hips (forward lean) -->
+    <path d="M50,26 Q50,46 50,88" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".85"/>
+    <!-- LEFT ARM hanging down (visible on sides) -->
+    <path class="bg" d="M34,38 Q28,54 26,72 Q25,78 29,79 Q33,80 34,74 L36,56 Q38,46 36,40 Z"/>
+    <!-- RIGHT ARM hanging down -->
+    <path class="bg" d="M66,38 Q72,54 74,72 Q75,78 71,79 Q67,80 66,74 L64,56 Q62,46 64,40 Z"/>
+    <!-- HEAD hanging at end of spine -->
+    <ellipse class="bg" cx="50" cy="100" rx="10" ry="12"/>
+    <text class="tx" x="54" y="56">척추</text>
+    <text x="50" y="185" text-anchor="middle" fill="#00c890" font-size="4" font-family="sans-serif">최대한 전굴</text>`
   },
 
-  trunk_l: {
+    trunk_l: {
     label:'Trunk Flexion 측면 — 좌측면, 무릎 완전히 펴기',
     warning:'무릎 완전히 펴기 · 손이 발 방향으로',
     viewBox:'0 0 100 220',
@@ -2002,6 +2001,7 @@ function autoAlign(srcPose,dstPose,sW,sH,dW,dH){
 
 // ─ DRAG-TO-FIT ─
 let dragTid2=null, dragTx2=0,dragTy2=0,dragScale2=1,dragRot2=0,dragCrop2={t:0,b:0,l:0,r:0},_dragMode='move';
+let _dragLayoutState={wW:0,wH:0,offX:0,offY:0,viewScale:1,acDispW:0,acDispH:0};
 let _dragPointers={},_pinchDist0=0,_pinchScale0=1,_dragOrigin={x:0,y:0,tx:0,ty:0};
 
 function setDragMode(m){
@@ -2121,6 +2121,8 @@ function openDrag(tid){
   let cW=wW,cH=wW*r;if(cH>wH){cH=wH;cW=wH/r}
   ac.width=Math.round(cW);ac.height=Math.round(cH);
   ac.style.cssText=`position:absolute;left:${(wW-cW)/2}px;top:${(wH-cH)/2}px;width:${cW}px;height:${cH}px`;
+  // Save layout state for applyDrag - avoids iOS toolbar height change bug
+  _dragLayoutState={wW,wH,offX:(wW-cW)/2,offY:(wH-cH)/2,viewScale:cW/aS.canvas.width,acDispW:cW,acDispH:cH};
   ac.getContext('2d').drawImage(aS.img,0,0,cW,cH);
   // Setup before img
   const bi=document.getElementById('dragBeforeImg');
@@ -2201,15 +2203,8 @@ function applyDrag(){
   const bi=document.getElementById('dragBeforeImg');
   const ac=document.getElementById('dragAfterCanvas');
   const aS=SHOTS[dragTid2]?.A;if(!aS?.canvas)return;
-  const wW=document.getElementById('dragWrap').offsetWidth;
-  const wH=document.getElementById('dragWrap').offsetHeight;
-  // ac displayed size
-  const acDispW=parseFloat(ac.style.width)||ac.width;
-  const acDispH=parseFloat(ac.style.height)||ac.height;
-  const offX=(wW-acDispW)/2;
-  const offY=(wH-acDispH)/2;
-  // viewScale: canvas pixels per screen pixel for After canvas
-  const viewScale=acDispW/aS.canvas.width;
+  // Use layout state saved at openDrag time (avoids iOS toolbar height change bug)
+  const {offX,offY,viewScale}=_dragLayoutState;
   const biL=parseFloat(bi.style.left)||0;
   const biT=parseFloat(bi.style.top)||0;
   const biW=parseFloat(bi.style.width)||100;
