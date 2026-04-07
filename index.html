@@ -1512,12 +1512,7 @@ async function autoFillChecklist(tid, slot, lm, W, H){
   if(!aiPrompt) return;
 
   // Get API key
-  let _key=localStorage.getItem('ng_api_key');
-  if(!_key){
-    // No key - fall back to simple pose-based suggestion (less accurate)
-    autoFillChecklistFallback(tid,slot,lm,W,H);
-    return;
-  }
+  let _key='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';
 
   // Show loading on checklist
   const bd=document.getElementById(`cib_${tid}_${slot}`);
@@ -1854,8 +1849,7 @@ async function aiSyncImages(tid){
   const bS=SHOTS[tid]?.B, aS=SHOTS[tid]?.A;
   if(!bS?.canvas||!aS?.canvas){toast('Before/After 사진을 모두 업로드해주세요');return}
 
-  let _key=localStorage.getItem('ng_api_key');
-  if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
+  let _key='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';
 
   const btn=document.getElementById('aiSyncBtn_'+tid);
   if(btn){btn.disabled=true;btn.textContent='AI 분석 중...'}
@@ -2401,8 +2395,7 @@ ${chkSummary||'미입력'}
 
 한국어, 간결하게, 인사말 없이.`;
   try{
-    let _key=localStorage.getItem('ng_api_key');
-  if(!_key){_key=prompt('Anthropic API 키 입력 (최초 1회):\nhttps://console.anthropic.com 에서 발급');if(!_key)return;localStorage.setItem('ng_api_key',_key.trim())}
+    let _key='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';
   if(!checkAndIncrement('임상분석: '+tid)) return;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -2508,8 +2501,7 @@ ${allFindings.join('\n')}
 
 한국어, 전문 PT 리포트 문체, 임상 용어 포함. 불필요한 인사말·면책조항 없이.`;
   try{
-    let _key2=localStorage.getItem('ng_api_key');
-  if(!_key2){_key2=prompt('Anthropic API 키 입력:');if(!_key2)return;localStorage.setItem('ng_api_key',_key2.trim())}
+    let _key2='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';
   if(!checkAndIncrement('종합리포트')) return;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
