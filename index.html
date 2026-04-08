@@ -133,6 +133,10 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .ai-md code{background:#edeee9;padding:1px 6px;border-radius:4px;font-family:ui-monospace,monospace;font-size:.9em}
 .ai-md ul{margin:4px 0 6px 18px;padding:0;list-style:disc}
 .ai-md li{font-size:13px;margin:3px 0;line-height:1.55}
+.narr-box{margin:10px 14px;padding:12px 14px;background:#fff5f5;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:10px}
+.narr-title{font-size:10px;font-weight:800;color:#dc2626;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.narr-title::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc2626}
+.narr-body{font-size:13px;color:#3f1212;line-height:1.6}
 .report-hero{background:linear-gradient(135deg,#071a10,#0b2a1c);border-radius:var(--r2);padding:20px;margin-bottom:16px;color:#fff}
 .rh-name{font-size:18px;font-weight:700;margin-bottom:2px}
 .rh-sub{font-size:12px;color:#7dd4b4;margin-bottom:14px}
@@ -158,9 +162,7 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .ract:active{transform:scale(.97)}
 .ract.pdf{border-color:#a7f3d0;color:var(--g2)}
 .ract.share{background:#FAE100;border-color:#d4c100;color:#3a1e00}
-.compare-cta{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;background:var(--green);color:#fff;padding:14px 26px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,168,120,.45);display:none;align-items:center;gap:10px;border:none;white-space:nowrap}
-.compare-cta.show{display:flex}
-.compare-cta:active{transform:translateX(-50%) scale(.95)}
+/* compare-cta 플로팅 버튼 제거됨 (v1.0.1) — nextPhaseBtn과 중복 충돌 해결 */
 .cam-ov{display:none;position:fixed;inset:0;z-index:600;background:#000;flex-direction:column}
 .cam-ov.show{display:flex}
 .cam-body{flex:1;position:relative;overflow:hidden}
@@ -216,7 +218,7 @@ input[type=range]{accent-color:var(--green)}
 </head>
 <body>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:6px;letter-spacing:.03em">v0.9.9</span>
+  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
@@ -239,9 +241,7 @@ input[type=range]{accent-color:var(--green)}
   </div>
   <div id="phasePanels"></div>
 </div>
-<button class="compare-cta" id="compareCta" onclick="showPhase('compare')">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>비교 분석 보기
-</button>
+<!-- compareCta 플로팅 버튼 제거: 상단 네비 탭(buildNav)에 '비교 분석' 버튼이 이미 있음. 플로팅은 nextPhaseBtn과 충돌하므로 삭제. -->
 <div id="fsView">
   <div class="fs-hd"><span id="fsTitle">오버랩 비교</span><button class="abtn" style="font-size:11px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15);color:#fff" onclick="closeFS()">✕ 닫기</button></div>
   <div class="fs-body"><canvas id="fsCanvas"></canvas></div>
@@ -995,6 +995,42 @@ let ASSESS = {text:'',training:[]};
 let currentPhase = 'before';
 
 // ═══════════════════════════════════════════
+// BUILD INFO (업데이트 시 자동 갱신)
+// ═══════════════════════════════════════════
+const APP_VERSION='v1.0.1';
+const BUILD_TIME='2026-04-08 17:30';
+
+// ═══════════════════════════════════════════
+// ACROMION EXTRAPOLATION
+// ═══════════════════════════════════════════
+// MediaPipe 어깨 랜드마크(11=Lt, 12=Rt)는 실제 견봉(acromion)보다 약 1~2cm 안쪽에 위치.
+// 트레이너가 눈으로 보는 "어깨 끝"(견봉)과 일치시키려면 좌우 바깥쪽으로 확장해야 함.
+// 대칭 확장: 두 점의 중심(미드라인)에서 각각 k배만큼 바깥으로 연장.
+// k=1.18 → 어깨폭 대비 18% 확장 (임상적으로 견봉 근사치).
+// 부가 효과: y축 기울기도 동일 비율로 증폭되어 비대칭 감지 감도 향상.
+const ACROMION_K=1.18;
+function getAcromion(lm){
+  if(!lm||!lm[11]||!lm[12]) return null;
+  if(lm[11].visibility<.3||lm[12].visibility<.3) return null;
+  const ls=lm[11], rs=lm[12];
+  const mx=(ls.x+rs.x)/2, my=(ls.y+rs.y)/2;
+  return {
+    L:{x:mx+(ls.x-mx)*ACROMION_K, y:my+(ls.y-my)*ACROMION_K, visibility:ls.visibility, z:ls.z},
+    R:{x:mx+(rs.x-mx)*ACROMION_K, y:my+(rs.y-my)*ACROMION_K, visibility:rs.visibility, z:rs.z}
+  };
+}
+// 화면 표시용 랜드마크 배열 반환 (11/12가 견봉 위치로 치환됨)
+function getDisplayLM(lm){
+  if(!lm) return lm;
+  const ac=getAcromion(lm);
+  if(!ac) return lm;
+  const copy=lm.slice();
+  copy[11]=ac.L;
+  copy[12]=ac.R;
+  return copy;
+}
+
+// ═══════════════════════════════════════════
 // MARKDOWN RENDERER (경량, AI 응답 표시 전용)
 // ═══════════════════════════════════════════
 // XSS 방지: 입력 텍스트를 먼저 이스케이프하고, 그 뒤 허용된 문법만 HTML로 변환
@@ -1076,6 +1112,9 @@ window.addEventListener('load', () => {
   showPhase('before');
   setInterval(tickTS,1000); tickTS();
   restoreAll();
+  // 버전/빌드 배지
+  const bb=document.getElementById('buildBadge');
+  if(bb) bb.textContent=APP_VERSION+' · '+BUILD_TIME;
   let _scTm=null;
   window.addEventListener('scroll',()=>{
     clearTimeout(_scTm);_scTm=setTimeout(()=>{
@@ -1325,9 +1364,11 @@ async function loadImg(tid,slot,src,skipSave){
       _s.pose=poseR.landmarks;
       if(poseR.segMask){const mc2=document.createElement('canvas');mc2.width=_s.canvas.width;mc2.height=_s.canvas.height;mc2.getContext('2d').drawImage(poseR.segMask,0,0,mc2.width,mc2.height);_s.segMask=mc2;}
       redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
-      // Before 사진에만 AI 자동분석 적용 (After는 비교 대상)
+      // AI 체크리스트 자동분석: Before/After 양쪽 모두 실행 (좌우 높이 판정은 Before/After 공통 필요)
+      autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
+      // Before 사진 전용: 서술형 자세 분석 함께 생성
       if(_slot==='B'){
-        autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
+        generateBeforeNarrative(_tid,poseR.landmarks,_s.canvas.width,_s.canvas.height);
       }
       toast('재분석 완료');
     } else {
@@ -1393,9 +1434,11 @@ async function loadImg(tid,slot,src,skipSave){
         }
         redrawSlot(tid,slot);
         saveMarkers(tid,slot);
-        // AI 체크리스트 자동 채우기: Before 사진에만 실행 (After는 비교용)
+        // AI 체크리스트 자동 채우기: Before/After 양쪽 모두 (좌우 비대칭 판정은 양쪽 공통)
+        setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,useImg.width,useImg.height),400);
+        // Before 사진 전용: 서술형 자세 분석 함께 생성
         if(slot==='B'){
-          setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,useImg.width,useImg.height),400);
+          setTimeout(()=>generateBeforeNarrative(tid,poseResult.landmarks,useImg.width,useImg.height),600);
         }
         // 체크리스트 자동 오픈 (트레이너가 바로 항목 확인 가능)
         const hdEl=document.getElementById(`cih_${tid}_${slot}`);
@@ -1731,50 +1774,51 @@ async function autoFillChecklist(tid, slot, lm, W, H){
       return;
     }
 
-    // ─ 포즈 데이터 우선 오버라이드 (v2: 각도 기반) ─
-    // AI는 시각 판단이 불안정하므로, 어깨/골반 같은 기하학적 측정은 MediaPipe 좌표로 강제 결정한다.
-    // v2: 카메라 거리에 상관없이 정확하도록 "각도(°)" 기준으로 변환. 사진 높이 기준(%) 사용 중단.
-    // 임상 기준: 어깨/골반 기울기 1.2° 이상이면 비대칭으로 판정 (clinically significant tilt).
+    // ─ 포즈 데이터 우선 오버라이드 (v3: 견봉 기준 각도) ─
+    // AI 시각판단은 불안정하므로, 어깨/골반 기하 측정은 MediaPipe 좌표로 강제 결정.
+    // v3: MediaPipe shoulder landmark → 견봉(acromion) 위치로 외삽 후 각도 계산.
+    // 임상 기준: 어깨/골반 기울기 1.0° 이상이면 비대칭 판정 (더 민감하게).
     if(lm&&W&&H){
-      const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
-      const ANGLE_TH=1.2; // degrees — clinically significant asymmetry
-      // 계산 보조: 두 랜드마크 간 수평선 대비 기울기(°). 부호: dy>0이면 첫번째가 더 아래쪽.
+      // 견봉 보정된 랜드마크로 작업
+      const dlm=getDisplayLM(lm);
+      const v=(...ids)=>ids.every(i=>dlm[i]&&dlm[i].visibility>.4);
+      const ANGLE_TH=1.0; // degrees — clinically significant asymmetry
       const tiltDeg=(a,b)=>{
-        const dx=Math.abs((lm[a].x-lm[b].x)*W);
-        const dy=(lm[a].y-lm[b].y)*H;
+        const dx=Math.abs((dlm[a].x-dlm[b].x)*W);
+        const dy=(dlm[a].y-dlm[b].y)*H;
         if(dx<1) return 0;
         return Math.atan(dy/dx)*180/Math.PI;
       };
       const overrideMap={};
       if(v(11,12)){
-        // lm[11]=Lt shoulder, lm[12]=Rt shoulder. y증가=아래쪽
+        // dlm[11]=Lt 견봉, dlm[12]=Rt 견봉 (acromion 보정). y증가=아래쪽
         // ang > TH → Lt가 더 아래 → Rt가 더 높음 → option 1 (Rt. 높음)
         // ang < -TH → Lt가 더 높음 → option 0 (Lt. 높음)
         // |ang| <= TH → 동일 → option 2
         const ang=tiltDeg(11,12);
-        const dyPx=(lm[11].y-lm[12].y)*H;
+        const dyPx=(dlm[11].y-dlm[12].y)*H;
         const sel = ang>ANGLE_TH?1 : ang<-ANGLE_TH?0 : 2;
-        const reasonTxt=`MediaPipe: 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
+        const reasonTxt=`견봉 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
         if(tid==='ant') overrideMap['ant_sh']={sel,reason:reasonTxt};
         if(tid==='post') overrideMap['post_scap']={sel,reason:reasonTxt};
       }
       if(v(23,24)){
         const ang=tiltDeg(23,24);
-        const dyPx=(lm[23].y-lm[24].y)*H;
+        const dyPx=(dlm[23].y-dlm[24].y)*H;
         const sel = ang>ANGLE_TH?1 : ang<-ANGLE_TH?0 : 2;
-        const reasonTxt=`MediaPipe: 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
+        const reasonTxt=`골반 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
         if(tid==='ant') overrideMap['ant_pel']={sel,reason:reasonTxt};
         if(tid==='post') overrideMap['post_pel']={sel,reason:reasonTxt};
       }
       // 무릎 정렬(knee varus/valgus) 강화: 무릎폭/골반폭 비율
       if(v(25,26,23,24)&&tid==='ant'){
-        const hw=Math.abs((lm[23].x-lm[24].x)*W);
-        const kw=Math.abs((lm[25].x-lm[26].x)*W);
+        const hw=Math.abs((dlm[23].x-dlm[24].x)*W);
+        const kw=Math.abs((dlm[25].x-dlm[26].x)*W);
         if(hw>0){
           const ratio=kw/hw*100;
           // <82% = 내반슬 경향(option 0), >118% = 외반슬 경향(option 1), 그 외 = 정상(option 2)
           const sel = ratio<82?0 : ratio>118?1 : 2;
-          overrideMap['ant_knee']={sel,reason:`MediaPipe: 무릎/골반폭 비율 ${ratio.toFixed(0)}%`};
+          overrideMap['ant_knee']={sel,reason:`무릎/골반폭 비율 ${ratio.toFixed(0)}%`};
         }
       }
       // AI 결과에서 해당 항목들을 오버라이드 (덮어쓰기 또는 추가)
@@ -1812,16 +1856,97 @@ async function autoFillChecklist(tid, slot, lm, W, H){
   }
 }
 
+// ═══════════════════════════════════════════
+// BEFORE 사진 서술형 자세 분석 (AI 단문 리포트)
+// ═══════════════════════════════════════════
+// 목적: 트레이너/고객이 사진 아래에서 "어디가 어떻게 틀어졌는지" 한눈에 볼 수 있게
+// 서술형으로 요약. 체크리스트와는 별개.
+async function generateBeforeNarrative(tid,lm,W,H){
+  const host=document.getElementById(`zone_${tid}_B`)?.parentElement; // test-card
+  if(!host) return;
+  let nbox=document.getElementById(`narr_${tid}`);
+  if(!nbox){
+    nbox=document.createElement('div');
+    nbox.id=`narr_${tid}`;
+    nbox.className='narr-box';
+    // 체크리스트 앞에 삽입
+    const chkInline=host.querySelector('.chk-inline');
+    if(chkInline) host.insertBefore(nbox,chkInline);
+    else host.appendChild(nbox);
+  }
+  nbox.innerHTML='<div class="narr-title">AI 자세 분석</div><div class="narr-body"><div class="spin" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>사진을 해석 중...</div>';
+  // 픽셀 수치 계산 (견봉 기준)
+  const dlm=getDisplayLM(lm);
+  const vis=(...ids)=>ids.every(i=>dlm[i]&&dlm[i].visibility>.4);
+  const metrics=[];
+  if(vis(11,12)){
+    const dx=Math.abs((dlm[11].x-dlm[12].x)*W);
+    const dy=(dlm[11].y-dlm[12].y)*H;
+    const ang=dx>0?Math.atan(dy/dx)*180/Math.PI:0;
+    metrics.push(`어깨(견봉): ${ang.toFixed(1)}° 기울어짐, ${Math.abs(dy).toFixed(0)}px (${dy>0?'우측 높음':'좌측 높음'})`);
+  }
+  if(vis(23,24)){
+    const dx=Math.abs((dlm[23].x-dlm[24].x)*W);
+    const dy=(dlm[23].y-dlm[24].y)*H;
+    const ang=dx>0?Math.atan(dy/dx)*180/Math.PI:0;
+    metrics.push(`골반: ${ang.toFixed(1)}° 기울어짐, ${Math.abs(dy).toFixed(0)}px (${dy>0?'우측 높음':'좌측 높음'})`);
+  }
+  if(vis(0,11,12)){
+    const headX=dlm[0].x*W;
+    const midShX=(dlm[11].x+dlm[12].x)/2*W;
+    metrics.push(`머리 전방/측방 이동: ${Math.abs(headX-midShX).toFixed(0)}px`);
+  }
+  if(vis(25,26,23,24)){
+    const hw=Math.abs((dlm[23].x-dlm[24].x)*W);
+    const kw=Math.abs((dlm[25].x-dlm[26].x)*W);
+    if(hw>0) metrics.push(`무릎/골반폭 비율: ${(kw/hw*100).toFixed(0)}%`);
+  }
+  // 관점 문맥
+  const ctx=TEST_CONTEXT[tid]||'일반 자세 평가';
+  const prompt=`당신은 16년 경력의 스포츠 물리치료사 겸 움직임 분석 전문가입니다.
+
+다음은 MediaPipe Pose가 추출한 Before 사진의 기하학적 측정치입니다:
+${metrics.join('\n')||'(측정치 없음 — 전신 가시성 낮음)'}
+
+검사 관점: ${ctx}
+
+위 데이터를 바탕으로 이 사진에서 보이는 자세 틀어짐·불균형·문제점을 **서술형 한 단락**(3~5문장)으로 정리하세요.
+- 수치를 반드시 인용 (예: "우측 어깨가 1.8° 낮으며...")
+- 이 데이터가 시사하는 근긴장/약화 패턴 언급 (예: "좌측 상부승모근 단축 의심")
+- 구체 해부학 용어 사용
+- 인사말·마크다운 기호(**, ##) 금지. 순수 텍스트 문단 한 개만.`;
+  try{
+    const _pw=getAppPw();
+    if(!_pw){
+      nbox.querySelector('.narr-body').innerHTML=`<span style="color:var(--tx3);font-size:12px">AI 비밀번호 미설정 — 측정치 기반 요약:</span><br><span style="font-size:12px">${metrics.join(' · ')||'데이터 부족'}</span>`;
+      return;
+    }
+    const res=await fetch(NG_API_BASE+'/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-app-password':_pw},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){
+      nbox.querySelector('.narr-body').textContent='AI 분석 실패 — '+metrics.join(' · ');
+      return;
+    }
+    const data=await res.json();
+    const text=data.content?.[0]?.text||'분석 실패';
+    nbox.querySelector('.narr-body').innerHTML=renderMD(text);
+  }catch(e){
+    nbox.querySelector('.narr-body').textContent='네트워크 오류 — '+metrics.join(' · ');
+  }
+}
+
 // Fallback: simple rule-based (when no API key)
 function autoFillChecklistFallback(tid,slot,lm,W,H){
   if(!lm||!W||!H) return;
+  // 어깨(11,12) → 견봉(acromion) 보정
+  lm=getDisplayLM(lm);
   const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
   const suggestions={};
-  // v2: 카메라 거리 영향 없는 각도(°) 기반. 1.2° 이상이면 비대칭.
-  // 방향 규칙: lm[11/23]=Lt, lm[12/24]=Rt, y증가=화면아래쪽
-  // ang > TH → Lt가 더 아래 → Rt가 더 높음 → option 1 (Rt. 높음)
-  // ang < -TH → Lt가 더 높음 → option 0 (Lt. 높음)
-  const ANGLE_TH=1.2;
+  // v3: 견봉 기준 각도. 1.0° 이상이면 비대칭.
+  const ANGLE_TH=1.0;
   const tiltDeg=(a,b)=>{
     const dx=Math.abs((lm[a].x-lm[b].x)*W);
     const dy=(lm[a].y-lm[b].y)*H;
@@ -1891,7 +2016,8 @@ function redrawSlot(tid,slot){
   const mkCol=isB?'#be1414':'#0f46c8';
   const lw=Math.max(3,W*.0045);
   if(s.pose){
-    const lm=s.pose;
+    // 표시용: 어깨 랜드마크(11,12)를 견봉 위치로 치환
+    const lm=getDisplayLM(s.pose);
     const lw2=Math.max(3,W*.005);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
     const pr=Math.max(7,W*.009);
@@ -2537,6 +2663,8 @@ function onFsCtrl(){
 // CLINICAL (AI via Anthropic API)
 // ═══════════════════════════════════════════
 function calcM(lm,W,H){
+  // 어깨 측정치는 견봉(acromion) 기준으로 계산 (MediaPipe shoulder joint → acromion extrapolation)
+  lm=getDisplayLM(lm);
   const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
   const a2=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
   const m={};
@@ -2805,9 +2933,8 @@ function updateReport(){
 }
 
 function updateCompareCta(){
-  const any=TESTS.some(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img);
-  const cta=document.getElementById('compareCta');
-  if(cta)cta.classList.toggle('show',any&&currentPhase!=='compare');
+  // compareCta 제거됨 (v1.0.1). 상단 네비 탭으로 비교 분석 이동.
+  // 호환성을 위해 stub 유지 — 호출 지점 정리 시 제거 가능.
 }
 
 // ═══════════════════════════════════════════
@@ -2914,10 +3041,9 @@ function exportPDF(){
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
     const pw=210;
-    // A4 height per page
-    const img=new Image();img.onload=()=>{
+    const img=new Image();img.onload=async()=>{
       const imgW=pw-20;const imgH=imgW*img.height/img.width;
-      const pageH=297-20;let yOff=10;
+      const pageH=297-20;
       if(imgH<=pageH){
         doc.addImage(dataUrl,'PNG',10,10,imgW,imgH);
       } else {
@@ -2933,21 +3059,37 @@ function exportPDF(){
         }
       }
       const filename=(document.getElementById('cName')?.value||'회원')+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf';
+      // iOS/모바일: 네이티브 공유 시트로 "파일에 저장" 선택 가능
+      // (doc.save는 iOS Safari에서 저장 위치 선택창을 띄우지 않음)
+      const pdfBlob=doc.output('blob');
+      const pdfFile=new File([pdfBlob],filename,{type:'application/pdf'});
+      const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[pdfFile]})){
+        try{
+          await navigator.share({
+            title:'NationalGym NPT 리포트',
+            text:filename,
+            files:[pdfFile]
+          });
+          toast('저장/공유 완료');
+          return;
+        }catch(e){
+          if(e.name==='AbortError')return; // 사용자 취소
+          console.warn('PDF share failed, falling back to download:',e);
+        }
+      }
+      // 폴백: 직접 다운로드 (데스크탑 브라우저/일부 안드로이드)
       doc.save(filename);
-      // 저장 위치 안내 (플랫폼별로 다르게)
-      const ua=navigator.userAgent;
-      const isIOS=/iPad|iPhone|iPod/.test(ua);
-      const isAndroid=/Android/.test(ua);
       let locHint='';
       if(isIOS) locHint='iPhone 파일 앱 → 다운로드 폴더';
-      else if(isAndroid) locHint='파일/내파일 → Download 폴더';
+      else if(/Android/.test(navigator.userAgent)) locHint='파일/내파일 → Download 폴더';
       else locHint='브라우저 다운로드 폴더';
       showPDFSavedModal(filename,locHint);
     };img.src=dataUrl;
   }).catch(e=>{toast('PDF 생성 실패: '+e.message)});
 }
 
-// PDF 저장 완료 시 위치 안내 모달
+// PDF 저장 완료 시 위치 안내 모달 (Web Share 미지원 환경용 폴백)
 function showPDFSavedModal(filename,locHint){
   const existing=document.getElementById('pdfSavedModal');if(existing)existing.remove();
   const m=document.createElement('div');m.id='pdfSavedModal';
@@ -3057,19 +3199,28 @@ function _exportPDF_UNUSED(){
   doc.save(name+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('PDF 저장 완료');
 }
-// ─ 전문 공유카드 합성 ─
-// 흰 배경, 헤더(국짐 브랜드), 이름/날짜, Before/After 뷰 썸네일 그리드
+// ─ 전문 공유카드 합성 (v2: 전체 테스트 + AI 종합리포트 포함) ─
+// 세로 긴 캔버스 한 장에 모든 내용을 넣음. iOS 공유 시트에서 파일로 저장/공유 가능.
 async function buildShareCard(name,trainer){
   const donePairs=TESTS.filter(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
   if(!donePairs.length) return null;
-  // 캔버스 규격: 1080x1350 (인스타/카톡 세로 비율, iPhone에서 잘 보임)
-  const CW=1080,pad=60,headerH=220,footerH=80;
-  // 최대 4개 검사 × 2열 = 8셀 (Before/After 쌍). 여유있게 상위 4개만.
-  const show=donePairs.slice(0,4);
-  const rows=show.length;
-  const cellH=320;
-  const gridH=rows*(cellH+60)+40;
-  const CH=headerH+gridH+footerH+pad*2;
+  const CW=1080,pad=60,headerH=220;
+  // 각 테스트 카드 높이: 타이틀 + 이미지 그리드 + 간격
+  const cellImgH=380;
+  const testCardH=cellImgH+110; // title+grid+gap
+  const testSectionH=donePairs.length*testCardH+40;
+  // AI 리포트 텍스트 영역 (있을 경우)
+  const aiReportText=document.getElementById('aiReportContent')?.innerText?.trim()||'';
+  // 텍스트 한 줄당 높이 28px, 가로 900px 기준으로 예상 줄 수 계산
+  const rptFontSize=22, rptLineH=32, rptMaxCharsPerLine=38; // 대략
+  const rptLinesEstimate=aiReportText?Math.ceil(aiReportText.length/rptMaxCharsPerLine)+aiReportText.split('\n').length+10:0;
+  const rptSectionH=aiReportText?(80+rptLinesEstimate*rptLineH+40):0;
+  // 트레이너 코멘트 영역
+  const trComment=document.getElementById('trainerComment')?.value?.trim()||'';
+  const trCommentLines=trComment?Math.ceil(trComment.length/rptMaxCharsPerLine)+trComment.split('\n').length+2:0;
+  const trSectionH=trComment?(80+trCommentLines*rptLineH+40):0;
+  const footerH=100;
+  const CH=headerH+pad+testSectionH+rptSectionH+trSectionH+footerH+pad;
   const cv=document.createElement('canvas');
   cv.width=CW;cv.height=CH;
   const c=cv.getContext('2d');
@@ -3077,39 +3228,44 @@ async function buildShareCard(name,trainer){
   c.fillStyle='#ffffff';c.fillRect(0,0,CW,CH);
   // 헤더 (검정 바)
   c.fillStyle='#0a0a0a';c.fillRect(0,0,CW,headerH);
-  // 브랜드 그린 악센트 라인
   c.fillStyle='#00a878';c.fillRect(0,headerH-6,CW,6);
-  // 타이틀
+  // 로고/타이틀
   c.fillStyle='#ffffff';
-  c.font='800 54px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.font='800 56px -apple-system,"Apple SD Gothic Neo",sans-serif';
   c.textAlign='left';c.textBaseline='top';
-  c.fillText('NationalGym',pad,56);
+  c.fillText('NationalGym',pad,54);
   c.fillStyle='#9de8c8';
-  c.font='600 26px -apple-system,"Apple SD Gothic Neo",sans-serif';
-  c.fillText('NPT 체형분석 리포트',pad,120);
-  // 이름/날짜 (우측)
+  c.font='600 28px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.fillText('NPT 체형분석 리포트',pad,122);
+  // 이름/날짜/트레이너 (우측)
   c.textAlign='right';
   c.fillStyle='#ffffff';
-  c.font='700 36px -apple-system,"Apple SD Gothic Neo",sans-serif';
-  c.fillText(name,CW-pad,58);
+  c.font='700 38px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.fillText(name+' 회원',CW-pad,56);
   c.fillStyle='#9de8c8';
   c.font='500 22px -apple-system,"Apple SD Gothic Neo",sans-serif';
   const dateStr=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
-  c.fillText(dateStr+(trainer?(' · '+trainer+' T'):''),CW-pad,108);
-  // 본문 그리드
-  let y=headerH+pad;
-  const colW=(CW-pad*2-40)/2; // 2열
-  const imgH=cellH-40;
+  c.fillText(dateStr+(trainer?(' · 담당 '+trainer):''),CW-pad,110);
+  c.font='400 16px -apple-system,sans-serif';
+  c.fillStyle='#7dd4b4';
+  c.fillText(APP_VERSION+' · '+BUILD_TIME,CW-pad,148);
   c.textAlign='left';
-  for(const t of show){
-    // 섹션 타이틀
-    c.fillStyle='#111';
-    c.font='700 26px -apple-system,"Apple SD Gothic Neo",sans-serif';
-    c.fillText(t.title,pad,y);
+  // ─ 본문: 모든 테스트 카드 ─
+  let y=headerH+pad;
+  const colW=(CW-pad*2-40)/2;
+  for(const t of donePairs){
+    // 섹션 타이틀 바
+    c.fillStyle='#0a0a0a';
+    c.fillRect(pad,y,CW-pad*2,50);
     c.fillStyle='#00a878';
-    c.fillRect(pad,y+38,80,3);
-    y+=54;
-    // Before / After 셀
+    c.fillRect(pad,y,6,50);
+    c.fillStyle='#ffffff';
+    c.font='700 26px -apple-system,"Apple SD Gothic Neo",sans-serif';
+    c.textBaseline='middle';
+    c.fillText('  '+t.title,pad+14,y+25);
+    c.textBaseline='top';
+    y+=66;
+    // Before/After 2열
     const bS=SHOTS[t.id]?.B,aS=SHOTS[t.id]?.A;
     const cells=[
       {label:'BEFORE',color:'#be1414',src:bS?.canvas},
@@ -3118,43 +3274,108 @@ async function buildShareCard(name,trainer){
     cells.forEach((cell,idx)=>{
       const cx=pad+idx*(colW+40);
       if(cell.src){
-        // 이미지 비율 유지하며 셀 중앙에 그리기
         const sw=cell.src.width,sh=cell.src.height;
-        const ratio=Math.min(colW/sw,imgH/sh);
+        const ratio=Math.min(colW/sw,cellImgH/sh);
         const dw=sw*ratio,dh=sh*ratio;
-        const dx=cx+(colW-dw)/2,dy=y+(imgH-dh)/2;
-        // 배경 플레이트
+        const dx=cx+(colW-dw)/2,dy=y+(cellImgH-dh)/2;
         c.fillStyle='#f3f1ea';
-        c.fillRect(cx,y,colW,imgH);
+        c.fillRect(cx,y,colW,cellImgH);
         c.drawImage(cell.src,dx,dy,dw,dh);
       } else {
         c.fillStyle='#e5e3db';
-        c.fillRect(cx,y,colW,imgH);
-        c.fillStyle='#999';
+        c.fillRect(cx,y,colW,cellImgH);
+        c.fillStyle='#888';
         c.font='500 22px -apple-system,sans-serif';
         c.textAlign='center';
-        c.fillText('(미촬영)',cx+colW/2,y+imgH/2);
+        c.fillText('(미촬영)',cx+colW/2,y+cellImgH/2);
         c.textAlign='left';
       }
-      // 라벨 바
       c.fillStyle=cell.color;
-      c.fillRect(cx,y+imgH,colW,30);
-      c.fillStyle='#fff';
-      c.font='800 18px -apple-system,sans-serif';
+      c.fillRect(cx,y+cellImgH,colW,36);
+      c.fillStyle='#ffffff';
+      c.font='800 20px -apple-system,sans-serif';
       c.textAlign='center';
-      c.fillText(cell.label,cx+colW/2,y+imgH+6);
+      c.textBaseline='middle';
+      c.fillText(cell.label,cx+colW/2,y+cellImgH+18);
+      c.textBaseline='top';
       c.textAlign='left';
     });
-    y+=imgH+30+30;
+    y+=cellImgH+36+24;
   }
-  // 푸터
+  // ─ 트레이너 코멘트 ─
+  if(trComment){
+    y+=10;
+    c.fillStyle='#e6f7f2';
+    const trEnd=drawWrappedText(c,trComment,pad,y+60,CW-pad*2,rptFontSize,rptLineH,'#111827',true);
+    c.fillStyle='#e6f7f2';
+    c.fillRect(pad-8,y,CW-pad*2+16,trEnd-y+20);
+    c.fillStyle='#00a878';
+    c.font='800 22px -apple-system,sans-serif';
+    c.fillText('트레이너 코멘트',pad+4,y+14);
+    drawWrappedText(c,trComment,pad+4,y+56,CW-pad*2-8,rptFontSize,rptLineH,'#111827');
+    y=trEnd+40;
+  }
+  // ─ AI 종합 분석 리포트 ─
+  if(aiReportText){
+    y+=10;
+    // 섹션 타이틀
+    c.fillStyle='#0a0a0a';
+    c.fillRect(pad,y,CW-pad*2,48);
+    c.fillStyle='#ffffff';
+    c.font='800 24px -apple-system,sans-serif';
+    c.textBaseline='middle';
+    c.fillText('  AI 종합 분석',pad+14,y+24);
+    c.textBaseline='top';
+    y+=60;
+    // 본문 텍스트 (래핑)
+    const endY=drawWrappedText(c,aiReportText,pad+8,y,CW-pad*2-16,rptFontSize,rptLineH,'#333');
+    y=endY+20;
+  }
+  // ─ 푸터 ─
+  const footY=CH-footerH;
   c.fillStyle='#f8f8f6';
-  c.fillRect(0,CH-footerH,CW,footerH);
-  c.fillStyle='#888';
-  c.font='500 20px -apple-system,sans-serif';
+  c.fillRect(0,footY,CW,footerH);
+  c.fillStyle='#00a878';
+  c.fillRect(0,footY,CW,3);
+  c.fillStyle='#555';
+  c.font='600 20px -apple-system,sans-serif';
   c.textAlign='center';
-  c.fillText('NationalGym · Powered by WellnessMode NPT',CW/2,CH-footerH/2-10);
+  c.fillText('NationalGym · NPT 체형분석',CW/2,footY+24);
+  c.fillStyle='#888';
+  c.font='400 16px -apple-system,sans-serif';
+  c.fillText('Powered by WellnessMode · '+APP_VERSION,CW/2,footY+54);
+  c.textAlign='left';
   return cv;
+}
+
+// 캔버스 텍스트 래핑 헬퍼 (한글/영문 혼합)
+function drawWrappedText(ctx,text,x,y,maxW,fontSize,lineH,color){
+  ctx.fillStyle=color;
+  ctx.font=`400 ${fontSize}px -apple-system,"Apple SD Gothic Neo",sans-serif`;
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  const paragraphs=String(text).split('\n');
+  let cy=y;
+  for(const para of paragraphs){
+    if(!para.trim()){cy+=lineH*.5;continue}
+    // 단어 단위로 쪼갠 뒤 라인 빌드
+    const words=para.split(/(\s+)/);
+    let line='';
+    for(const w of words){
+      const testLine=line+w;
+      const metrics=ctx.measureText(testLine);
+      if(metrics.width>maxW&&line.trim()){
+        ctx.fillText(line,x,cy);
+        cy+=lineH;
+        line=w.trimStart();
+      } else {
+        line=testLine;
+      }
+    }
+    if(line.trim()){ctx.fillText(line,x,cy);cy+=lineH}
+    cy+=4; // 문단 간격
+  }
+  return cy;
 }
 
 async function doShare(){
