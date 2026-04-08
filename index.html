@@ -157,6 +157,14 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .sev-dot.sev-warn{background:#f59e0b}
 .sev-dot.sev-bad{background:#ef4444}
 .sev-dot.sev-none{background:#4b5563}
+.ex-card{background:#fff;border:1px solid var(--brd);border-left:4px solid #00a878;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.ex-title{font-size:13px;font-weight:800;color:#0a5a3c;margin-bottom:4px}
+.ex-finding{font-size:11px;color:var(--tx3);margin-bottom:8px;line-height:1.4}
+.ex-list{display:flex;flex-direction:column;gap:8px}
+.ex-item{padding:8px 10px;background:#f0faf5;border-radius:8px}
+.ex-name{font-size:12px;font-weight:700;color:#064e3b;margin-bottom:2px}
+.ex-meta{font-size:10px;color:#065f46;font-weight:600;margin-bottom:3px}
+.ex-cue{font-size:10px;color:var(--tx2);line-height:1.4}
 .sess-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:1px solid var(--brd);border-radius:8px;margin-bottom:6px;font-size:12px}
 .sess-date{flex:1;color:var(--tx2)}
 .sess-scores{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--tx3);font-size:11px}
@@ -265,6 +273,10 @@ input[type=range]{accent-color:var(--green)}
       </div>
       <div class="f"><label>키 (cm)</label><input id="cHeight" type="number" inputmode="numeric" min="100" max="230" placeholder="예: 175" oninput="autoSave()" style="font-variant-numeric:tabular-nums"></div>
       <div class="f"><label>검사 일시</label><div class="ts-val" id="tsDispFull">—</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;background:#f8f8f6;border-radius:8px">
+      <input type="checkbox" id="cFaceBlur" onchange="toggleFaceBlur(this.checked)" style="width:15px;height:15px;accent-color:var(--green)">
+      <label for="cFaceBlur" style="font-size:11px;color:var(--tx);font-weight:600;cursor:pointer;flex:1">🔒 얼굴 블러 — 공유/PDF 시 얼굴 자동 가리기</label>
     </div>
     <div style="font-size:10px;color:var(--tx3);margin-top:8px;line-height:1.4">💡 키(cm)를 입력하면 모든 측정치가 실제 길이(mm) 단위로 자동 변환됩니다. (전신이 프레임에 포함될 때만 가능)</div>
   </div>
@@ -1059,6 +1071,7 @@ const NORMS = {
   headOffset:{max:30,unit:'px',lbl:'정상 30px 이하 (FHP)',w:8},
   headTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:8},
   cva:{min:50,unit:'°',lbl:'정상 50° 이상 (FHP 임상 기준)',w:10},
+  potsi:{max:27,unit:'',lbl:'정상 27 이하 (POTSI 측만 지수)',w:8},
   kneeAlign:{min:85,max:115,unit:'%',lbl:'정상 85~115%',w:10},
   slrAngle:{min:60,max:85,unit:'°',lbl:'정상 60~85°',w:6},
   trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준, 척추 수평에 가까울수록 양호)',w:6},
@@ -1148,8 +1161,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.2.0';
-const BUILD_TIME='2026-04-08 18:30';
+const APP_VERSION='v1.3.0';
+const BUILD_TIME='2026-04-08 18:50';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1386,6 +1399,7 @@ function buildReportPhase(){
   <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트</div>
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="트레이너 종합 소견 및 처방 메모를 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
   </div>
+  <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 처방</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
   <div class="rep-sec" id="aiReportSec" style="display:none"><div class="rep-sec-hd">AI 종합 분석 리포트</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 버튼을 눌러 AI 분석을 생성하세요.</p></div></div>
   <button class="abtn primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px;border-radius:var(--r2)" onclick="genAIReport()">AI 종합 분석 생성</button>
   <!-- 세션 히스토리 / 트렌드 -->
@@ -1397,6 +1411,114 @@ function buildReportPhase(){
     <p style="font-size:12px;color:var(--tx3)">이름을 입력한 뒤 "현재 세션 저장"을 누르면 종합 점수·측정치·체크리스트가 로컬에 저장됩니다. 재검사 시 점수 추이를 차트로 확인할 수 있습니다.</p>
   </div></div>
   <div class="rep-actions"><button class="ract pdf" onclick="exportPDF()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF 저장</button><button class="ract share" onclick="doShare()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>카톡 공유</button></div>`;
+}
+
+// ═══════════════════════════════════════════
+// EXERCISE LIBRARY (근거 기반 교정 운동 매핑)
+// ═══════════════════════════════════════════
+// 소견 패턴 → 추천 운동 목록. PostureScreen의 WebExercises/CBP 컨셉을 Korean 버전으로.
+// 각 운동: {name, target(목표근), sets, reps, hold, cue(지도 포인트)}
+const EX_LIB = {
+  shoulder_tilt: {
+    title: '어깨 비대칭 교정',
+    findings: '어깨 높이 차이 · 상부승모근 긴장 불균형',
+    exercises: [
+      {name:'벽 엔젤 (Wall Angel)', target:'하부승모근·능형근', sets:3, reps:12, cue:'엉덩이·어깨·머리 벽 밀착, 팔꿈치 90° 유지'},
+      {name:'밴드 페이스풀 (Face Pull)', target:'후면삼각근·중부승모근', sets:3, reps:15, cue:'팔꿈치 높이 유지, 견갑 내전'},
+      {name:'측면 넥 릴리즈 (Neck Stretch)', target:'상부승모근·견갑거근', sets:3, hold:'30초/측', cue:'높은 쪽 어깨 아래로, 귀를 반대쪽 어깨로'}
+    ]
+  },
+  pelvic_tilt: {
+    title: '골반 기울기 교정',
+    findings: '골반 좌우 높이 차이 · QL 긴장 불균형',
+    exercises: [
+      {name:'사이드 플랭크 (Side Plank)', target:'중둔근·복사근', sets:3, hold:'30초/측', cue:'하체 정렬, 엉덩이 들어올림'},
+      {name:'클램셸 (Clamshell)', target:'중둔근·소둔근', sets:3, reps:15, cue:'발 붙이고 무릎만 벌림'},
+      {name:'QL 스트레칭', target:'요방형근', sets:3, hold:'30초/측', cue:'팔 위로, 골반 반대쪽으로'}
+    ]
+  },
+  fhp: { // Forward Head Posture
+    title: 'FHP(거북목) 교정',
+    findings: 'CVA < 50° · 두부 전방 이동 · 상부승모근 과활성',
+    exercises: [
+      {name:'친 턱 (Chin Tuck)', target:'심부경추굴근', sets:3, reps:15, cue:'이중턱 만들듯, 머리 수평 뒤로'},
+      {name:'밴드 로잉 (Banded Row)', target:'중부승모근·능형근', sets:3, reps:12, cue:'견갑 먼저 당김, 팔꿈치 뒤로'},
+      {name:'도어웨이 펙 스트레치', target:'대흉근', sets:3, hold:'30초', cue:'팔꿈치 90°, 가슴 앞으로 열기'}
+    ]
+  },
+  knee_valgus: {
+    title: '무릎 외반(Knee Valgus) 교정',
+    findings: '무릎 X자 정렬 · 중둔근 약화 · 고관절 외회전 근육 약화',
+    exercises: [
+      {name:'밴드 몬스터 워크', target:'중둔근·소둔근', sets:3, reps:'10걸음/방향', cue:'무릎 벌림 유지, 작은 보폭'},
+      {name:'글루트 브릿지', target:'둔근', sets:3, reps:15, cue:'발 어깨너비, 엉덩이 완전 수축'},
+      {name:'벽 스쿼트', target:'대퇴사두·둔근', sets:3, hold:'30초', cue:'무릎 발가락 방향, 외회전 유지'}
+    ]
+  },
+  knee_varus: {
+    title: '무릎 내반(O자) 교정',
+    findings: '무릎 O자 정렬 · 고관절 내전근 약화 · 외측근 긴장',
+    exercises: [
+      {name:'이너 타이 스퀴즈', target:'내전근', sets:3, reps:15, cue:'공을 무릎 사이에 두고 조이기'},
+      {name:'단각 데드리프트', target:'햄스트링·둔근·코어', sets:3, reps:10, cue:'지지발 무게 중심, 골반 중립'},
+      {name:'IT 밴드 폼롤링', target:'장경인대', sets:1, hold:'60초/측', cue:'천천히 롤, 통증 지점 집중'}
+    ]
+  },
+  lumbar_hyperlordosis: {
+    title: '요추 과전만 교정 (ATPT)',
+    findings: '골반 전방 경사 · 복부 약화 · 고관절 굴곡근 단축',
+    exercises: [
+      {name:'데드버그 (Dead Bug)', target:'심부복근', sets:3, reps:10, cue:'허리 바닥 고정, 반대팔/다리'},
+      {name:'커치 스트레치 (고관절 굴곡근)', target:'장요근', sets:3, hold:'30초/측', cue:'둔근 활성화 상태에서 앞으로'},
+      {name:'힙 힌지 패턴', target:'햄스트링·둔근', sets:3, reps:12, cue:'등 중립, 엉덩이 뒤로'}
+    ]
+  },
+  thoracic_kyphosis: {
+    title: '흉추 후만(라운드숄더) 교정',
+    findings: '등 굽음 · 흉추 가동성 저하 · 중부승모근 약화',
+    exercises: [
+      {name:'폼롤러 흉추 신전', target:'흉추 가동성', sets:3, reps:10, cue:'폼롤러 상부 등 아래, 손 뒷머리'},
+      {name:'수퍼맨', target:'척주기립근·후면삼각근', sets:3, reps:12, cue:'목 중립, 가슴 들기'},
+      {name:'월 슬라이드', target:'하부승모근·견갑', sets:3, reps:12, cue:'팔 벽에 유지하며 위아래'}
+    ]
+  }
+};
+
+// 소견 → 운동 매핑: 메트릭 값을 보고 해당되는 운동 카드를 반환
+function getRecommendedExercises(metrics){
+  const recs=[];
+  const pushOnce=(key)=>{if(!recs.includes(key))recs.push(key)};
+  if(metrics.shoulderTilt>3 || metrics.shoulderHDiff>15) pushOnce('shoulder_tilt');
+  if(metrics.hipTilt>3 || metrics.hipHDiff>15) pushOnce('pelvic_tilt');
+  if(metrics.cva!==undefined && metrics.cva<50) pushOnce('fhp');
+  if(metrics.headOffset>30) pushOnce('fhp');
+  if(metrics.kneeAlign!==undefined){
+    if(metrics.kneeAlign>115) pushOnce('knee_valgus');
+    if(metrics.kneeAlign<85) pushOnce('knee_varus');
+  }
+  if(metrics.potsi!==undefined && metrics.potsi>27) pushOnce('shoulder_tilt');
+  // 측면 플럼 편차가 크면 FHP 또는 과전만
+  if(metrics.devEar!==undefined && Math.abs(metrics.devEar)>30) pushOnce('fhp');
+  if(metrics.devHip!==undefined && metrics.devHip>25) pushOnce('lumbar_hyperlordosis');
+  return recs.map(k=>EX_LIB[k]).filter(Boolean);
+}
+
+function renderExerciseRecommendations(metrics){
+  const recs=getRecommendedExercises(metrics);
+  if(!recs.length){
+    return '<div style="font-size:12px;color:var(--tx3);padding:12px;text-align:center">소견에 해당하는 교정 운동이 없습니다. 체형이 정상 범위입니다.</div>';
+  }
+  return recs.map(r=>`<div class="ex-card">
+    <div class="ex-title">${r.title}</div>
+    <div class="ex-finding">🔎 ${r.findings}</div>
+    <div class="ex-list">
+      ${r.exercises.map(e=>`<div class="ex-item">
+        <div class="ex-name">${e.name}</div>
+        <div class="ex-meta">${e.target} · ${e.sets}세트 × ${e.reps||e.hold}</div>
+        <div class="ex-cue">💡 ${e.cue}</div>
+      </div>`).join('')}
+    </div>
+  </div>`).join('');
 }
 
 // ═══════════════════════════════════════════
@@ -2651,6 +2773,8 @@ function redrawSlot(tid,slot){
   const s=SHOTS[tid]?.[slot];if(!s?.ctx||!s?.img)return;
   const c=s.ctx,W=s.canvas.width,H=s.canvas.height;
   c.clearRect(0,0,W,H);c.drawImage(s.img,0,0);
+  // 프라이버시: 얼굴 블러 (있으면 스켈레톤보다 먼저 적용)
+  if(FACE_BLUR_ON && s.pose) applyFaceBlur(c,s.pose,W,H);
   const isB=slot==='B';
   const skelCol=isB?'rgba(190,20,20,.55)':'rgba(15,70,200,.55)';
   const ptCol=isB?'rgba(190,20,20,.85)':'rgba(15,70,200,.85)';
@@ -3365,8 +3489,28 @@ function calcM(lm,W,H){
       if(a?.visibility>.4 && b?.visibility>.4) pt={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
       else if(a?.visibility>.4) pt=a;
       else if(b?.visibility>.4) pt=b;
-      if(pt) m[ck.key]=(pt.x*W)-plumbX; // 양수=앞쪽으로 이탈, 음수=뒤쪽
+      if(pt) m[ck.key]=(pt.x*W)-plumbX;
     });
+  }
+  // POTSI/ATSI — 몸통 대칭 지수 (측만증 스크리닝)
+  // 간소화된 버전: 어깨, 중간(액와), 허리 3개 지점에서 좌우 높이차를 평균 몸통폭으로 정규화.
+  // 정상 <27, 경도 27-41, 중증 >41 (참고: 원저 POTSI는 3개 h-asym + 3 shift = 6요소, 본 구현은 높이 비대칭 합)
+  if(v(11,12,23,24)){
+    const sLy=lm[11].y*H, sRy=lm[12].y*H;
+    const hLy=lm[23].y*H, hRy=lm[24].y*H;
+    const sDiff=Math.abs(sLy-sRy);
+    const wDiff=Math.abs(hLy-hRy);
+    // 액와(axilla) 근사: 어깨~골반 1/3 지점
+    const axL=sLy+(hLy-sLy)*0.33;
+    const axR=sRy+(hRy-sRy)*0.33;
+    const aDiff=Math.abs(axL-axR);
+    const sWidth=Math.abs((lm[11].x-lm[12].x)*W);
+    const hWidth=Math.abs((lm[23].x-lm[24].x)*W);
+    const avgTrunkW=(sWidth+hWidth)/2;
+    if(avgTrunkW>10){
+      const sumAsym=sDiff+aDiff+wDiff;
+      m.potsi=sumAsym*100/avgTrunkW;
+    }
   }
   return m;
 }
@@ -3487,8 +3631,8 @@ ${chkSummary||'미입력'}
 
 function buildMetricsHTML(tid,bm,am){
   const relevant={
-    ant:['shoulderTilt','shoulderHDiff','headTilt','hipTilt','hipHDiff','headOffset','shoulderHipAlign','kneeAlign'],
-    post:['shoulderTilt','shoulderHDiff','hipTilt','hipHDiff','shoulderHipAlign'],
+    ant:['shoulderTilt','shoulderHDiff','headTilt','hipTilt','hipHDiff','headOffset','shoulderHipAlign','kneeAlign','potsi'],
+    post:['shoulderTilt','shoulderHDiff','hipTilt','hipHDiff','shoulderHipAlign','potsi'],
     lat:['cva','headOffset','spineAngle','shoulderHipAlign','devEar','devShoulder','devHip','devKnee'],
     sh_flex_l:['shoulderTilt','shoulderHDiff'],sh_flex_r:['shoulderTilt','shoulderHDiff'],
     trunk_b:['spineAngle','shoulderHipAlign'],trunk_l:['trunkFlex','spineAngle'],
@@ -3497,7 +3641,7 @@ function buildMetricsHTML(tid,bm,am){
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
   };
   const keys=relevant[tid]||Object.keys(NORMS);
-  const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선'};
+  const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선',potsi:'POTSI 몸통 대칭 지수'};
   let rows='';
   keys.forEach(k=>{
     const bv=bm[k],av=am[k];if(bv===undefined&&av===undefined)return;
@@ -3621,6 +3765,12 @@ function updateReport(){
   const scoreA=compositeScore(aggA);
   const scoreDelta=(scoreB!==null&&scoreA!==null)?(scoreA-scoreB):null;
   renderScoreHero(scoreB,scoreA,scoreDelta,aggB,aggA);
+  // 교정 운동 처방 (Before 기준 — 교정 전 문제점 대응)
+  const exEl=document.getElementById('exerciseContent');
+  if(exEl){
+    if(Object.keys(aggB).length===0) exEl.innerHTML='<p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p>';
+    else exEl.innerHTML=renderExerciseRecommendations(aggB);
+  }
   // 세션 히스토리 갱신 (이름 있을 때만)
   renderSessionHistory().catch(()=>{});
   const list=document.getElementById('repTestList');
@@ -3699,7 +3849,7 @@ function saveMarkers(tid,slot){
   try{localStorage.setItem(`${LS}_mk_${tid}_${slot}`,JSON.stringify({markers:s.markers||[],lines:s.lines||[],guides:s.guides||[]}))}catch(e){}
 }
 function autoSave(){
-  try{localStorage.setItem(LS+'_meta',JSON.stringify({name:document.getElementById('cName')?.value||'',trainer:document.getElementById('cTrainer')?.value||'',height:document.getElementById('cHeight')?.value||'',assess:ASSESS,chk:CHK}))}catch(e){}
+  try{localStorage.setItem(LS+'_meta',JSON.stringify({name:document.getElementById('cName')?.value||'',trainer:document.getElementById('cTrainer')?.value||'',height:document.getElementById('cHeight')?.value||'',faceBlur:FACE_BLUR_ON,assess:ASSESS,chk:CHK}))}catch(e){}
 }
 async function restoreAll(){
   try{
@@ -3709,6 +3859,7 @@ async function restoreAll(){
       const ne=document.getElementById('cName');if(ne&&m.name)ne.value=m.name;
       const te=document.getElementById('cTrainer');if(te&&m.trainer)te.value=m.trainer;
       const he=document.getElementById('cHeight');if(he&&m.height)he.value=m.height;
+      if(m.faceBlur){FACE_BLUR_ON=true;const fbEl=document.getElementById('cFaceBlur');if(fbEl)fbEl.checked=true;}
       if(m.assess){ASSESS=m.assess;const tc=document.getElementById('trainerComment');if(tc&&ASSESS.text)tc.value=ASSESS.text}
       if(m.chk){
         Object.assign(CHK,m.chk);
@@ -3766,6 +3917,72 @@ window.addEventListener('beforeunload',(e)=>{
 document.getElementById('cName').addEventListener('input',autoSave);
 document.getElementById('cTrainer').addEventListener('change',autoSave);
 document.getElementById('cHeight')?.addEventListener('input',()=>{autoSave();updateReport();});
+
+// ═══════════════════════════════════════════
+// FACE BLUR PRIVACY
+// ═══════════════════════════════════════════
+// MediaPipe 얼굴 랜드마크(0=코, 2/5=눈, 7/8=귀)로 얼굴 영역 추정 → 모자이크 처리.
+// 토글이 켜지면 모든 redrawSlot에서 얼굴 부위를 블러링.
+let FACE_BLUR_ON=false;
+function toggleFaceBlur(on){
+  FACE_BLUR_ON=!!on;
+  autoSave();
+  // 모든 photo canvas 재그리기
+  TESTS.forEach(t=>{
+    ['B','A'].forEach(slot=>{
+      const s=SHOTS[t.id]?.[slot];
+      if(s?.img) redrawSlot(t.id,slot);
+    });
+  });
+  if(FACE_BLUR_ON) toast('얼굴 블러 활성화 — 공유/PDF 시 얼굴 자동 가리기');
+  else toast('얼굴 블러 해제');
+}
+function applyFaceBlur(c,lm,W,H){
+  if(!FACE_BLUR_ON||!lm) return;
+  // 얼굴 bbox: 코(0), 귀(7,8), 눈(2,5), 입(9,10) 주변 영역
+  const pts=[0,1,2,3,4,5,6,7,8,9,10].map(i=>lm[i]).filter(p=>p&&p.visibility>.3);
+  if(pts.length<3) return;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  pts.forEach(p=>{
+    const x=p.x*W, y=p.y*H;
+    if(x<minX)minX=x;
+    if(x>maxX)maxX=x;
+    if(y<minY)minY=y;
+    if(y>maxY)maxY=y;
+  });
+  // bbox 확장 (머리카락·턱 포함)
+  const padX=(maxX-minX)*0.45;
+  const padY=(maxY-minY)*0.6;
+  const bx=Math.max(0,minX-padX);
+  const by=Math.max(0,minY-padY*1.5); // 위쪽 더
+  const bw=Math.min(W-bx,maxX-minX+padX*2);
+  const bh=Math.min(H-by,maxY-minY+padY*2.2);
+  if(bw<4||bh<4) return;
+  // 타원형 마스크로 모자이크 적용
+  c.save();
+  // 클리핑 영역: 타원
+  c.beginPath();
+  c.ellipse(bx+bw/2,by+bh/2,bw/2,bh/2,0,0,Math.PI*2);
+  c.clip();
+  // 모자이크: 작은 블럭으로 샘플링 후 확대
+  try{
+    const tmp=document.createElement('canvas');
+    const scale=0.06;
+    tmp.width=Math.max(2,Math.round(bw*scale));
+    tmp.height=Math.max(2,Math.round(bh*scale));
+    const tctx=tmp.getContext('2d');
+    tctx.imageSmoothingEnabled=false;
+    tctx.drawImage(c.canvas,bx,by,bw,bh,0,0,tmp.width,tmp.height);
+    c.imageSmoothingEnabled=false;
+    c.drawImage(tmp,bx,by,bw,bh);
+    c.imageSmoothingEnabled=true;
+  }catch(e){
+    // 폴백: 불투명 사각형
+    c.fillStyle='rgba(80,80,90,.95)';
+    c.fillRect(bx,by,bw,bh);
+  }
+  c.restore();
+}
 
 // ═══════════════════════════════════════════
 // PIXEL → CM CALIBRATION
