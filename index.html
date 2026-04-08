@@ -128,6 +128,11 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .ai-box-title{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
 .ai-line{font-size:12px;color:#1a3a5c;margin-bottom:5px;line-height:1.55;display:flex;gap:6px}
 .ai-line::before{content:'→';color:var(--blue);flex-shrink:0}
+.ai-md{font-size:13px;color:#1a2533;line-height:1.6}
+.ai-md b{color:#0a1525;font-weight:700}
+.ai-md code{background:#edeee9;padding:1px 6px;border-radius:4px;font-family:ui-monospace,monospace;font-size:.9em}
+.ai-md ul{margin:4px 0 6px 18px;padding:0;list-style:disc}
+.ai-md li{font-size:13px;margin:3px 0;line-height:1.55}
 .report-hero{background:linear-gradient(135deg,#071a10,#0b2a1c);border-radius:var(--r2);padding:20px;margin-bottom:16px;color:#fff}
 .rh-name{font-size:18px;font-weight:700;margin-bottom:2px}
 .rh-sub{font-size:12px;color:#7dd4b4;margin-bottom:14px}
@@ -988,6 +993,70 @@ const SHOTS = {};
 const CHK = {};
 let ASSESS = {text:'',training:[]};
 let currentPhase = 'before';
+
+// ═══════════════════════════════════════════
+// MARKDOWN RENDERER (경량, AI 응답 표시 전용)
+// ═══════════════════════════════════════════
+// XSS 방지: 입력 텍스트를 먼저 이스케이프하고, 그 뒤 허용된 문법만 HTML로 변환
+function escHTML(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function renderMD(md){
+  if(!md) return '';
+  const lines=String(md).split('\n');
+  let html='';
+  let inList=false;
+  const inline=(s)=>{
+    // 먼저 이스케이프된 상태여야 함
+    // **bold** → <b>
+    s=s.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+    // *italic* → <i>   (bold와 충돌 회피: 위에서 ** 먼저 처리됨)
+    s=s.replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<i>$2</i>');
+    // `code`
+    s=s.replace(/`([^`]+)`/g,'<code style="background:#f0efea;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:.9em">$1</code>');
+    return s;
+  };
+  const closeList=()=>{if(inList){html+='</ul>';inList=false}};
+  for(let raw of lines){
+    const line=raw.trim();
+    if(!line){closeList();html+='<div style="height:6px"></div>';continue}
+    let esc=escHTML(line);
+    // ### heading → <h4>
+    if(/^###\s+/.test(line)){closeList();const t=inline(escHTML(line.replace(/^###\s+/,'')));html+=`<div style="font-size:13px;font-weight:700;color:var(--tx);margin:10px 0 5px">${t}</div>`;continue}
+    // ## heading → <h3>
+    if(/^##\s+/.test(line)){closeList();const t=inline(escHTML(line.replace(/^##\s+/,'')));html+=`<div style="font-size:14px;font-weight:700;color:var(--tx);margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--brd)">${t}</div>`;continue}
+    // # heading → <h2>
+    if(/^#\s+/.test(line)){closeList();const t=inline(escHTML(line.replace(/^#\s+/,'')));html+=`<div style="font-size:15px;font-weight:800;color:var(--tx);margin:16px 0 8px">${t}</div>`;continue}
+    // - list or * list
+    if(/^[-•]\s+/.test(line)||/^\*\s+/.test(line)){
+      if(!inList){html+='<ul style="margin:4px 0 4px 18px;padding:0;list-style:disc">';inList=true}
+      const t=inline(escHTML(line.replace(/^[-•*]\s+/,'')));
+      html+=`<li style="font-size:13px;color:var(--tx2);line-height:1.55;margin:3px 0">${t}</li>`;
+      continue;
+    }
+    // Numbered list (1. text) or Priority N
+    if(/^\d+\.\s+/.test(line)||/^Priority\s*\d/i.test(line)){
+      closeList();
+      const t=inline(esc);
+      html+=`<div style="font-size:13px;color:var(--tx);margin:6px 0;padding:5px 0 5px 12px;border-left:3px solid var(--green)">${t}</div>`;
+      continue;
+    }
+    // "레이블: 값" 형태 (예: "주요 소견: 어깨 기울어짐")
+    const labelM=line.match(/^([^:：]{1,30})[:：]\s*(.+)$/);
+    if(labelM){
+      closeList();
+      const lbl=inline(escHTML(labelM[1]));
+      const val=inline(escHTML(labelM[2]));
+      html+=`<div style="font-size:13px;color:var(--tx2);margin:5px 0;line-height:1.6"><b style="color:var(--tx)">${lbl}:</b> ${val}</div>`;
+      continue;
+    }
+    // 일반 문단
+    closeList();
+    html+=`<div style="font-size:13px;color:var(--tx2);margin:4px 0;line-height:1.6">${inline(esc)}</div>`;
+  }
+  closeList();
+  return html;
+}
 let activeMode = null;
 let activeModeTest = null;
 let msStart=null,gsStart=null;
@@ -1020,7 +1089,9 @@ window.addEventListener('load', () => {
   },{passive:true});
   if(typeof Pose!=='undefined'){
     poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
-    poseEng.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
+    // modelComplexity:2(heavy) for better accuracy on side/back views & unusual angles
+    // Lowered minDetectionConfidence to 0.4 so partial landmark sets still render
+    poseEng.setOptions({modelComplexity:2,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
     poseEng.onResults(()=>{});
     poseEng.initialize().then(()=>{poseOk=true}).catch(()=>{});
   }
@@ -1115,12 +1186,8 @@ function buildSlotPhase(slot, title, hint){
 }
 
 function buildComparePhase(){
-  return `<div id="cmpContent"><p style="text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px">Before와 After 촬영 후 비교 분석이 여기에 표시됩니다.</p></div>
-<div style="padding:20px 0;text-align:center">
-  <button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px" onclick="showPhase('report');window.scrollTo({top:0,behavior:'smooth'})">
-    최종 리포트 보기 →
-  </button>
-</div>`;
+  // 리포트 이동 버튼은 rebuildCompare()에서 동적으로 삽입 (중복 방지)
+  return `<div id="cmpContent"><p style="text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px">Before와 After 촬영 후 비교 분석이 여기에 표시됩니다.</p></div>`;
 }
 
 function buildReportPhase(){
@@ -1258,7 +1325,10 @@ async function loadImg(tid,slot,src,skipSave){
       _s.pose=poseR.landmarks;
       if(poseR.segMask){const mc2=document.createElement('canvas');mc2.width=_s.canvas.width;mc2.height=_s.canvas.height;mc2.getContext('2d').drawImage(poseR.segMask,0,0,mc2.width,mc2.height);_s.segMask=mc2;}
       redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
-      autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
+      // Before 사진에만 AI 자동분석 적용 (After는 비교 대상)
+      if(_slot==='B'){
+        autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
+      }
       toast('재분석 완료');
     } else {
       toast('포즈 감지 실패 — 전신이 잘 보이는 각도로 다시 시도해주세요');
@@ -1302,7 +1372,13 @@ async function loadImg(tid,slot,src,skipSave){
       const loader=document.createElement('div');loader.className='pload';
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
-      const poseResult=await runPose(useImg);loader.remove();
+      let poseResult=await runPose(useImg);
+      // 재시도: 첫 시도에서 감지 실패 시 1회 재시도 (side/back 뷰 케이스)
+      if(!poseResult?.landmarks){
+        await new Promise(r=>setTimeout(r,150));
+        poseResult=await runPose(useImg);
+      }
+      loader.remove();
       if(poseResult?.landmarks){
         SHOTS[tid][slot].pose=poseResult.landmarks;
         // Save segmentation mask (Safari 메모리 보호: 긴변 800px로 다운샘플)
@@ -1317,7 +1393,20 @@ async function loadImg(tid,slot,src,skipSave){
         }
         redrawSlot(tid,slot);
         saveMarkers(tid,slot);
-        setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,useImg.width,useImg.height),400);
+        // AI 체크리스트 자동 채우기: Before 사진에만 실행 (After는 비교용)
+        if(slot==='B'){
+          setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,useImg.width,useImg.height),400);
+        }
+        // 체크리스트 자동 오픈 (트레이너가 바로 항목 확인 가능)
+        const hdEl=document.getElementById(`cih_${tid}_${slot}`);
+        const bdEl=document.getElementById(`cib_${tid}_${slot}`);
+        if(hdEl&&bdEl){hdEl.classList.add('open');bdEl.classList.add('open');}
+      } else {
+        // 감지 실패: 사용자에게 알림 + 수동 체크리스트는 여전히 사용 가능
+        toast('포즈 감지 실패 — 전신 각도 다시 시도하거나 체크리스트 수동 입력');
+        const hdEl=document.getElementById(`cih_${tid}_${slot}`);
+        const bdEl=document.getElementById(`cib_${tid}_${slot}`);
+        if(hdEl&&bdEl){hdEl.classList.add('open');bdEl.classList.add('open');}
       }
     }
     // add mode bar to compare panel if both loaded
@@ -1642,28 +1731,51 @@ async function autoFillChecklist(tid, slot, lm, W, H){
       return;
     }
 
-    // ─ 포즈 데이터 우선 오버라이드 ─
+    // ─ 포즈 데이터 우선 오버라이드 (v2: 각도 기반) ─
     // AI는 시각 판단이 불안정하므로, 어깨/골반 같은 기하학적 측정은 MediaPipe 좌표로 강제 결정한다.
-    // 임계값: 사진 높이의 1.2% (예: 1600px 사진 → 약 19px). 이보다 크면 비대칭으로 판정.
-    if(lm&&H){
+    // v2: 카메라 거리에 상관없이 정확하도록 "각도(°)" 기준으로 변환. 사진 높이 기준(%) 사용 중단.
+    // 임상 기준: 어깨/골반 기울기 1.2° 이상이면 비대칭으로 판정 (clinically significant tilt).
+    if(lm&&W&&H){
       const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
-      const TH=H*0.012;
+      const ANGLE_TH=1.2; // degrees — clinically significant asymmetry
+      // 계산 보조: 두 랜드마크 간 수평선 대비 기울기(°). 부호: dy>0이면 첫번째가 더 아래쪽.
+      const tiltDeg=(a,b)=>{
+        const dx=Math.abs((lm[a].x-lm[b].x)*W);
+        const dy=(lm[a].y-lm[b].y)*H;
+        if(dx<1) return 0;
+        return Math.atan(dy/dx)*180/Math.PI;
+      };
       const overrideMap={};
       if(v(11,12)){
-        const dy=(lm[11].y-lm[12].y)*H;
         // lm[11]=Lt shoulder, lm[12]=Rt shoulder. y증가=아래쪽
-        // dy > TH → Lt가 더 아래 → Rt가 더 높음 → option 1
-        // dy < -TH → Rt가 더 아래 → Lt가 더 높음 → option 0
-        // |dy| <= TH → 동일 → option 2
-        const sel = dy>TH?1 : dy<-TH?0 : 2;
-        if(tid==='ant') overrideMap['ant_sh']={sel,reason:`MediaPipe 측정: 어깨높이차 ${dy.toFixed(0)}px`};
-        if(tid==='post') overrideMap['post_scap']={sel,reason:`MediaPipe 측정: 견갑높이차 ${dy.toFixed(0)}px`};
+        // ang > TH → Lt가 더 아래 → Rt가 더 높음 → option 1 (Rt. 높음)
+        // ang < -TH → Lt가 더 높음 → option 0 (Lt. 높음)
+        // |ang| <= TH → 동일 → option 2
+        const ang=tiltDeg(11,12);
+        const dyPx=(lm[11].y-lm[12].y)*H;
+        const sel = ang>ANGLE_TH?1 : ang<-ANGLE_TH?0 : 2;
+        const reasonTxt=`MediaPipe: 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
+        if(tid==='ant') overrideMap['ant_sh']={sel,reason:reasonTxt};
+        if(tid==='post') overrideMap['post_scap']={sel,reason:reasonTxt};
       }
       if(v(23,24)){
-        const dy=(lm[23].y-lm[24].y)*H;
-        const sel = dy>TH?1 : dy<-TH?0 : 2;
-        if(tid==='ant') overrideMap['ant_pel']={sel,reason:`MediaPipe 측정: 골반높이차 ${dy.toFixed(0)}px`};
-        if(tid==='post') overrideMap['post_pel']={sel,reason:`MediaPipe 측정: 골반높이차 ${dy.toFixed(0)}px`};
+        const ang=tiltDeg(23,24);
+        const dyPx=(lm[23].y-lm[24].y)*H;
+        const sel = ang>ANGLE_TH?1 : ang<-ANGLE_TH?0 : 2;
+        const reasonTxt=`MediaPipe: 기울기 ${ang.toFixed(1)}° (${Math.abs(dyPx).toFixed(0)}px 차)`;
+        if(tid==='ant') overrideMap['ant_pel']={sel,reason:reasonTxt};
+        if(tid==='post') overrideMap['post_pel']={sel,reason:reasonTxt};
+      }
+      // 무릎 정렬(knee varus/valgus) 강화: 무릎폭/골반폭 비율
+      if(v(25,26,23,24)&&tid==='ant'){
+        const hw=Math.abs((lm[23].x-lm[24].x)*W);
+        const kw=Math.abs((lm[25].x-lm[26].x)*W);
+        if(hw>0){
+          const ratio=kw/hw*100;
+          // <82% = 내반슬 경향(option 0), >118% = 외반슬 경향(option 1), 그 외 = 정상(option 2)
+          const sel = ratio<82?0 : ratio>118?1 : 2;
+          overrideMap['ant_knee']={sel,reason:`MediaPipe: 무릎/골반폭 비율 ${ratio.toFixed(0)}%`};
+        }
       }
       // AI 결과에서 해당 항목들을 오버라이드 (덮어쓰기 또는 추가)
       Object.entries(overrideMap).forEach(([id,o])=>{
@@ -1705,18 +1817,25 @@ function autoFillChecklistFallback(tid,slot,lm,W,H){
   if(!lm||!W||!H) return;
   const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
   const suggestions={};
-  // Only apply very conservative thresholds
+  // v2: 카메라 거리 영향 없는 각도(°) 기반. 1.2° 이상이면 비대칭.
   // 방향 규칙: lm[11/23]=Lt, lm[12/24]=Rt, y증가=화면아래쪽
-  // dy = (Lt.y - Rt.y) > 0 → Lt가 더 아래 → Rt가 더 높음 → option 1 (Rt. 높음)
-  // dy < 0 → Lt가 더 높음 → option 0 (Lt. 높음)
+  // ang > TH → Lt가 더 아래 → Rt가 더 높음 → option 1 (Rt. 높음)
+  // ang < -TH → Lt가 더 높음 → option 0 (Lt. 높음)
+  const ANGLE_TH=1.2;
+  const tiltDeg=(a,b)=>{
+    const dx=Math.abs((lm[a].x-lm[b].x)*W);
+    const dy=(lm[a].y-lm[b].y)*H;
+    if(dx<1) return 0;
+    return Math.atan(dy/dx)*180/Math.PI;
+  };
   if(tid==='ant'){
-    if(v(11,12)){const dy=(lm[11].y-lm[12].y)*H,d=Math.abs(dy);if(d>H*0.012)suggestions['ant_sh']=dy>0?1:0;else suggestions['ant_sh']=2;}
-    if(v(23,24)){const dy=(lm[23].y-lm[24].y)*H,d=Math.abs(dy);if(d>H*0.012)suggestions['ant_pel']=dy>0?1:0;else suggestions['ant_pel']=2;}
-    if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0){const r=kw/hw*100;suggestions['ant_knee']=r<80?0:r>120?1:2;}}
+    if(v(11,12)){const a=tiltDeg(11,12);suggestions['ant_sh']=a>ANGLE_TH?1:a<-ANGLE_TH?0:2;}
+    if(v(23,24)){const a=tiltDeg(23,24);suggestions['ant_pel']=a>ANGLE_TH?1:a<-ANGLE_TH?0:2;}
+    if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0){const r=kw/hw*100;suggestions['ant_knee']=r<82?0:r>118?1:2;}}
   }
   if(tid==='post'){
-    if(v(11,12)){const dy=(lm[11].y-lm[12].y)*H,d=Math.abs(dy);suggestions['post_scap']=d>H*0.012?(dy>0?1:0):2;}
-    if(v(23,24)){const dy=(lm[23].y-lm[24].y)*H,d=Math.abs(dy);suggestions['post_pel']=d>H*0.012?(dy>0?1:0):2;}
+    if(v(11,12)){const a=tiltDeg(11,12);suggestions['post_scap']=a>ANGLE_TH?1:a<-ANGLE_TH?0:2;}
+    if(v(23,24)){const a=tiltDeg(23,24);suggestions['post_pel']=a>ANGLE_TH?1:a<-ANGLE_TH?0:2;}
     suggestions['post_scol']=4; // 기본: 측만 없음 (사진 없이는 판단 불가)
     suggestions['post_calc']=2; // 기본: 종골 정상
   }
@@ -2474,31 +2593,57 @@ async function buildClinical(tid){
   const am=aS?.pose?calcM(aS.pose,aS.canvas.width,aS.canvas.height):{};
   // Show pose metrics table first (instant)
   el.innerHTML=buildMetricsHTML(tid,bm,am);
+  // Compute delta summary — drives the improvement-focused prompt
+  const deltaLines=[];
+  Object.keys(bm).forEach(k=>{
+    if(typeof bm[k]==='number'&&typeof am[k]==='number'){
+      const d=am[k]-bm[k];
+      if(Math.abs(d)>0.05) deltaLines.push(`- ${k}: Before ${bm[k].toFixed(1)} → After ${am[k].toFixed(1)} (변화 ${d>0?'+':''}${d.toFixed(1)})`);
+    }
+  });
   // Then call AI
-  const ctx=TEST_CONTEXT[tid]||'일반 체형 평가';
   const chkSummary=getChkSummary(tid);
-  const aiPrompt=`당신은 16년 경력의 스포츠 물리치료사이자 움직임 분석 전문가입니다.
+  const hasAfter=!!(aS?.pose);
+  // 프롬프트 분기: After 있으면 "개선 비교 (세일즈톤)", 없으면 "Before 문제점 진단"
+  const aiPrompt=hasAfter?`당신은 16년 경력의 스포츠 물리치료사이자 개인 트레이너입니다. 고객 유지/재구매를 위한 "개선 리포트"를 작성하세요.
 
 검사: ${TESTS.find(t=>t.id===tid)?.title||tid}
 평가 맥락: ${TEST_CONTEXT[tid]||'일반 체형 평가'}
 
-포즈 측정값 (MediaPipe, 원본크기 기준):
-${Object.entries(bm).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''} (정상기준: ${n?.lbl||'-'})`}).join('\n')}
+Before 측정값 (운동 전):
+${Object.entries(bm).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''} (정상기준: ${n?.lbl||'-'})`}).join('\n')||'- 데이터 없음'}
 
-→ After 측정값:
-${Object.entries(am).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''}`}).join('\n')}
+After 측정값 (운동 후):
+${Object.entries(am).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''}`}).join('\n')||'- 데이터 없음'}
 
-체크리스트 결과:
+수치 변화량:
+${deltaLines.join('\n')||'- 변화 계산 불가'}
+
+체크리스트:
 ${chkSummary||'미입력'}
 
-이 데이터를 기반으로 아래 형식으로만 응답하세요.
-반드시 이 검사(${tid})와 관련된 항목만 분석하고 관련 없는 항목은 절대 포함하지 마세요.
+반드시 아래 형식으로만 한국어 응답. 인사말/면책조항 금지. 마크다운 구문(**, ##)은 쓰지 마세요.
 
-**주요 소견** (2~3개, 수치 포함)
-**근기능 불균형** (관련 근육명 포함)
-**운동 처방** (구체적 운동명 2~3개)
+개선된 항목: (Before 대비 수치가 좋아진 항목 2~3개. 몇 %/° 개선됐는지 구체 수치. "확실히 좋아졌습니다" 같은 긍정 표현)
+유지/관리 필요: (아직 정상 범위 밖이거나 미세 비대칭. 재검사 권장 부위)
+다음 운동 처방: (개선 유지·가속을 위한 구체 운동 2~3개. 세트/반복 수 포함)
+고객에게 한마디: (1문장, 동기부여. 판매원 톤 NO, 전문가 톤 YES)`:
+`당신은 16년 경력의 스포츠 물리치료사이자 움직임 분석 전문가입니다. Before 사진을 바탕으로 문제점 진단만 수행합니다.
 
-한국어, 간결하게, 인사말 없이.`;
+검사: ${TESTS.find(t=>t.id===tid)?.title||tid}
+평가 맥락: ${TEST_CONTEXT[tid]||'일반 체형 평가'}
+
+Before 측정값 (MediaPipe):
+${Object.entries(bm).map(([k,v])=>{const n=NORMS[k];return `- ${k}: ${typeof v==='number'?v.toFixed(1):''}${n?.unit||''} (정상: ${n?.lbl||'-'})`}).join('\n')||'- 데이터 없음'}
+
+체크리스트:
+${chkSummary||'미입력'}
+
+반드시 이 검사(${tid})와 관련된 항목만 분석. 마크다운 구문(**, ##) 금지. 한국어, 간결, 인사말 없이.
+
+주요 소견: (2~3개, 수치 포함)
+근기능 불균형: (관련 근육명 포함)
+운동 처방: (구체적 운동명 2~3개)`;
   try{
     let _pw=getAppPw();
   if(!_pw)return;
@@ -2512,8 +2657,7 @@ ${chkSummary||'미입력'}
     const text=data.content?.[0]?.text||'분석 실패';
     const aiEl=document.getElementById('aiClin_'+tid);
     if(aiEl){
-      aiEl.innerHTML=`<div class="ai-box-title">AI Clinical Analysis</div>`+
-        text.split('\n').filter(l=>l.trim()).map(l=>`<div class="ai-line">${l.replace(/^\d+\.\s*/,'').replace(/^[-•]\s*/,'')}</div>`).join('');
+      aiEl.innerHTML=`<div class="ai-box-title">AI Clinical Analysis</div><div class="ai-md">${renderMD(text)}</div>`;
     }
   }catch(e){
     const aiEl=document.getElementById('aiClin_'+tid);
@@ -2618,12 +2762,7 @@ ${allFindings.join('\n')}
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'생성 실패';
-    el.innerHTML=text.split('\n').map(l=>{
-      if(l.startsWith('## '))return `<div style="font-size:14px;font-weight:700;color:var(--tx);margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--brd)">${l.slice(3)}</div>`;
-      if(l.match(/^Priority \d/)||l.match(/^\d+\./))return `<div style="font-size:13px;color:var(--tx);margin:6px 0;padding-left:12px;border-left:3px solid var(--green)">${l}</div>`;
-      if(l.trim())return `<div style="font-size:13px;color:var(--tx2);margin:4px 0;line-height:1.6">${l}</div>`;
-      return '';
-    }).join('');
+    el.innerHTML=`<div class="ai-md">${renderMD(text)}</div>`;
     toast('AI 리포트 생성 완료');
   }catch(e){
     const errMsg2=e?.message||String(e);
@@ -2770,7 +2909,7 @@ document.getElementById('cTrainer').addEventListener('change',autoSave);
 // ═══════════════════════════════════════════
 function exportPDF(){
   if(typeof window.jspdf==='undefined'){toast('PDF 로딩 중...');return}
-  toast('PDF 생성 중...');
+  toast('PDF 생성 중... (5~10초 소요)');
   buildPDFCanvas().then(dataUrl=>{
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -2793,10 +2932,41 @@ function exportPDF(){
           srcY+=sliceH;remaining-=chunk;
         }
       }
-      doc.save((document.getElementById('cName')?.value||'회원')+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');
-      toast('PDF 저장 완료');
+      const filename=(document.getElementById('cName')?.value||'회원')+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf';
+      doc.save(filename);
+      // 저장 위치 안내 (플랫폼별로 다르게)
+      const ua=navigator.userAgent;
+      const isIOS=/iPad|iPhone|iPod/.test(ua);
+      const isAndroid=/Android/.test(ua);
+      let locHint='';
+      if(isIOS) locHint='iPhone 파일 앱 → 다운로드 폴더';
+      else if(isAndroid) locHint='파일/내파일 → Download 폴더';
+      else locHint='브라우저 다운로드 폴더';
+      showPDFSavedModal(filename,locHint);
     };img.src=dataUrl;
   }).catch(e=>{toast('PDF 생성 실패: '+e.message)});
+}
+
+// PDF 저장 완료 시 위치 안내 모달
+function showPDFSavedModal(filename,locHint){
+  const existing=document.getElementById('pdfSavedModal');if(existing)existing.remove();
+  const m=document.createElement('div');m.id='pdfSavedModal';
+  m.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  m.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="width:36px;height:36px;border-radius:50%;background:#e6f7f2;display:flex;align-items:center;justify-content:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a878" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#111">PDF 저장 완료</div>
+    </div>
+    <div style="font-size:12px;color:#666;margin-bottom:6px">파일명</div>
+    <div style="font-size:13px;color:#111;font-weight:600;padding:8px 10px;background:#f3f1ea;border-radius:8px;margin-bottom:12px;word-break:break-all">${filename}</div>
+    <div style="font-size:12px;color:#666;margin-bottom:6px">저장 위치</div>
+    <div style="font-size:13px;color:#111;font-weight:600;padding:8px 10px;background:#f3f1ea;border-radius:8px;margin-bottom:16px">${locHint}</div>
+    <button onclick="document.getElementById('pdfSavedModal').remove()" style="width:100%;padding:12px;background:#00a878;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">확인</button>
+  </div>`;
+  m.onclick=(e)=>{if(e.target===m)m.remove()};
+  document.body.appendChild(m);
 }
 
 async function buildPDFCanvas(){
@@ -2887,18 +3057,154 @@ function _exportPDF_UNUSED(){
   doc.save(name+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('PDF 저장 완료');
 }
+// ─ 전문 공유카드 합성 ─
+// 흰 배경, 헤더(국짐 브랜드), 이름/날짜, Before/After 뷰 썸네일 그리드
+async function buildShareCard(name,trainer){
+  const donePairs=TESTS.filter(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
+  if(!donePairs.length) return null;
+  // 캔버스 규격: 1080x1350 (인스타/카톡 세로 비율, iPhone에서 잘 보임)
+  const CW=1080,pad=60,headerH=220,footerH=80;
+  // 최대 4개 검사 × 2열 = 8셀 (Before/After 쌍). 여유있게 상위 4개만.
+  const show=donePairs.slice(0,4);
+  const rows=show.length;
+  const cellH=320;
+  const gridH=rows*(cellH+60)+40;
+  const CH=headerH+gridH+footerH+pad*2;
+  const cv=document.createElement('canvas');
+  cv.width=CW;cv.height=CH;
+  const c=cv.getContext('2d');
+  // 배경
+  c.fillStyle='#ffffff';c.fillRect(0,0,CW,CH);
+  // 헤더 (검정 바)
+  c.fillStyle='#0a0a0a';c.fillRect(0,0,CW,headerH);
+  // 브랜드 그린 악센트 라인
+  c.fillStyle='#00a878';c.fillRect(0,headerH-6,CW,6);
+  // 타이틀
+  c.fillStyle='#ffffff';
+  c.font='800 54px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.textAlign='left';c.textBaseline='top';
+  c.fillText('NationalGym',pad,56);
+  c.fillStyle='#9de8c8';
+  c.font='600 26px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.fillText('NPT 체형분석 리포트',pad,120);
+  // 이름/날짜 (우측)
+  c.textAlign='right';
+  c.fillStyle='#ffffff';
+  c.font='700 36px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  c.fillText(name,CW-pad,58);
+  c.fillStyle='#9de8c8';
+  c.font='500 22px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  const dateStr=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  c.fillText(dateStr+(trainer?(' · '+trainer+' T'):''),CW-pad,108);
+  // 본문 그리드
+  let y=headerH+pad;
+  const colW=(CW-pad*2-40)/2; // 2열
+  const imgH=cellH-40;
+  c.textAlign='left';
+  for(const t of show){
+    // 섹션 타이틀
+    c.fillStyle='#111';
+    c.font='700 26px -apple-system,"Apple SD Gothic Neo",sans-serif';
+    c.fillText(t.title,pad,y);
+    c.fillStyle='#00a878';
+    c.fillRect(pad,y+38,80,3);
+    y+=54;
+    // Before / After 셀
+    const bS=SHOTS[t.id]?.B,aS=SHOTS[t.id]?.A;
+    const cells=[
+      {label:'BEFORE',color:'#be1414',src:bS?.canvas},
+      {label:'AFTER',color:'#0f46c8',src:aS?.canvas}
+    ];
+    cells.forEach((cell,idx)=>{
+      const cx=pad+idx*(colW+40);
+      if(cell.src){
+        // 이미지 비율 유지하며 셀 중앙에 그리기
+        const sw=cell.src.width,sh=cell.src.height;
+        const ratio=Math.min(colW/sw,imgH/sh);
+        const dw=sw*ratio,dh=sh*ratio;
+        const dx=cx+(colW-dw)/2,dy=y+(imgH-dh)/2;
+        // 배경 플레이트
+        c.fillStyle='#f3f1ea';
+        c.fillRect(cx,y,colW,imgH);
+        c.drawImage(cell.src,dx,dy,dw,dh);
+      } else {
+        c.fillStyle='#e5e3db';
+        c.fillRect(cx,y,colW,imgH);
+        c.fillStyle='#999';
+        c.font='500 22px -apple-system,sans-serif';
+        c.textAlign='center';
+        c.fillText('(미촬영)',cx+colW/2,y+imgH/2);
+        c.textAlign='left';
+      }
+      // 라벨 바
+      c.fillStyle=cell.color;
+      c.fillRect(cx,y+imgH,colW,30);
+      c.fillStyle='#fff';
+      c.font='800 18px -apple-system,sans-serif';
+      c.textAlign='center';
+      c.fillText(cell.label,cx+colW/2,y+imgH+6);
+      c.textAlign='left';
+    });
+    y+=imgH+30+30;
+  }
+  // 푸터
+  c.fillStyle='#f8f8f6';
+  c.fillRect(0,CH-footerH,CW,footerH);
+  c.fillStyle='#888';
+  c.font='500 20px -apple-system,sans-serif';
+  c.textAlign='center';
+  c.fillText('NationalGym · Powered by WellnessMode NPT',CW/2,CH-footerH/2-10);
+  return cv;
+}
+
 async function doShare(){
-  const done=TESTS.find(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);if(!done){toast('사진 없음');return}
+  const hasAny=TESTS.some(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
+  if(!hasAny){toast('공유할 사진 없음');return}
   const name=document.getElementById('cName')?.value||'회원';
-  const oc=document.getElementById('oc_'+done.id);
-  const canvas=oc&&oc.width?oc:(SHOTS[done.id].A?.canvas||SHOTS[done.id].B?.canvas);
-  canvas.toBlob(async blob=>{
-    const file=new File([blob],name+'_NPT.jpg',{type:'image/jpeg'});
+  const trainer=document.getElementById('cTrainer')?.value||'';
+  toast('공유 카드 생성 중...');
+  const cardCv=await buildShareCard(name,trainer);
+  if(!cardCv){toast('공유 카드 생성 실패');return}
+  const shareText=`[NationalGym NPT] ${name}님 체형분석 결과\n${new Date().toLocaleDateString('ko-KR')} · 트레이너 ${trainer||'-'}`;
+  cardCv.toBlob(async blob=>{
+    if(!blob){toast('이미지 변환 실패');return}
+    const fname=name+'_NPT_'+new Date().toISOString().slice(0,10)+'.jpg';
+    const file=new File([blob],fname,{type:'image/jpeg'});
+    // ─ iOS 공유시트에서 카톡 노출 유도 ─
+    // 팁: text+file 동시 전달 시, 메시징 앱이 공유 대상으로 더 자주 노출됨
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({title:'NationalGym NPT',text:'[NationalGym] '+name+' NPT 체형분석',files:[file]});toast('공유 완료')}
-      catch(e){if(e.name!=='AbortError'){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_NPT.jpg';a.click()}}
-    }else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_NPT.jpg';a.click();toast('저장됨 → 갤러리에서 공유')}
-  },'image/jpeg',.9);
+      try{
+        await navigator.share({
+          title:'NationalGym NPT 체형분석',
+          text:shareText,
+          files:[file]
+        });
+        toast('공유 완료');
+        return;
+      }catch(e){
+        if(e.name==='AbortError')return; // 사용자 취소
+        console.warn('Web Share failed:',e);
+      }
+    }
+    // ─ 폴백: 이미지 저장 + 카톡 설치 시 URL 스킴으로 열기 ─
+    try{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=fname;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    }catch(e){}
+    // iOS 환경: 카톡 앱이 설치돼 있으면 열기 시도 (없으면 무시됨)
+    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+    if(isIOS){
+      // 약간의 지연 후 카톡 앱 호출 (다운로드가 먼저 시작되도록)
+      setTimeout(()=>{
+        try{window.location.href='kakaotalk://'}catch(e){}
+      },600);
+      toast('이미지 저장됨 → 카톡에서 갤러리 선택해 첨부');
+    } else {
+      toast('이미지 저장됨 → 갤러리/다운로드에서 공유');
+    }
+  },'image/jpeg',.92);
 }
 
 // ═══════════════════════════════════════════
