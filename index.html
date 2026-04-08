@@ -157,6 +157,13 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .sev-dot.sev-warn{background:#f59e0b}
 .sev-dot.sev-bad{background:#ef4444}
 .sev-dot.sev-none{background:#4b5563}
+.sess-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:1px solid var(--brd);border-radius:8px;margin-bottom:6px;font-size:12px}
+.sess-date{flex:1;color:var(--tx2)}
+.sess-scores{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--tx3);font-size:11px}
+.sess-score{display:inline-block;min-width:32px;text-align:center;padding:3px 7px;border-radius:6px;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
+.sess-del{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px}
+.sess-del:hover{background:#fee2e2;color:var(--red)}
+.sess-list{max-height:240px;overflow-y:auto}
 .report-hero{background:linear-gradient(135deg,#071a10,#0b2a1c);border-radius:var(--r2);padding:20px;margin-bottom:16px;color:#fff}
 .rh-name{font-size:18px;font-weight:700;margin-bottom:2px}
 .rh-sub{font-size:12px;color:#7dd4b4;margin-bottom:14px}
@@ -891,13 +898,21 @@ function getRateStatus(){
   return {daily, dailyMax:RATE_LIMIT.DAILY_MAX, session:d.session||0, sessionMax:RATE_LIMIT.SESSION_MAX};
 }
 
-const IDB_NAME='ng_npt_v3',IDB_VER=1,IDB_STORE='photos';
+const IDB_NAME='ng_npt_v3',IDB_VER=2,IDB_STORE='photos',IDB_SESSIONS='sessions';
 let _idb=null;
 function openIDB(){
   if(_idb)return Promise.resolve(_idb);
   return new Promise((res,rej)=>{
     const req=indexedDB.open(IDB_NAME,IDB_VER);
-    req.onupgradeneeded=e=>{e.target.result.createObjectStore(IDB_STORE)};
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      if(!db.objectStoreNames.contains(IDB_SESSIONS)){
+        const s=db.createObjectStore(IDB_SESSIONS,{keyPath:'id',autoIncrement:true});
+        s.createIndex('name','name',{unique:false});
+        s.createIndex('date','date',{unique:false});
+      }
+    };
     req.onsuccess=e=>{_idb=e.target.result;res(_idb)};
     req.onerror=e=>rej(e);
   });
@@ -905,6 +920,35 @@ function openIDB(){
 async function idbSet(key,val){const db=await openIDB();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=()=>res();tx.onerror=e=>rej(e)})}
 async function idbGet(key){const db=await openIDB();return new Promise((res,rej)=>{const req=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(key);req.onsuccess=()=>res(req.result);req.onerror=e=>rej(e)})}
 async function idbDel(key){const db=await openIDB();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).delete(key);tx.oncomplete=()=>res();tx.onerror=e=>rej(e)})}
+// ─ Session history helpers ─
+async function saveSession(obj){
+  const db=await openIDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(IDB_SESSIONS,'readwrite');
+    const req=tx.objectStore(IDB_SESSIONS).add(obj);
+    req.onsuccess=()=>res(req.result);
+    req.onerror=e=>rej(e);
+  });
+}
+async function listSessionsByName(name){
+  const db=await openIDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(IDB_SESSIONS,'readonly');
+    const idx=tx.objectStore(IDB_SESSIONS).index('name');
+    const req=idx.getAll(IDBKeyRange.only(name));
+    req.onsuccess=()=>res(req.result||[]);
+    req.onerror=e=>rej(e);
+  });
+}
+async function deleteSession(id){
+  const db=await openIDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(IDB_SESSIONS,'readwrite');
+    tx.objectStore(IDB_SESSIONS).delete(id);
+    tx.oncomplete=()=>res();
+    tx.onerror=e=>rej(e);
+  });
+}
 
 
 // ═══════════════════════════════════════════
@@ -1013,9 +1057,16 @@ const NORMS = {
   spineAngle:{max:5,unit:'°',lbl:'정상 5° 이하',w:10},
   shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하',w:8},
   headOffset:{max:30,unit:'px',lbl:'정상 30px 이하 (FHP)',w:8},
+  headTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:8},
+  cva:{min:50,unit:'°',lbl:'정상 50° 이상 (FHP 임상 기준)',w:10},
   kneeAlign:{min:85,max:115,unit:'%',lbl:'정상 85~115%',w:10},
   slrAngle:{min:60,max:85,unit:'°',lbl:'정상 60~85°',w:6},
   trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준, 척추 수평에 가까울수록 양호)',w:6},
+  // Plumb line deviations (측면): 절댓값 기준 허용 오차
+  devEar:{max:30,unit:'px',lbl:'정상 30px 이하 (귀-발목 일치)',w:6,signed:true},
+  devShoulder:{max:25,unit:'px',lbl:'정상 25px 이하 (어깨-발목 일치)',w:5,signed:true},
+  devHip:{max:25,unit:'px',lbl:'정상 25px 이하 (대전자-발목 일치)',w:5,signed:true},
+  devKnee:{max:25,unit:'px',lbl:'정상 25px 이하 (무릎-발목 일치)',w:5,signed:true},
 };
 
 // ═══════════════════════════════════════════
@@ -1029,25 +1080,24 @@ function severity(key,value){
   const n=NORMS[key];
   if(!n||typeof value!=='number'||isNaN(value)) return {pct:null,level:'none'};
   let pct=100; // 100 = 완벽, 0 = 최악
+  // signed 메트릭(예: 플럼라인 편차)은 절댓값으로 비교
+  const v=n.signed?Math.abs(value):value;
   if(n.max!==undefined && n.min!==undefined){
-    // 범위형: 85~115% 같은 것
-    if(value<n.min){
-      const deficit=(n.min-value)/n.min*100;
+    if(v<n.min){
+      const deficit=(n.min-v)/n.min*100;
       pct=Math.max(0,100-deficit*2);
-    } else if(value>n.max){
-      const excess=(value-n.max)/n.max*100;
+    } else if(v>n.max){
+      const excess=(v-n.max)/n.max*100;
       pct=Math.max(0,100-excess*2);
     }
   } else if(n.max!==undefined){
-    // 상한형: 어깨 기울기 등
-    if(value>n.max){
-      const excess=(value-n.max)/n.max*100;
+    if(v>n.max){
+      const excess=(v-n.max)/n.max*100;
       pct=Math.max(0,100-excess*2);
     }
   } else if(n.min!==undefined){
-    // 하한형: trunk flex min 70
-    if(value<n.min){
-      const deficit=(n.min-value)/n.min*100;
+    if(v<n.min){
+      const deficit=(n.min-v)/n.min*100;
       pct=Math.max(0,100-deficit*2);
     }
   }
@@ -1098,8 +1148,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.1.0';
-const BUILD_TIME='2026-04-08 18:10';
+const APP_VERSION='v1.2.0';
+const BUILD_TIME='2026-04-08 18:30';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1337,8 +1387,179 @@ function buildReportPhase(){
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="트레이너 종합 소견 및 처방 메모를 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
   </div>
   <div class="rep-sec" id="aiReportSec" style="display:none"><div class="rep-sec-hd">AI 종합 분석 리포트</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 버튼을 눌러 AI 분석을 생성하세요.</p></div></div>
-  <button class="abtn primary" style="width:100%;padding:14px;margin-bottom:14px;font-size:14px;border-radius:var(--r2)" onclick="genAIReport()">AI 종합 분석 생성</button>
+  <button class="abtn primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px;border-radius:var(--r2)" onclick="genAIReport()">AI 종합 분석 생성</button>
+  <!-- 세션 히스토리 / 트렌드 -->
+  <div class="rep-sec" id="sessionHistorySec"><div class="rep-sec-hd" style="display:flex;justify-content:space-between;align-items:center">
+    <span>세션 기록 & 트렌드</span>
+    <button class="abtn primary" style="font-size:11px;padding:5px 12px" onclick="saveCurrentSession()">현재 세션 저장</button>
+  </div>
+  <div id="sessionHistoryContent" style="padding:12px 16px">
+    <p style="font-size:12px;color:var(--tx3)">이름을 입력한 뒤 "현재 세션 저장"을 누르면 종합 점수·측정치·체크리스트가 로컬에 저장됩니다. 재검사 시 점수 추이를 차트로 확인할 수 있습니다.</p>
+  </div></div>
   <div class="rep-actions"><button class="ract pdf" onclick="exportPDF()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF 저장</button><button class="ract share" onclick="doShare()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>카톡 공유</button></div>`;
+}
+
+// ═══════════════════════════════════════════
+// SESSION HISTORY
+// ═══════════════════════════════════════════
+async function saveCurrentSession(){
+  const name=(document.getElementById('cName')?.value||'').trim();
+  if(!name){toast('회원 이름을 먼저 입력하세요');return}
+  const trainer=document.getElementById('cTrainer')?.value||'';
+  // 집계
+  const aggB={},aggA={};
+  TESTS.forEach(t=>{
+    const bS=SHOTS[t.id]?.B,aS=SHOTS[t.id]?.A;
+    if(bS?.pose){const bm=calcM(bS.pose,bS.canvas.width,bS.canvas.height);Object.entries(bm).forEach(([k,v])=>{if(typeof v==='number'&&(!aggB[k]||Math.abs(v)>Math.abs(aggB[k]||0)))aggB[k]=v})}
+    if(aS?.pose){const am=calcM(aS.pose,aS.canvas.width,aS.canvas.height);Object.entries(am).forEach(([k,v])=>{if(typeof v==='number'&&(!aggA[k]||Math.abs(v)>Math.abs(aggA[k]||0)))aggA[k]=v})}
+  });
+  const scoreB=compositeScore(aggB);
+  const scoreA=compositeScore(aggA);
+  const obj={
+    name,
+    trainer,
+    date:new Date().toISOString(),
+    version:APP_VERSION,
+    scoreB, scoreA,
+    metricsBefore:aggB,
+    metricsAfter:aggA,
+    checklistCount:Object.keys(CHK).length,
+    testsDone:TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img).length
+  };
+  try{
+    const id=await saveSession(obj);
+    toast(`세션 저장됨 (#${id})`);
+    renderSessionHistory();
+  }catch(e){
+    toast('세션 저장 실패: '+e.message);
+  }
+}
+async function renderSessionHistory(){
+  const name=(document.getElementById('cName')?.value||'').trim();
+  const el=document.getElementById('sessionHistoryContent');
+  if(!el) return;
+  if(!name){el.innerHTML='<p style="font-size:12px;color:var(--tx3)">회원 이름을 입력하면 과거 세션이 표시됩니다.</p>';return}
+  try{
+    const sessions=await listSessionsByName(name);
+    if(!sessions.length){el.innerHTML=`<p style="font-size:12px;color:var(--tx3)">${name}님의 저장된 세션이 없습니다. "현재 세션 저장" 버튼으로 이번 검사를 보관할 수 있습니다.</p>`;return}
+    // 날짜 오름차순 정렬
+    sessions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    // 점수 추이 차트 + 목록
+    const chartHtml=`<canvas id="trendChart" width="600" height="180" style="width:100%;max-width:100%;height:auto;border-radius:8px;background:#f8f8f6"></canvas>`;
+    const rows=sessions.slice().reverse().map(s=>{
+      const d=new Date(s.date);
+      const dstr=d.toLocaleDateString('ko-KR',{year:'numeric',month:'short',day:'numeric'})+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+      const sb=s.scoreB!==null&&s.scoreB!==undefined?s.scoreB:'—';
+      const sa=s.scoreA!==null&&s.scoreA!==undefined?s.scoreA:'—';
+      return `<div class="sess-row">
+        <div class="sess-date">${dstr}</div>
+        <div class="sess-scores"><span class="sess-score" style="background:${scoreColor(s.scoreB)}">${sb}</span>→<span class="sess-score" style="background:${scoreColor(s.scoreA)}">${sa}</span></div>
+        <button onclick="deleteSessionConfirm(${s.id})" class="sess-del" title="삭제">✕</button>
+      </div>`;
+    }).join('');
+    el.innerHTML=`<div style="margin-bottom:10px">${chartHtml}</div>
+      <div class="sess-list">${rows}</div>`;
+    // 차트 그리기
+    drawTrendChart(sessions);
+  }catch(e){
+    el.innerHTML=`<p style="font-size:12px;color:var(--red)">세션 로드 실패: ${e.message}</p>`;
+  }
+}
+function drawTrendChart(sessions){
+  const cv=document.getElementById('trendChart');if(!cv)return;
+  const c=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  c.clearRect(0,0,W,H);
+  const padL=38,padR=20,padT=20,padB=26;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  // 축: 0~100
+  c.strokeStyle='#d1d5db';
+  c.lineWidth=1;
+  c.beginPath();
+  c.moveTo(padL,padT);
+  c.lineTo(padL,padT+chartH);
+  c.lineTo(padL+chartW,padT+chartH);
+  c.stroke();
+  // y 눈금: 0, 25, 50, 75, 100
+  c.font='10px -apple-system,sans-serif';
+  c.fillStyle='#6b7280';
+  c.textAlign='right';
+  c.textBaseline='middle';
+  [0,25,50,75,100].forEach(v=>{
+    const y=padT+chartH-(v/100)*chartH;
+    c.fillText(String(v),padL-4,y);
+    c.strokeStyle='#e5e7eb';
+    c.beginPath();
+    c.moveTo(padL,y);
+    c.lineTo(padL+chartW,y);
+    c.stroke();
+  });
+  // 데이터 포인트
+  const n=sessions.length;
+  if(n===0) return;
+  const xStep=n>1?chartW/(n-1):chartW/2;
+  const getY=(score)=>padT+chartH-((score||0)/100)*chartH;
+  // Before line (점선 주황)
+  c.strokeStyle='#ea580c';
+  c.lineWidth=2;
+  c.setLineDash([5,3]);
+  c.beginPath();
+  sessions.forEach((s,i)=>{
+    if(s.scoreB===null||s.scoreB===undefined) return;
+    const x=padL+(n>1?i*xStep:chartW/2);
+    const y=getY(s.scoreB);
+    if(i===0) c.moveTo(x,y);
+    else c.lineTo(x,y);
+  });
+  c.stroke();
+  c.setLineDash([]);
+  // After line (실선 녹색)
+  c.strokeStyle='#059669';
+  c.lineWidth=2.5;
+  c.beginPath();
+  sessions.forEach((s,i)=>{
+    if(s.scoreA===null||s.scoreA===undefined) return;
+    const x=padL+(n>1?i*xStep:chartW/2);
+    const y=getY(s.scoreA);
+    if(i===0) c.moveTo(x,y);
+    else c.lineTo(x,y);
+  });
+  c.stroke();
+  // 점 찍기
+  sessions.forEach((s,i)=>{
+    const x=padL+(n>1?i*xStep:chartW/2);
+    if(s.scoreB!==null&&s.scoreB!==undefined){
+      c.fillStyle='#ea580c';
+      c.beginPath();c.arc(x,getY(s.scoreB),3,0,Math.PI*2);c.fill();
+    }
+    if(s.scoreA!==null&&s.scoreA!==undefined){
+      c.fillStyle='#059669';
+      c.beginPath();c.arc(x,getY(s.scoreA),4,0,Math.PI*2);c.fill();
+    }
+  });
+  // 범례
+  c.textAlign='left';
+  c.fillStyle='#ea580c';c.fillRect(padL,5,12,3);c.fillText('Before',padL+16,5);
+  c.fillStyle='#059669';c.fillRect(padL+70,5,12,3);c.fillText('After',padL+86,5);
+  // x축 라벨 (세션 날짜)
+  c.textAlign='center';
+  c.textBaseline='top';
+  c.fillStyle='#6b7280';
+  sessions.forEach((s,i)=>{
+    if(n>6 && i%Math.ceil(n/4)!==0 && i!==n-1) return;
+    const x=padL+(n>1?i*xStep:chartW/2);
+    const d=new Date(s.date);
+    const lbl=(d.getMonth()+1)+'/'+d.getDate();
+    c.fillText(lbl,x,padT+chartH+4);
+  });
+}
+async function deleteSessionConfirm(id){
+  if(!confirm('이 세션을 삭제하시겠습니까?'))return;
+  try{
+    await deleteSession(id);
+    toast('세션 삭제됨');
+    renderSessionHistory();
+  }catch(e){toast('삭제 실패: '+e.message)}
 }
 
 // ═══════════════════════════════════════════
@@ -2269,32 +2490,104 @@ function drawClinicalReferences(c,lm,W,H,tid,slot){
     }
   }
 
-  // ── 5) 측면 Kendall Line 보조 (귀 → 어깨 → 대전자 → 발목) ──
-  // 각 지점이 plumb line과 얼마나 떨어져 있는지 간단히 표시
+  // ── 4.5) 머리 기울기 (양쪽 눈 연결선, 전면) ──
+  if(!isLateral && lm[2]?.visibility>.4 && lm[5]?.visibility>.4){
+    const x1=lm[2].x*W, y1=lm[2].y*H;
+    const x2=lm[5].x*W, y2=lm[5].y*H;
+    const dx=Math.abs(x2-x1);
+    const dy=y1-y2;
+    if(dx>1){
+      const ang=Math.atan(dy/dx)*180/Math.PI;
+      const absAng=Math.abs(ang);
+      const col=absAng>TH_DEG?BAD:OK;
+      // 짧은 선 (눈 사이만)
+      c.save();
+      c.strokeStyle=col;
+      c.lineWidth=Math.max(2,W*.0035);
+      c.beginPath();
+      c.moveTo(x1,y1);
+      c.lineTo(x2,y2);
+      c.stroke();
+      c.restore();
+      drawLabel(c,`머리 ${absAng.toFixed(1)}°`,(x1+x2)/2,Math.min(y1,y2)-Math.max(18,W*.024),col,fs);
+    }
+  }
+
+  // ── 5) 측면 Kendall Line: 귀/어깨/골반/무릎 plumb 편차 + CVA ──
   if(isLateral && plumbX!==null){
+    // 각 지점별로 편차 라벨 표시
     const chkPts=[
-      {i:7,name:'귀',off:-12},   // Lt ear (가시성 높은 쪽 사용 후속)
-      {i:11,name:'어깨',off:-12},
-      {i:23,name:'골반',off:12},
-      {i:25,name:'무릎',off:12}
+      {ids:[7,8],name:'귀',col:'#f59e0b'},
+      {ids:[11,12],name:'어깨',col:'#0891b2'},
+      {ids:[23,24],name:'대전자',col:'#7c3aed'},
+      {ids:[25,26],name:'무릎',col:'#059669'}
     ];
     chkPts.forEach(p=>{
-      const iR=p.i+1; // 반대쪽 랜드마크 (e.g. 8, 12, 24, 26)
-      const pt = lm[p.i]?.visibility>.4 ? lm[p.i] : (lm[iR]?.visibility>.4 ? lm[iR] : null);
+      const a=lm[p.ids[0]], b=lm[p.ids[1]];
+      let pt=null;
+      if(a?.visibility>.4 && b?.visibility>.4) pt={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      else if(a?.visibility>.4) pt=a;
+      else if(b?.visibility>.4) pt=b;
       if(!pt) return;
       const px=pt.x*W, py=pt.y*H;
       const dev=px-plumbX;
       const deviation=Math.abs(dev);
-      const bad=deviation>W*0.04; // 4% 이상 이탈
+      const bad=deviation>W*0.035;
       const col=bad?BAD:OK;
-      // 작은 점 찍고 offset 표시
+      // 수평 점선 (랜드마크 → 플럼라인)
       c.save();
+      c.strokeStyle=col;
+      c.lineWidth=Math.max(1.5,W*.0025);
+      c.setLineDash([6,4]);
+      c.beginPath();
+      c.moveTo(px,py);
+      c.lineTo(plumbX,py);
+      c.stroke();
+      c.setLineDash([]);
+      // 작은 점
       c.fillStyle=col;
       c.beginPath();
-      c.arc(px,py,Math.max(4,W*.006),0,Math.PI*2);
+      c.arc(px,py,Math.max(5,W*.0075),0,Math.PI*2);
       c.fill();
       c.restore();
+      // 편차 라벨 (px 또는 mm)
+      const devStr=pxPerCm?fmtLen(deviation,pxPerCm,0):Math.round(deviation)+'px';
+      const sign=dev>0?'+':'-';
+      const lbl=`${p.name} ${sign}${devStr}`;
+      const lblX = dev>0 ? (px+plumbX)/2+deviation/2+20 : (px+plumbX)/2-deviation/2-20;
+      drawLabel(c,lbl,Math.min(W-60,Math.max(60,lblX)),py,col,Math.max(11,fs-3));
     });
+    // CVA 각도 표시 (귀-어깨)
+    const ear=lm[7]?.visibility>.4?lm[7]:(lm[8]?.visibility>.4?lm[8]:null);
+    const sh=lm[11]?.visibility>.4?lm[11]:(lm[12]?.visibility>.4?lm[12]:null);
+    if(ear&&sh){
+      const ex=ear.x*W, ey=ear.y*H, sx=sh.x*W, sy=sh.y*H;
+      if(sy>ey){
+        const dxE=Math.abs(ex-sx);
+        const dyE=sy-ey;
+        const cva=Math.atan2(dyE,dxE)*180/Math.PI;
+        const cvaBad=cva<50; // 임상 FHP 기준
+        const cvaCol=cvaBad?BAD:OK;
+        c.save();
+        c.strokeStyle=cvaCol;
+        c.lineWidth=Math.max(2.5,W*.0045);
+        c.beginPath();
+        c.moveTo(sx,sy);
+        c.lineTo(ex,ey);
+        c.stroke();
+        // 수평선 (어깨에서 귀 쪽 수평)
+        c.setLineDash([5,4]);
+        c.strokeStyle='rgba(100,116,139,.6)';
+        c.lineWidth=Math.max(1.5,W*.002);
+        c.beginPath();
+        c.moveTo(sx,sy);
+        c.lineTo(ex<sx?Math.max(0,sx-Math.abs(ex-sx)*1.2):Math.min(W,sx+Math.abs(ex-sx)*1.2),sy);
+        c.stroke();
+        c.setLineDash([]);
+        c.restore();
+        drawLabel(c,`CVA ${cva.toFixed(0)}°${cvaBad?' (FHP)':''}`,(sx+ex)/2,(sy+ey)/2,cvaCol,fs);
+      }
+    }
   }
 }
 
@@ -3028,9 +3321,52 @@ function calcM(lm,W,H){
   if(v(11,12,23,24)){
     const msX=(lm[11].x+lm[12].x)/2,msY=(lm[11].y+lm[12].y)/2;
     const mhX=(lm[23].x+lm[24].x)/2,mhY=(lm[23].y+lm[24].y)/2;
-    // angle from vertical: 0=standing straight, 90=fully bent horizontal
     const dx=msX-mhX, dy=msY-mhY;
     m.trunkFlex=Math.abs(Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI);
+  }
+  // ═════ Clinical metrics (benchmark: PostureScreen / APECS) ═════
+  // Cranio-Vertebral Angle (CVA): 측면에서 외이도(ear)→C7(하부 경추, 어깨 상단)과 수평선의 각도
+  // 정상 ≥50°, <48°이면 FHP(Forward Head Posture) 임상 기준. MediaPipe는 C7이 없으므로 어깨(견봉)를 프록시로 사용.
+  // lm[7]=Lt ear, lm[8]=Rt ear, lm[11]/lm[12]=shoulders (acromion 보정됨)
+  const ear = lm[7]?.visibility>.4 ? lm[7] : (lm[8]?.visibility>.4 ? lm[8] : null);
+  const shForCva = lm[11]?.visibility>.4 ? lm[11] : (lm[12]?.visibility>.4 ? lm[12] : null);
+  if(ear && shForCva){
+    // CVA = 어깨 기준점에서 귀로 향하는 벡터와 수평선이 이루는 각도
+    // 해부학적으로: 귀가 어깨 수직 위(90°)면 완벽, 앞으로 기울수록 감소
+    const dx=(ear.x-shForCva.x)*W;
+    const dy=(shForCva.y-ear.y)*H; // y 증가=아래쪽이므로 어깨->귀 방향 (위쪽)이면 양수
+    if(dy>0){ // 귀가 어깨 위쪽에 있어야 유효
+      m.cva=Math.abs(Math.atan2(dy,Math.abs(dx))*180/Math.PI); // 수평선 대비 각도
+    }
+  }
+  // Head Tilt (전면 기준): 양쪽 눈(2, 5) 연결선과 수평선의 각도
+  // lm[2]=Lt eye, lm[5]=Rt eye
+  if(v(2,5)){
+    const dx=Math.abs((lm[2].x-lm[5].x)*W);
+    const dy=(lm[2].y-lm[5].y)*H;
+    if(dx>0) m.headTilt=Math.abs(Math.atan(dy/dx)*180/Math.PI);
+  }
+  // Plumb line deviations (측면 전용): 귀/어깨/골반/무릎/발목이 발목 수직선에서 얼마나 벗어났는지
+  // 정상 이상 자세: 귀-어깨-대전자-무릎-외측복사뼈가 하나의 수직선 위
+  const lAnkle=lm[27]?.visibility>.4?lm[27]:null;
+  const rAnkle=lm[28]?.visibility>.4?lm[28]:null;
+  const ankle = lAnkle || rAnkle;
+  if(ankle){
+    const plumbX=ankle.x*W;
+    const chkLandmarks=[
+      {key:'devEar',   id:[7,8]},
+      {key:'devShoulder', id:[11,12]},
+      {key:'devHip',   id:[23,24]},
+      {key:'devKnee',  id:[25,26]}
+    ];
+    chkLandmarks.forEach(ck=>{
+      const a=lm[ck.id[0]], b=lm[ck.id[1]];
+      let pt=null;
+      if(a?.visibility>.4 && b?.visibility>.4) pt={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      else if(a?.visibility>.4) pt=a;
+      else if(b?.visibility>.4) pt=b;
+      if(pt) m[ck.key]=(pt.x*W)-plumbX; // 양수=앞쪽으로 이탈, 음수=뒤쪽
+    });
   }
   return m;
 }
@@ -3151,17 +3487,17 @@ ${chkSummary||'미입력'}
 
 function buildMetricsHTML(tid,bm,am){
   const relevant={
-    ant:['shoulderTilt','shoulderHDiff','hipTilt','hipHDiff','headOffset','shoulderHipAlign','kneeAlign'],
+    ant:['shoulderTilt','shoulderHDiff','headTilt','hipTilt','hipHDiff','headOffset','shoulderHipAlign','kneeAlign'],
     post:['shoulderTilt','shoulderHDiff','hipTilt','hipHDiff','shoulderHipAlign'],
-    lat:['headOffset','spineAngle','shoulderHipAlign'],
+    lat:['cva','headOffset','spineAngle','shoulderHipAlign','devEar','devShoulder','devHip','devKnee'],
     sh_flex_l:['shoulderTilt','shoulderHDiff'],sh_flex_r:['shoulderTilt','shoulderHDiff'],
     trunk_b:['spineAngle','shoulderHipAlign'],trunk_l:['trunkFlex','spineAngle'],
-    ohs_b:['kneeAlign','hipTilt'],ohs_l:['spineAngle','shoulderHipAlign'],
+    ohs_b:['kneeAlign','hipTilt'],ohs_l:['cva','spineAngle','shoulderHipAlign','devHip','devKnee'],
     sku:['hipHDiff','hipTilt'],
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
   };
   const keys=relevant[tid]||Object.keys(NORMS);
-  const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM'};
+  const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선'};
   let rows='';
   keys.forEach(k=>{
     const bv=bm[k],av=am[k];if(bv===undefined&&av===undefined)return;
@@ -3285,6 +3621,8 @@ function updateReport(){
   const scoreA=compositeScore(aggA);
   const scoreDelta=(scoreB!==null&&scoreA!==null)?(scoreA-scoreB):null;
   renderScoreHero(scoreB,scoreA,scoreDelta,aggB,aggA);
+  // 세션 히스토리 갱신 (이름 있을 때만)
+  renderSessionHistory().catch(()=>{});
   const list=document.getElementById('repTestList');
   if(list)list.innerHTML=TESTS.map(t=>{
     const ok=SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img;
