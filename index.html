@@ -21,11 +21,14 @@
 }
 html,body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;min-height:100%;font-size:15px;overscroll-behavior-y:none}
 button,input,select,textarea{font-family:inherit}
-.hdr{position:sticky;top:0;z-index:300;background:#0d0d0d;height:54px;display:flex;align-items:center;padding:0 16px;gap:12px}
+.hdr{position:sticky;top:0;z-index:300;background:#0d0d0d;height:54px;display:flex;align-items:center;padding:0 12px;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hdr::-webkit-scrollbar{display:none}
+.hdr .logo{flex-shrink:0}
 .logo{font-size:16px;font-weight:700;letter-spacing:.04em;color:#fff}.logo em{color:var(--green);font-style:normal}
 .logo sup{font-size:9px;font-weight:400;color:#666;margin-left:4px}
-.hdr-r{margin-left:auto;display:flex;gap:6px;align-items:center}
-.phase-pill{background:#1a2e24;color:var(--green);font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;letter-spacing:.04em;white-space:nowrap}
+.hdr-r{margin-left:auto;display:flex;gap:4px;align-items:center;flex-shrink:0}
+.hdr-r button{flex-shrink:0}
+.phase-pill{background:#1a2e24;color:var(--green);font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
 .pnav-wrap{background:#fff;border-bottom:1px solid var(--brd);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .pnav-wrap::-webkit-scrollbar{display:none}
 .pnav{flex-shrink:0;padding:13px 16px;font-size:13px;font-weight:500;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px}
@@ -321,7 +324,7 @@ input[type=range]{accent-color:var(--green)}
   <div class="ls-footer" id="lsFooter"></div>
 </div>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>Body Scan</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span>
+  <div class="logo"><em>National</em>Gym <sup>Body Scan</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer;flex-shrink:0" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="backToLandingConfirm()">🏠 처음</button>
@@ -897,71 +900,82 @@ const POSE_GUIDES = {
   },
 
   neck_l: {
-    label:'경추 좌회전 — 베드 걸터앉은 상태에서 고개 좌측으로',
-    warning:'베드에 편히 앉아 · 고개 좌측 최대 회전',
+    label:'경추 좌회전 — 앉은 자세, 머리만 좌측으로 회전',
+    warning:'상체는 정면 유지 · 목만 좌측 최대 회전 · 기울이지 말 것',
     viewBox:'0 0 100 220',
     svg:`<defs>
-      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4px;font-family:sans-serif}</style>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.2;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.20);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4.5px;font-family:sans-serif}</style>
     </defs>
-    <!-- BED (person seated on edge — back view of head+shoulders+torso) -->
-    <rect x="15" y="178" width="70" height="10" rx="2" fill="rgba(0,180,120,.12)" stroke="#00c890" stroke-width=".8" stroke-dasharray="3,2"/>
-    <text x="50" y="196" text-anchor="middle" class="tn">베드</text>
-    <!-- HEAD ROTATED LEFT (highlighted) — seen from behind, turned to left so right ear visible -->
-    <ellipse class="hi" cx="46" cy="34" rx="11" ry="14" transform="rotate(-18 46 34)"/>
-    <!-- Ear dot (right side of person visible since head turned left) -->
-    <circle cx="55" cy="30" r="2.4" fill="#ffd700"/>
-    <!-- NECK (rotated base stays centered on spine) -->
-    <path class="bg" d="M45,48 Q47,54 47,58 L53,58 Q53,54 55,48 Z"/>
-    <!-- UPPER TORSO back view (stays facing camera) -->
-    <path class="bg" d="M22,58 Q28,54 47,56 L53,56 Q72,54 78,58 L76,98 Q68,94 53,96 L47,96 Q32,94 24,98 Z"/>
-    <!-- SPINE line (reference for rotation measurement) -->
-    <line x1="50" y1="58" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
-    <text class="tx" x="53" y="120">척추</text>
-    <!-- SHOULDERS LINE (reference) -->
-    <line x1="15" y1="58" x2="85" y2="58" stroke="#ff6060" stroke-width=".7" stroke-dasharray="3,2" opacity=".6"/>
-    <text class="tx" x="2" y="57">어깨선</text>
-    <!-- ARMS hanging beside torso -->
-    <path class="bg" d="M24,60 Q18,76 16,96 Q16,104 20,104 Q24,104 26,98 L28,76 Q30,64 27,60 Z"/>
-    <path class="bg" d="M76,60 Q82,76 84,96 Q84,104 80,104 Q76,104 74,98 L72,76 Q70,64 73,60 Z"/>
-    <!-- LOWER TORSO to bed -->
-    <path class="bg" d="M24,98 Q32,108 50,108 Q68,108 76,98 L78,178 Q50,186 22,178 Z"/>
-    <!-- ROTATION ARROW: circular arc pointing LEFT -->
-    <path d="M36,30 Q26,22 22,28" fill="none" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
-    <path d="M22,28 L25,25 M22,28 L25,31" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
-    <text x="10" y="20" fill="#ffd700" font-size="5" font-family="sans-serif" font-weight="bold">← 좌회전</text>
-    <text x="50" y="210" text-anchor="middle" class="tn">측면/후면 촬영</text>`
+    <!-- ═ 앉은 자세 흉상 (sitting bust) — 앉은키라 상체만 크게 ═ -->
+    <!-- HEAD (rotated left — 좌측으로 회전, 기울임 없음) -->
+    <!-- 회전된 머리는 옆얼굴 형태 (정면 윤곽이 아닌 측면 윤곽) -->
+    <ellipse class="hi" cx="50" cy="44" rx="22" ry="28"/>
+    <!-- NOSE pointing left (shows head has rotated) -->
+    <path class="hi" d="M28,42 Q22,44 26,48 Q30,48 32,46 Z"/>
+    <!-- CHIN/JAW line (좌측으로 회전한 경계) -->
+    <path d="M38,68 Q34,66 30,60" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,2" opacity=".8"/>
+    <!-- EAR (우측 귀가 카메라 쪽으로 보임) -->
+    <circle cx="68" cy="44" r="3" fill="#ffd700" opacity=".9"/>
+    <text class="tx" x="72" y="46">귀</text>
+    <!-- NECK (수직 유지, 회전 없음 — 목은 척추와 일자) -->
+    <path class="bg" d="M42,72 Q46,78 46,86 L54,86 Q54,78 58,72 Z"/>
+    <!-- SHOULDERS + UPPER TORSO (정면 유지, 좌우 어깨 수평) -->
+    <path class="bg" d="M18,86 Q26,82 46,84 L54,84 Q74,82 82,86 L82,118 Q74,112 54,114 L46,114 Q26,112 18,118 Z"/>
+    <!-- ARMS hanging naturally (정면 기준) -->
+    <path class="bg" d="M20,88 Q12,108 12,134 Q12,144 18,144 Q24,144 25,136 L27,108 Q29,92 24,88 Z"/>
+    <path class="bg" d="M80,88 Q88,108 88,134 Q88,144 82,144 Q76,144 75,136 L73,108 Q71,92 76,88 Z"/>
+    <!-- LOWER TORSO (앉은 자세라 골반까지만 보이고 하체는 생략) -->
+    <path class="bg" d="M18,118 Q30,128 50,128 Q70,128 82,118 L84,168 Q50,176 16,168 Z"/>
+    <!-- SHOULDERS REFERENCE LINE (수평 유지 확인용) -->
+    <line x1="6" y1="86" x2="94" y2="86" stroke="#ff6060" stroke-width=".8" stroke-dasharray="3,2" opacity=".65"/>
+    <text class="tx" x="2" y="84" style="font-size:3.8px">어깨선</text>
+    <!-- SPINE LINE (수직 유지 — 목 회전만이지 기울임 아님) -->
+    <line x1="50" y1="72" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
+    <!-- ROTATION ARC (머리 위에서 좌회전 방향 화살표) -->
+    <path d="M40,18 Q20,22 14,36" fill="none" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
+    <path d="M14,36 L17,31 M14,36 L19,38" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
+    <text x="8" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">← 좌회전</text>
+    <!-- BOTTOM NOTE -->
+    <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
+    <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
   },
 
   neck_r: {
-    label:'경추 우회전 — 베드 걸터앉은 상태에서 고개 우측으로',
-    warning:'베드에 편히 앉아 · 고개 우측 최대 회전',
+    label:'경추 우회전 — 앉은 자세, 머리만 우측으로 회전',
+    warning:'상체는 정면 유지 · 목만 우측 최대 회전 · 기울이지 말 것',
     viewBox:'0 0 100 220',
     svg:`<defs>
-      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4px;font-family:sans-serif}</style>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.2;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.20);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4.5px;font-family:sans-serif}</style>
     </defs>
-    <!-- BED -->
-    <rect x="15" y="178" width="70" height="10" rx="2" fill="rgba(0,180,120,.12)" stroke="#00c890" stroke-width=".8" stroke-dasharray="3,2"/>
-    <text x="50" y="196" text-anchor="middle" class="tn">베드</text>
-    <!-- HEAD ROTATED RIGHT -->
-    <ellipse class="hi" cx="54" cy="34" rx="11" ry="14" transform="rotate(18 54 34)"/>
-    <!-- Ear dot (left side of person visible since head turned right) -->
-    <circle cx="45" cy="30" r="2.4" fill="#ffd700"/>
-    <!-- NECK -->
-    <path class="bg" d="M45,48 Q47,54 47,58 L53,58 Q53,54 55,48 Z"/>
-    <!-- UPPER TORSO back view -->
-    <path class="bg" d="M22,58 Q28,54 47,56 L53,56 Q72,54 78,58 L76,98 Q68,94 53,96 L47,96 Q32,94 24,98 Z"/>
-    <line x1="50" y1="58" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
-    <text class="tx" x="53" y="120">척추</text>
-    <line x1="15" y1="58" x2="85" y2="58" stroke="#ff6060" stroke-width=".7" stroke-dasharray="3,2" opacity=".6"/>
-    <text class="tx" x="2" y="57">어깨선</text>
-    <path class="bg" d="M24,60 Q18,76 16,96 Q16,104 20,104 Q24,104 26,98 L28,76 Q30,64 27,60 Z"/>
-    <path class="bg" d="M76,60 Q82,76 84,96 Q84,104 80,104 Q76,104 74,98 L72,76 Q70,64 73,60 Z"/>
-    <path class="bg" d="M24,98 Q32,108 50,108 Q68,108 76,98 L78,178 Q50,186 22,178 Z"/>
-    <!-- ROTATION ARROW: right direction -->
-    <path d="M64,30 Q74,22 78,28" fill="none" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
-    <path d="M78,28 L75,25 M78,28 L75,31" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
-    <text x="62" y="20" fill="#ffd700" font-size="5" font-family="sans-serif" font-weight="bold">우회전 →</text>
-    <text x="50" y="210" text-anchor="middle" class="tn">측면/후면 촬영</text>`
+    <!-- HEAD (rotated right) -->
+    <ellipse class="hi" cx="50" cy="44" rx="22" ry="28"/>
+    <!-- NOSE pointing right -->
+    <path class="hi" d="M72,42 Q78,44 74,48 Q70,48 68,46 Z"/>
+    <!-- CHIN/JAW line (우측으로 회전) -->
+    <path d="M62,68 Q66,66 70,60" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,2" opacity=".8"/>
+    <!-- EAR (좌측 귀 가시) -->
+    <circle cx="32" cy="44" r="3" fill="#ffd700" opacity=".9"/>
+    <text class="tx" x="20" y="46">귀</text>
+    <!-- NECK (수직) -->
+    <path class="bg" d="M42,72 Q46,78 46,86 L54,86 Q54,78 58,72 Z"/>
+    <!-- SHOULDERS + UPPER TORSO (정면) -->
+    <path class="bg" d="M18,86 Q26,82 46,84 L54,84 Q74,82 82,86 L82,118 Q74,112 54,114 L46,114 Q26,112 18,118 Z"/>
+    <!-- ARMS -->
+    <path class="bg" d="M20,88 Q12,108 12,134 Q12,144 18,144 Q24,144 25,136 L27,108 Q29,92 24,88 Z"/>
+    <path class="bg" d="M80,88 Q88,108 88,134 Q88,144 82,144 Q76,144 75,136 L73,108 Q71,92 76,88 Z"/>
+    <!-- LOWER TORSO -->
+    <path class="bg" d="M18,118 Q30,128 50,128 Q70,128 82,118 L84,168 Q50,176 16,168 Z"/>
+    <!-- 수평 어깨선 -->
+    <line x1="6" y1="86" x2="94" y2="86" stroke="#ff6060" stroke-width=".8" stroke-dasharray="3,2" opacity=".65"/>
+    <text class="tx" x="2" y="84" style="font-size:3.8px">어깨선</text>
+    <!-- 수직 척추선 -->
+    <line x1="50" y1="72" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
+    <!-- 우회전 화살표 -->
+    <path d="M60,18 Q80,22 86,36" fill="none" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
+    <path d="M86,36 L83,31 M86,36 L81,38" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
+    <text x="56" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">우회전 →</text>
+    <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
+    <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
   },
 
   slr_r: {
@@ -1200,7 +1214,7 @@ const TESTS = [
   // ─── Neck palpation (사진 + 수기) — 필살기 ───
   {id:'neck_l',       n:19, sec:'npt', title:'경추 회전 — 좌측',  sub:'베드에 앉아 좌측 회전 · 회전각 측정', tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
   {id:'neck_r',       n:20, sec:'npt', title:'경추 회전 — 우측',  sub:'베드에 앉아 우측 회전 · 회전각 측정', tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
-  {id:'neck_palp',    n:21, sec:'npt', manual:true, title:'Neck Palpation (필살기)', sub:'Cervical Curve · SCM · Scalene · U.Trap', tip:'수기 촉진 · 체크리스트 입력'}
+  {id:'neck_palp',    n:21, sec:'npt', manual:true, title:'Neck Palpation', sub:'Cervical Curve · SCM · Scalene · U.Trap', tip:'수기 촉진 · 체크리스트 입력'}
 ];
 
 const TEST_CHECKLIST = {
@@ -1270,35 +1284,43 @@ const TEST_CHECKLIST = {
     {id:'slrr_ham',  label:'Rt. Hamstring',          opts:['단축 (< 70°)','정상 (70~85°)','과가동 (> 85°)'], colors:['bad','ok','warn']},
     {id:'slrr_comp', label:'Rt. 골반 보상',           opts:['후방 경사','없음'], colors:['warn','ok']},
   ],
-  // ─── 신규 수기 검사 체크리스트 (v1.10) ───
+  // ─── 신규 수기 검사 체크리스트 (v1.10.1: Lt/Rt 분리 방식) ───
   patrick: [
-    {id:'patrick_side', label:'문제 있는 쪽',          opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
-    {id:'patrick_loc',  label:'통증 위치',            opts:['앞쪽 (서혜부·고관절)','뒤쪽 (SI joint·천장관절)','없음'], colors:['warn','warn','ok']},
+    {id:'patrick_lt', label:'Lt. Patrick (통증 위치)', opts:['앞쪽 (서혜부·고관절)','뒤쪽 (SI joint·천장관절)','없음'], colors:['warn','warn','ok']},
+    {id:'patrick_rt', label:'Rt. Patrick (통증 위치)', opts:['앞쪽 (서혜부·고관절)','뒤쪽 (SI joint·천장관절)','없음'], colors:['warn','warn','ok']},
   ],
   prone_quad: [
-    {id:'pq_side', label:'문제 있는 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
-    {id:'pq_type', label:'근 상태',                   opts:['단축 (Short)','약화 (Weak)','정상'], colors:['warn','warn','ok']},
+    {id:'pq_lt', label:'Lt. Quadriceps',              opts:['단축 (Short)','약화 (Weak)','정상'], colors:['warn','warn','ok']},
+    {id:'pq_rt', label:'Rt. Quadriceps',              opts:['단축 (Short)','약화 (Weak)','정상'], colors:['warn','warn','ok']},
   ],
   prone_hipext: [
-    {id:'phe_side', label:'문제 있는 쪽',              opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
-    {id:'phe_tilt', label:'골반 경사 패턴',            opts:['Ant. Tilt (전방경사)','Post. Tilt (후방경사)','정상'], colors:['warn','warn','ok']},
+    {id:'phe_lt', label:'Lt. Hip Extension (골반 경사)', opts:['Ant. Tilt (전방경사)','Post. Tilt (후방경사)','정상'], colors:['warn','warn','ok']},
+    {id:'phe_rt', label:'Rt. Hip Extension (골반 경사)', opts:['Ant. Tilt (전방경사)','Post. Tilt (후방경사)','정상'], colors:['warn','warn','ok']},
   ],
   prone_ql: [
-    {id:'pql_side', label:'긴장/단축 쪽',              opts:['Lt.','Rt.','대칭'], colors:['warn','warn','ok']},
+    {id:'pql_lt', label:'Lt. Quadratus Lumborum',      opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'pql_rt', label:'Rt. Quadratus Lumborum',      opts:['긴장/단축','정상'], colors:['warn','ok']},
   ],
   calf_achilles: [
-    {id:'ca_side', label:'압통/경직 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'ca_lt', label:'Lt. Achilles 압통',            opts:['Medial (내측)','Lateral (외측)','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'ca_rt', label:'Rt. Achilles 압통',            opts:['Medial (내측)','Lateral (외측)','양측','없음'], colors:['warn','warn','bad','ok']},
   ],
   calf_palp: [
-    {id:'cp_side', label:'압통/경직 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'cp_lt', label:'Lt. Calf (비복근) 압통',        opts:['Medial (내측)','Lateral (외측)','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'cp_rt', label:'Rt. Calf (비복근) 압통',        opts:['Medial (내측)','Lateral (외측)','양측','없음'], colors:['warn','warn','bad','ok']},
   ],
   // Neck rotation photo tests — 체크리스트는 none (사진+AI 분석만)
   // Neck palpation — 수기 촉진 체크리스트
   neck_palp: [
-    {id:'np_curve', label:'Cervical Curve (경추 커브)', opts:['일자목 / 역C형','과전만 (Hyperlordosis)','정상'], colors:['warn','warn','ok']},
-    {id:'np_scm',   label:'SCM (흉쇄유돌근) 긴장',      opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
-    {id:'np_scal',  label:'Scalene (사각근) 긴장',      opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
-    {id:'np_utrap', label:'U.Trap (상부승모근) 긴장',    opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
+    {id:'np_curve', label:'Cervical Curve (경추 커브)', opts:['Lt. 측만','Rt. 측만','일자목 / 역C','정상'], colors:['warn','warn','warn','ok']},
+    {id:'np_scm_lt',   label:'Lt. SCM (흉쇄유돌근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'np_scm_rt',   label:'Rt. SCM (흉쇄유돌근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'np_scal_lt',  label:'Lt. Scalene (사각근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'np_scal_rt',  label:'Rt. Scalene (사각근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'np_scal_neuro_lt', label:'Lt. 상완신경총 / 팔 저림 (신경통)', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'np_scal_neuro_rt', label:'Rt. 상완신경총 / 팔 저림 (신경통)', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'np_utrap_lt', label:'Lt. U.Trap (상부승모근)',  opts:['긴장/단축','정상'], colors:['warn','ok']},
+    {id:'np_utrap_rt', label:'Rt. U.Trap (상부승모근)',  opts:['긴장/단축','정상'], colors:['warn','ok']},
   ],
 };
 
@@ -1422,8 +1444,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.10.0';
-const BUILD_TIME='2026-04-09 18:45';
+const APP_VERSION='v1.10.1';
+const BUILD_TIME='2026-04-10 03:40';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
