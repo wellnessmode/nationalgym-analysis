@@ -133,10 +133,23 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .ai-md code{background:#edeee9;padding:1px 6px;border-radius:4px;font-family:ui-monospace,monospace;font-size:.9em}
 .ai-md ul{margin:4px 0 6px 18px;padding:0;list-style:disc}
 .ai-md li{font-size:13px;margin:3px 0;line-height:1.55}
-.narr-box{margin:10px 14px;padding:12px 14px;background:#fff5f5;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:10px}
+.narr-box{margin:10px 14px;padding:12px 14px;background:#fff5f5;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:10px;position:relative}
 .narr-title{font-size:10px;font-weight:800;color:#dc2626;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .narr-title::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc2626}
 .narr-body{font-size:13px;color:#3f1212;line-height:1.6}
+.narr-body.narr-empty{color:#9ca3af;font-style:italic;font-size:12px}
+.narr-nav{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px}
+.narr-nav-btn{background:#fff;border:1px solid #fecaca;border-radius:6px;width:28px;height:24px;font-size:11px;color:#dc2626;cursor:pointer;font-family:inherit;padding:0;line-height:22px}
+.narr-nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.narr-nav-btn:not(:disabled):active{background:#fee2e2}
+.narr-nav-idx{font-size:10px;font-weight:700;color:#b91c1c;font-variant-numeric:tabular-nums}
+.narr-actions{margin-top:10px;display:flex;justify-content:flex-end}
+.narr-btn{background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.narr-btn:disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed}
+.narr-btn:not(:disabled):active{transform:scale(.96);background:#b91c1c}
+.ai-manual-bar{display:flex;gap:8px;padding:10px 14px;background:#f0f9ff;border-top:1px solid #e0e7ff}
+.ai-manual-btn{flex:1;background:#fff;border:1px solid #93c5fd;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;color:#1e40af;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ai-manual-btn:active{background:#dbeafe;transform:scale(.98)}
 .score-hero{margin:0 0 14px;padding:0;border-radius:var(--r2);overflow:hidden;background:linear-gradient(135deg,#111827,#1f2937);color:#fff}
 .sh-wrap{padding:20px}
 .sh-title{font-size:11px;font-weight:700;color:#9de8c8;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:10px}
@@ -887,16 +900,26 @@ function updateCamGuide(tid){
 
 
 // ═══════════════════════════════════════════
-// API RATE LIMITER (v2: 현실적 한도로 재조정)
-// ═══════════════════════════════════════════
-// 한 세션 예상 사용량: 12 테스트 × 2 슬롯 × 2 콜(체크리스트+narrative) = 48
-//                   + 12 Clinical Analysis (compare) = 60
-//                   + 1 종합리포트 = 61
-//                   + AI 싱크/재분석 여유 = ~100
-// 따라서 세션 500, 일일 500으로 상향. 세션 카운터는 메모리에만 보관 (페이지 리로드 시 리셋).
+// AI 모델 설정 (v1.7)
+// - Haiku: 체크리스트 이미지 분석, AI 자동 싱크 (이미지 콜, Sonnet은 비용 과다)
+// - Sonnet: narrative, Clinical Analysis, 종합 리포트 (텍스트 분석, 품질 우선)
+const AI_MODEL_HAIKU = 'claude-haiku-4-5-20251001';
+const AI_MODEL_SONNET = 'claude-sonnet-4-5-20250929';
+
+// AI 분석 시도 횟수 관리 (수동 버튼 기반, 각 검사당 최대 3회)
+const AI_MAX_ATTEMPTS = 3;
+// 히스토리: narrative / clinical / report 각각 tid별로 결과 배열 + 현재 선택 인덱스
+const AI_HISTORY = {
+  narrative: {}, // { tid: {results: [{text, ts, model}], active: 0} }
+  clinical:  {}, // same
+  report:    {results: [], active: 0}, // 종합 리포트는 단일 (전체 기준)
+};
+
+// API RATE LIMITER (v3: 수동 AI 패턴에 맞춰 하향 조정)
+// 예상 사용량: 12 테스트 × 체크리스트 2 + narrative 12 × 평균 2회 + clinical 12 × 2회 + report 1 = ~73 콜/고객
 const RATE_LIMIT = {
-  DAILY_MAX: 500,
-  SESSION_MAX: 500,
+  DAILY_MAX: 300,
+  SESSION_MAX: 300,
   KEY: 'ng_api_usage',
 };
 let _sessionUsage = 0; // 메모리 기반 세션 카운터 (페이지 리로드 시 자동 0)
@@ -1232,8 +1255,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.6.0';
-const BUILD_TIME='2026-04-09 11:30';
+const APP_VERSION='v1.7.0';
+const BUILD_TIME='2026-04-09 14:00';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1438,6 +1461,10 @@ function buildSlotPhase(slot, title, hint){
         </button>
       </div>
     </div>`;
+    // Before 슬롯: AI 자세 분석 버튼 영역 (수동 트리거, 최대 3회)
+    if(slot==='B'){
+      h+=`<div class="ai-manual-bar"><button class="ai-manual-btn" onclick="runChecklistAI('${t.id}')">📋 체크리스트 AI 자동</button><button class="ai-manual-btn" onclick="generateBeforeNarrative('${t.id}')">🧠 AI 자세 분석하기</button></div>`;
+    }
     const ckItems=TEST_CHECKLIST[t.id]||[];
     if(ckItems.length){
       h+=`<div class="chk-inline">
@@ -1472,8 +1499,7 @@ function buildReportPhase(){
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="트레이너 종합 소견 및 처방 메모를 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
   </div>
   <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 처방</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
-  <div class="rep-sec" id="aiReportSec" style="display:none"><div class="rep-sec-hd">AI 종합 분석 리포트</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 버튼을 눌러 AI 분석을 생성하세요.</p></div></div>
-  <button class="abtn primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px;border-radius:var(--r2)" onclick="genAIReport()">AI 종합 분석 생성</button>
+  <div class="rep-sec" id="aiReportSec"><div class="rep-sec-hd">AI 종합 분석 리포트</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 "AI 종합 분석 생성" 버튼을 누르면 Sonnet 4.5로 리포트가 생성됩니다. (최대 3회)</p></div></div>
   <!-- 세션 히스토리 / 트렌드 -->
   <div class="rep-sec" id="sessionHistorySec"><div class="rep-sec-hd" style="display:flex;justify-content:space-between;align-items:center">
     <span>세션 기록 & 트렌드</span>
@@ -1971,13 +1997,10 @@ async function loadImg(tid,slot,src,skipSave){
       _s.pose=poseR.landmarks;
       if(poseR.segMask){const mc2=document.createElement('canvas');mc2.width=_s.canvas.width;mc2.height=_s.canvas.height;mc2.getContext('2d').drawImage(poseR.segMask,0,0,mc2.width,mc2.height);_s.segMask=mc2;}
       redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
-      // AI 체크리스트 자동분석: Before/After 양쪽 모두 실행 (좌우 높이 판정은 Before/After 공통 필요)
-      autoFillChecklist(_tid,_slot,poseR.landmarks,_s.canvas.width,_s.canvas.height);
-      // Before 사진 전용: 서술형 자세 분석 함께 생성
-      if(_slot==='B'){
-        generateBeforeNarrative(_tid,poseR.landmarks,_s.canvas.width,_s.canvas.height);
-      }
-      toast('재분석 완료');
+      // v1.7: 스켈레톤 재분석은 스켈레톤 좌표만 갱신. AI 호출은 "AI 자세 분석하기" 버튼을 눌러야 실행됨.
+      // 체크리스트 자동분석도 비활성화 — 수동 버튼으로 통합
+      // (이미 체크리스트가 채워진 상태면 재분석 버튼으로도 변경 없음)
+      toast('스켈레톤 재분석 완료 — AI 분석은 수동 버튼으로 실행하세요');
     } else {
       toast('포즈 감지 실패 — 전신이 잘 보이는 각도로 다시 시도해주세요');
     }
@@ -2041,18 +2064,13 @@ async function loadImg(tid,slot,src,skipSave){
         }
         redrawSlot(tid,slot);
         saveMarkers(tid,slot);
-        // AI 체크리스트 자동 채우기: Before/After 양쪽 모두 (좌우 비대칭 판정은 양쪽 공통)
-        setTimeout(()=>autoFillChecklist(tid,slot,poseResult.landmarks,useImg.width,useImg.height),400);
-        // Before 사진 전용: 서술형 자세 분석 함께 생성
-        if(slot==='B'){
-          setTimeout(()=>generateBeforeNarrative(tid,poseResult.landmarks,useImg.width,useImg.height),600);
-        }
-        // 체크리스트 자동 오픈 (트레이너가 바로 항목 확인 가능)
+        // v1.7: AI 호출은 수동 버튼으로만 실행. 자동 트리거 없음.
+        // (이전 버전: autoFillChecklist + generateBeforeNarrative 자동 호출)
+        // 체크리스트 자동 오픈 (트레이너가 수동 입력하거나 AI 버튼 누를 수 있도록)
         const hdEl=document.getElementById(`cih_${tid}_${slot}`);
         const bdEl=document.getElementById(`cib_${tid}_${slot}`);
         if(hdEl&&bdEl){hdEl.classList.add('open');bdEl.classList.add('open');}
       } else {
-        // 감지 실패: 사용자에게 알림 + 수동 체크리스트는 여전히 사용 가능
         toast('포즈 감지 실패 — 전신 각도 다시 시도하거나 체크리스트 수동 입력');
         const hdEl=document.getElementById(`cih_${tid}_${slot}`);
         const bdEl=document.getElementById(`cib_${tid}_${slot}`);
@@ -2505,7 +2523,26 @@ const TEST_FOCUS = {
   slr_r:'우측 S.L.R. 테스트 — 오직 우측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
 };
 
-async function generateBeforeNarrative(tid,lm,W,H){
+// v1.7: 체크리스트 AI 자동 채우기 — 수동 실행 래퍼 (Before/After 어느 쪽이든 현재 로드된 슬롯)
+function runChecklistAI(tid){
+  const s=SHOTS[tid]?.B||SHOTS[tid]?.A;
+  if(!s?.pose||!s?.canvas){toast('사진과 스켈레톤이 필요합니다');return}
+  const slot=SHOTS[tid]?.B?.pose?'B':'A';
+  autoFillChecklist(tid,slot,s.pose,s.canvas.width,s.canvas.height);
+}
+
+// v1.7: 수동 트리거로 호출되며, 결과를 AI_HISTORY.narrative[tid]에 누적 저장.
+// 최대 AI_MAX_ATTEMPTS 회 분석 가능. 사용자가 ◀ ▶로 이전 결과 선택 가능.
+async function generateBeforeNarrative(tid){
+  const s=SHOTS[tid]?.B;
+  if(!s?.pose||!s?.canvas){toast('Before 사진과 스켈레톤이 필요합니다');return}
+  const lm=s.pose, W=s.canvas.width, H=s.canvas.height;
+  // 시도 횟수 확인
+  const hist = AI_HISTORY.narrative[tid] || (AI_HISTORY.narrative[tid]={results:[],active:0});
+  if(hist.results.length >= AI_MAX_ATTEMPTS){
+    toast(`분석 한도 도달 (${AI_MAX_ATTEMPTS}회). ◀ ▶ 버튼으로 이전 결과를 선택하세요.`);
+    return;
+  }
   const host=document.getElementById(`zone_${tid}_B`)?.parentElement;
   if(!host) return;
   let nbox=document.getElementById(`narr_${tid}`);
@@ -2517,7 +2554,7 @@ async function generateBeforeNarrative(tid,lm,W,H){
     if(chkInline) host.insertBefore(nbox,chkInline);
     else host.appendChild(nbox);
   }
-  nbox.innerHTML='<div class="narr-title">AI 자세 분석</div><div class="narr-body"><div class="spin" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>사진을 해석 중...</div>';
+  renderNarrativeBox(tid, true); // 로딩 상태 표시
   // 견봉 보정된 랜드마크
   const dlm=getDisplayLM(lm);
   const vis=(...ids)=>ids.every(i=>dlm[i]&&dlm[i].visibility>.4);
@@ -2643,28 +2680,94 @@ ${metrics.join('\n')||'(측정 실패 — 전신 가시성 낮음)'}
   try{
     const _pw=getAppPw();
     if(!_pw){
-      nbox.querySelector('.narr-body').innerHTML=`<span style="color:var(--tx3);font-size:12px">AI 비밀번호 미설정 — 측정치:</span><br><span style="font-size:12px">${metrics.join(' · ')||'데이터 부족'}</span>`;
+      hist.results.push({text:'AI 비밀번호 미설정 — 측정치: '+(metrics.join(' · ')||'데이터 부족'),ts:Date.now(),model:'local'});
+      hist.active=hist.results.length-1;
+      renderNarrativeBox(tid,false);
       return;
     }
     if(!checkAndIncrement('narrative: '+tid)){
-      nbox.querySelector('.narr-body').innerHTML=`<span style="color:var(--tx3);font-size:12px">AI 한도 초과 — 측정치만 표시:</span><br><span style="font-size:12px">${metrics.join(' · ')||'데이터 부족'}</span>`;
+      hist.results.push({text:'AI 한도 초과 — 측정치: '+(metrics.join(' · ')||'데이터 부족'),ts:Date.now(),model:'local'});
+      hist.active=hist.results.length-1;
+      renderNarrativeBox(tid,false);
       return;
     }
     const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
     if(!res.ok){
-      nbox.querySelector('.narr-body').textContent='AI 분석 실패 ('+res.status+') — '+metrics.join(' · ');
+      hist.results.push({text:'AI 분석 실패 ('+res.status+')',ts:Date.now(),model:'error'});
+      hist.active=hist.results.length-1;
+      renderNarrativeBox(tid,false);
       return;
     }
     const data=await res.json();
     const text=data.content?.[0]?.text||'분석 실패';
-    nbox.querySelector('.narr-body').innerHTML=renderMD(text);
+    hist.results.push({text,ts:Date.now(),model:'sonnet-4.5'});
+    hist.active=hist.results.length-1;
+    renderNarrativeBox(tid,false);
   }catch(e){
-    nbox.querySelector('.narr-body').textContent='네트워크 오류 — '+metrics.join(' · ');
+    hist.results.push({text:'네트워크 오류: '+(e?.message||e),ts:Date.now(),model:'error'});
+    hist.active=hist.results.length-1;
+    renderNarrativeBox(tid,false);
   }
+}
+
+// narrative 박스를 현재 AI_HISTORY 상태로 렌더링 (로딩 + 결과 + 네비게이션)
+function renderNarrativeBox(tid, loading){
+  const host=document.getElementById(`zone_${tid}_B`)?.parentElement;
+  if(!host) return;
+  let nbox=document.getElementById(`narr_${tid}`);
+  if(!nbox){
+    nbox=document.createElement('div');
+    nbox.id=`narr_${tid}`;
+    nbox.className='narr-box';
+    const chkInline=host.querySelector('.chk-inline');
+    if(chkInline) host.insertBefore(nbox,chkInline);
+    else host.appendChild(nbox);
+  }
+  const hist=AI_HISTORY.narrative[tid] || {results:[],active:0};
+  const attempts=hist.results.length;
+  const maxRemaining=AI_MAX_ATTEMPTS-attempts;
+  const active=hist.results[hist.active];
+  // 버튼 라벨
+  let btnLabel;
+  let btnDisabled=false;
+  if(attempts===0) btnLabel='AI 자세 분석하기';
+  else if(maxRemaining>0) btnLabel=`다시 분석하기 (${maxRemaining}회 남음)`;
+  else {btnLabel='분석 한도 도달'; btnDisabled=true;}
+  const btnHtml=`<button onclick="generateBeforeNarrative('${tid}')" class="narr-btn" ${btnDisabled?'disabled':''}>${btnLabel}</button>`;
+  // 네비게이션 (2개 이상일 때만)
+  let navHtml='';
+  if(attempts>=2){
+    navHtml=`<div class="narr-nav">
+      <button onclick="navNarrative('${tid}',-1)" class="narr-nav-btn" ${hist.active===0?'disabled':''}>◀</button>
+      <span class="narr-nav-idx">${hist.active+1} / ${attempts}</span>
+      <button onclick="navNarrative('${tid}',1)" class="narr-nav-btn" ${hist.active===attempts-1?'disabled':''}>▶</button>
+    </div>`;
+  }
+  // 본문
+  let bodyHtml;
+  if(loading){
+    bodyHtml=`<div class="narr-body"><div class="spin" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>Sonnet 4.5 분석 중...</div>`;
+  } else if(attempts===0){
+    bodyHtml=`<div class="narr-body narr-empty">AI 자세 분석 버튼을 누르면 이 검사의 주요 문제점을 요약합니다. (검사당 최대 ${AI_MAX_ATTEMPTS}회 분석 가능)</div>`;
+  } else {
+    bodyHtml=`<div class="narr-body">${renderMD(active.text)}</div>`;
+  }
+  nbox.innerHTML=`<div class="narr-title">AI 자세 분석${attempts?' · Sonnet 4.5':''}</div>
+    ${navHtml}
+    ${bodyHtml}
+    <div class="narr-actions">${btnHtml}</div>`;
+}
+
+// 이전/다음 분석 결과로 이동
+function navNarrative(tid,dir){
+  const hist=AI_HISTORY.narrative[tid];if(!hist)return;
+  const n=hist.results.length;
+  hist.active=Math.max(0,Math.min(n-1,hist.active+dir));
+  renderNarrativeBox(tid,false);
 }
 
 // Fallback: simple rule-based (when no API key)
@@ -4070,7 +4173,8 @@ function parseClinicalSections(text){
   return sections;
 }
 
-async function buildClinical(tid){
+// v1.7: Clinical Analysis — 사진 측정치 테이블은 자동 표시, AI 분석은 수동 버튼 + 3회 제한 + 히스토리
+async function buildClinical(tid, forceGenerate){
   const el=document.getElementById('clinBox_'+tid);if(!el)return;
   const bS=SHOTS[tid]?.B,aS=SHOTS[tid]?.A;
   if(!bS?.pose&&!aS?.pose){
@@ -4079,9 +4183,20 @@ async function buildClinical(tid){
   }
   const bm=bS?.pose?calcM(bS.pose,bS.canvas.width,bS.canvas.height):{};
   const am=aS?.pose?calcM(aS.pose,aS.canvas.width,aS.canvas.height):{};
-  // Show pose metrics table first (instant)
+  // 측정치 테이블은 항상 즉시 표시 (AI 콜 아님)
   el.innerHTML=buildMetricsHTML(tid,bm,am);
-  // Compute delta summary
+  // 기존 히스토리 있으면 AI 카드 갱신
+  renderClinicalBox(tid);
+  // 수동 트리거일 때만 AI 호출
+  if(!forceGenerate) return;
+  const hist = AI_HISTORY.clinical[tid] || (AI_HISTORY.clinical[tid]={results:[],active:0});
+  if(hist.results.length >= AI_MAX_ATTEMPTS){
+    toast(`분석 한도 도달 (${AI_MAX_ATTEMPTS}회). ◀ ▶ 버튼으로 이전 결과를 선택하세요.`);
+    return;
+  }
+  // 로딩 표시
+  renderClinicalBox(tid, true);
+  // Delta 계산
   const deltaLines=[];
   Object.keys(bm).forEach(k=>{
     if(typeof bm[k]==='number'&&typeof am[k]==='number'){
@@ -4091,7 +4206,6 @@ async function buildClinical(tid){
   });
   const chkSummary=getChkSummary(tid);
   const hasAfter=!!(aS?.pose);
-  // 테스트별 관련 메트릭만 프롬프트에 포함 (AI가 엉뚱한 부위 언급 방지)
   const testFocus = TEST_FOCUS[tid] || '일반 자세 평가';
   const testTitle = TESTS.find(t=>t.id===tid)?.title||tid;
   const aiPrompt=hasAfter?`당신은 16년 경력 스포츠 물리치료사이자 개인 트레이너입니다.
@@ -4151,41 +4265,92 @@ ${Object.entries(bm).filter(([k])=>NORMS[k]).map(([k,v])=>`- ${k}: ${typeof v===
 (1문장)`;
   try{
     let _pw=getAppPw();
-  if(!_pw)return;
-  if(!checkAndIncrement('임상분석: '+tid)) return;
-  const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+    if(!_pw){
+      hist.results.push({text:'AI 비밀번호 미설정',sections:{improved:'AI 비밀번호 미설정',maintain:'',prescription:'',message:''},ts:Date.now(),model:'error'});
+      hist.active=hist.results.length-1;
+      renderClinicalBox(tid);
+      return;
+    }
+    if(!checkAndIncrement('임상분석: '+tid)){
+      hist.results.push({text:'AI 한도 초과',sections:{improved:'AI 한도 초과',maintain:'',prescription:'',message:''},ts:Date.now(),model:'error'});
+      hist.active=hist.results.length-1;
+      renderClinicalBox(tid);
+      return;
+    }
+    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:700,messages:[{role:'user',content:aiPrompt}]})
+      body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:800,messages:[{role:'user',content:aiPrompt}]})
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'분석 실패';
-    // 4개 섹션 파싱
     const sections=parseClinicalSections(text);
-    // 트레이너용 전체 컨텐츠 저장
+    hist.results.push({text,sections,testTitle,ts:Date.now(),model:'sonnet-4.5'});
+    hist.active=hist.results.length-1;
+    // TRAINER_ONLY 에도 현재 active 기준으로 반영 (전송 시 최신 선택 사용)
     TRAINER_ONLY.clinical[tid]={...sections, raw:text, testTitle};
-    const aiEl=document.getElementById('aiClin_'+tid);
-    if(aiEl){
-      // ═ 고객 체험용 화면: "개선된 항목" 만 표시 ═
-      // 나머지 3개 섹션(유지/관리·운동·한마디)은 트레이너가 별도 전송
-      const improvedHtml = sections.improved ? renderMD(sections.improved) : '<p style="font-size:12px;color:var(--tx3)">Before 대비 변화 데이터 분석 중...</p>';
-      aiEl.innerHTML=`<div class="ai-box-title">AI Clinical Analysis — 개선된 항목</div>
-        <div class="ai-md">${improvedHtml}</div>
-        <div style="margin-top:10px;padding:8px 10px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:8px;font-size:10px;color:#1e40af;line-height:1.5">
-          🔒 <b>트레이너 전용</b>: 유지/관리·운동 처방·고객 한마디는 아래 "트레이너에게 상세 전송" 버튼으로 전송됩니다.
-        </div>
-        <button onclick="sendClinicalToTrainer('${tid}')" class="abtn" style="margin-top:8px;font-size:11px;padding:6px 12px;width:100%;background:#1e40af;color:#fff;border-color:#1e40af">📧 트레이너에게 상세 전송 (${testTitle})</button>`;
-    }
+    renderClinicalBox(tid);
   }catch(e){
-    const aiEl=document.getElementById('aiClin_'+tid);
-    const errMsg=e?.message||String(e);
-    if(aiEl)aiEl.innerHTML=`<div style="padding:10px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
-      <div style="font-size:12px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 오류</div>
-      <div style="font-size:11px;color:#555;margin-bottom:6px">오류: ${errMsg}</div>
-      <div style="font-size:11px;color:#555;margin-bottom:8px">Safari에서 로컬 파일을 열 때 외부 API 호출이 차단될 수 있습니다.<br>Safari 설정 → 개발자 메뉴 → CORS 비활성화 또는 Chrome으로 열어주세요.</div>
-      <button onclick="localStorage.removeItem('ng_app_pw');buildClinical('${tid}')" style="padding:6px 12px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">비밀번호 재설정</button>
+    hist.results.push({text:'네트워크 오류: '+(e?.message||e),sections:{improved:'네트워크 오류',maintain:'',prescription:'',message:''},ts:Date.now(),model:'error'});
+    hist.active=hist.results.length-1;
+    renderClinicalBox(tid);
+  }
+}
+
+// Clinical 박스 렌더링 (히스토리 기반)
+function renderClinicalBox(tid, loading){
+  const aiEl=document.getElementById('aiClin_'+tid);
+  if(!aiEl) return;
+  const hist=AI_HISTORY.clinical[tid]||{results:[],active:0};
+  const attempts=hist.results.length;
+  const remaining=AI_MAX_ATTEMPTS-attempts;
+  const active=hist.results[hist.active];
+  const testTitle = TESTS.find(t=>t.id===tid)?.title||tid;
+
+  let btnLabel;
+  let btnDisabled=false;
+  if(attempts===0) btnLabel='🧠 AI Clinical Analysis 실행';
+  else if(remaining>0) btnLabel=`다시 분석하기 (${remaining}회 남음)`;
+  else {btnLabel='분석 한도 도달'; btnDisabled=true;}
+
+  let navHtml='';
+  if(attempts>=2){
+    navHtml=`<div class="narr-nav">
+      <button onclick="navClinical('${tid}',-1)" class="narr-nav-btn" ${hist.active===0?'disabled':''}>◀</button>
+      <span class="narr-nav-idx">${hist.active+1} / ${attempts}</span>
+      <button onclick="navClinical('${tid}',1)" class="narr-nav-btn" ${hist.active===attempts-1?'disabled':''}>▶</button>
     </div>`;
   }
+
+  let bodyHtml;
+  if(loading){
+    bodyHtml=`<div class="ai-loading"><div class="spin"></div><span>Sonnet 4.5 분석 중...</span></div>`;
+  } else if(attempts===0){
+    bodyHtml=`<div style="font-size:12px;color:var(--tx3);padding:8px 0">버튼을 눌러 AI Clinical Analysis를 생성하세요. (검사당 최대 ${AI_MAX_ATTEMPTS}회)</div>`;
+  } else {
+    const improvedHtml = active.sections?.improved ? renderMD(active.sections.improved) : '<p style="font-size:12px;color:var(--tx3)">데이터 없음</p>';
+    bodyHtml=`<div class="ai-md">${improvedHtml}</div>
+      <div style="margin-top:10px;padding:8px 10px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:8px;font-size:10px;color:#1e40af;line-height:1.5">
+        🔒 <b>트레이너 전용</b>: 유지/관리·운동 처방·고객 한마디는 아래 버튼으로 전송됩니다.
+      </div>
+      <button onclick="sendClinicalToTrainer('${tid}')" class="abtn" style="margin-top:8px;font-size:11px;padding:6px 12px;width:100%;background:#1e40af;color:#fff;border-color:#1e40af">📧 트레이너에게 상세 전송 (${testTitle})</button>`;
+  }
+
+  aiEl.innerHTML=`<div class="ai-box-title">AI Clinical Analysis${attempts?' — 개선된 항목 · Sonnet 4.5':''}</div>
+    ${navHtml}
+    ${bodyHtml}
+    <div class="narr-actions"><button onclick="buildClinical('${tid}',true)" class="narr-btn" ${btnDisabled?'disabled':''}>${btnLabel}</button></div>`;
+  // TRAINER_ONLY 현재 active 결과로 갱신
+  if(attempts>0 && active?.sections){
+    TRAINER_ONLY.clinical[tid]={...active.sections,raw:active.text,testTitle};
+  }
+}
+
+function navClinical(tid,dir){
+  const hist=AI_HISTORY.clinical[tid];if(!hist)return;
+  const n=hist.results.length;
+  hist.active=Math.max(0,Math.min(n-1,hist.active+dir));
+  renderClinicalBox(tid);
 }
 
 function buildMetricsHTML(tid,bm,am){
@@ -4229,10 +4394,17 @@ function buildMetricsHTML(tid,bm,am){
 // ═══════════════════════════════════════════
 // AI REPORT
 // ═══════════════════════════════════════════
+// v1.7: 종합 리포트 — 수동 버튼 + 3회 제한 + 히스토리
 async function genAIReport(){
   const el=document.getElementById('aiReportContent');if(!el)return;
   const sec=document.getElementById('aiReportSec');if(sec)sec.style.display='block';
-  el.innerHTML='<div class="ai-loading"><div class="spin"></div><span>AI 종합 리포트 생성 중...</span></div>';
+  // 시도 횟수 확인
+  const hist = AI_HISTORY.report;
+  if(hist.results.length >= AI_MAX_ATTEMPTS){
+    toast(`분석 한도 도달 (${AI_MAX_ATTEMPTS}회). ◀ ▶ 버튼으로 이전 결과를 선택하세요.`);
+    return;
+  }
+  renderReportBox(true);
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
   const trainerComment=document.getElementById('trainerComment')?.value||'';
@@ -4282,42 +4454,88 @@ ${allFindings.join('\n')}
 한국어, 인사말·면책조항 금지, 마크다운 헤딩만 사용.`;
   try{
     let _pw=getAppPw();
-  if(!_pw)return;
-  if(!checkAndIncrement('종합리포트')) return;
-  const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+    if(!_pw){
+      hist.results.push({text:'AI 비밀번호 미설정',clientPart:'AI 비밀번호 미설정',trainerPart:'',ts:Date.now(),model:'error'});
+      hist.active=hist.results.length-1;
+      renderReportBox(false);
+      return;
+    }
+    if(!checkAndIncrement('종합리포트')){
+      hist.results.push({text:'AI 한도 초과',clientPart:'AI 한도 초과',trainerPart:'',ts:Date.now(),model:'error'});
+      hist.active=hist.results.length-1;
+      renderReportBox(false);
+      return;
+    }
+    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       mode:'cors',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1800,messages:[{role:'user',content:aiPrompt}]})
+      body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:1800,messages:[{role:'user',content:aiPrompt}]})
     });
     const data=await res.json();
     const text=data.content?.[0]?.text||'생성 실패';
-    // 구분자로 client / trainer 섹션 분리
     const split=text.split(/={3,}\s*TRAINER_ONLY\s*={3,}/);
     const clientPart=(split[0]||text).trim();
     const trainerPart=(split[1]||'').trim();
-    TRAINER_ONLY.finalReport = trainerPart || '(트레이너 섹션 파싱 실패 — 전체 원문 저장)\n\n'+text;
-    el.innerHTML=`<div class="ai-md">${renderMD(clientPart)}</div>
+    hist.results.push({text,clientPart,trainerPart,ts:Date.now(),model:'sonnet-4.5'});
+    hist.active=hist.results.length-1;
+    TRAINER_ONLY.finalReport = trainerPart || '(트레이너 섹션 파싱 실패)\n\n'+text;
+    renderReportBox(false);
+    toast('AI 리포트 생성 완료 — 고객 화면에는 요약만 표시됨');
+  }catch(e){
+    hist.results.push({text:'네트워크 오류: '+(e?.message||e),clientPart:'네트워크 오류',trainerPart:'',ts:Date.now(),model:'error'});
+    hist.active=hist.results.length-1;
+    renderReportBox(false);
+  }
+}
+
+function renderReportBox(loading){
+  const el=document.getElementById('aiReportContent');if(!el) return;
+  const hist=AI_HISTORY.report;
+  const attempts=hist.results.length;
+  const remaining=AI_MAX_ATTEMPTS-attempts;
+  const active=hist.results[hist.active];
+
+  let btnLabel;
+  let btnDisabled=false;
+  if(attempts===0) btnLabel='AI 종합 분석 생성';
+  else if(remaining>0) btnLabel=`다시 생성하기 (${remaining}회 남음)`;
+  else {btnLabel='생성 한도 도달'; btnDisabled=true;}
+
+  let navHtml='';
+  if(attempts>=2){
+    navHtml=`<div class="narr-nav">
+      <button onclick="navReport(-1)" class="narr-nav-btn" ${hist.active===0?'disabled':''}>◀</button>
+      <span class="narr-nav-idx">${hist.active+1} / ${attempts}</span>
+      <button onclick="navReport(1)" class="narr-nav-btn" ${hist.active===attempts-1?'disabled':''}>▶</button>
+    </div>`;
+  }
+
+  let bodyHtml;
+  if(loading){
+    bodyHtml=`<div class="ai-loading"><div class="spin"></div><span>Sonnet 4.5 리포트 생성 중...</span></div>`;
+  } else if(attempts===0){
+    bodyHtml=`<p style="font-size:13px;color:var(--tx3)">버튼을 눌러 AI 종합 분석을 생성하세요. (최대 ${AI_MAX_ATTEMPTS}회)</p>`;
+  } else {
+    bodyHtml=`<div class="ai-md">${renderMD(active.clientPart)}</div>
       <div style="margin-top:14px;padding:10px 12px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:10px">
         <div style="font-size:11px;color:#1e40af;font-weight:700;margin-bottom:6px">🔒 트레이너 전용 상세 (고객 화면에 표시되지 않음)</div>
         <div style="font-size:10px;color:#3b5fb5;line-height:1.5;margin-bottom:8px">우선순위별 운동 처방·재검사 목표·트레이너 메모는 아래 버튼으로 트레이너 본인에게만 전송됩니다.</div>
         <button onclick="sendFinalReportToTrainer()" class="abtn" style="width:100%;background:#1e40af;color:#fff;border-color:#1e40af;font-size:12px;padding:8px">📧 트레이너에게 상세 리포트 전송</button>
       </div>`;
-    toast('AI 리포트 생성 완료 — 고객 화면에는 요약만 표시됨');
-  }catch(e){
-    const errMsg2=e?.message||String(e);
-    el.innerHTML=`<div style="padding:12px;background:#fff8e6;border-radius:8px;border:1px solid #e89820">
-      <div style="font-size:13px;font-weight:700;color:#b87000;margin-bottom:6px">AI 분석 오류</div>
-      <div style="font-size:12px;color:#555;margin-bottom:6px">오류 내용: ${errMsg2}</div>
-      <div style="font-size:12px;color:#555;margin-bottom:10px">
-      <b>Safari에서 로컬 파일 실행 시 해결 방법:</b><br>
-      1. Chrome 또는 Firefox로 파일 열기 (권장)<br>
-      2. Safari → 환경설정 → 고급 → "개발자용 메뉴 보기" 활성화<br>
-         → 개발자 메뉴 → CORS 비활성화<br>
-      3. GitHub Pages에 올리고 Safari에서 https:// URL로 접속</div>
-      <button onclick="localStorage.removeItem('ng_app_pw');genAIReport()" style="padding:8px 16px;background:#b87000;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">비밀번호 재설정 후 재시도</button>
-    </div>`;
+    // TRAINER_ONLY 는 현재 active 기준 갱신
+    if(active?.trainerPart) TRAINER_ONLY.finalReport=active.trainerPart;
   }
+
+  el.innerHTML=`${navHtml}${bodyHtml}
+    <div class="narr-actions" style="margin-top:12px"><button onclick="genAIReport()" class="narr-btn" style="background:#059669" ${btnDisabled?'disabled':''}>${btnLabel}</button></div>`;
+}
+
+function navReport(dir){
+  const hist=AI_HISTORY.report;
+  const n=hist.results.length;
+  hist.active=Math.max(0,Math.min(n-1,hist.active+dir));
+  renderReportBox(false);
 }
 
 // ═══════════════════════════════════════════
@@ -4331,6 +4549,8 @@ function updateReport(){
   const rs=getRateStatus();
   const usageEl=document.getElementById('rUsageStatus');
   if(usageEl) usageEl.innerHTML=`<span style="font-size:11px;color:#9de8c8">오늘 AI 사용: ${rs.daily}/${rs.dailyMax}회</span>`;
+  // v1.7: 리포트 박스를 히스토리 기반으로 렌더 (버튼 포함)
+  renderReportBox(false);
   document.getElementById('rHeroSub').textContent=trainer?'담당: '+trainer:'';
   const done=TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img).length;
   document.getElementById('rDone').textContent=done;
