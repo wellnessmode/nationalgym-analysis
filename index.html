@@ -54,6 +54,7 @@ button,input,select,textarea{font-family:inherit}
 .tc-info p{font-size:11px;color:var(--tx3);margin-top:1px}
 .tc-badge{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;white-space:nowrap}
 .tc-badge.none{background:var(--bg3);color:var(--tx3)}
+.tc-badge.manual{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .tc-badge.done{background:var(--g3);color:var(--g2)}
 .tc-badge.partial{background:var(--a3);color:var(--amber)}
 .photo-zone{position:relative;background:var(--bg3);min-height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -895,6 +896,74 @@ const POSE_GUIDES = {
     <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
 
+  neck_l: {
+    label:'경추 좌회전 — 베드 걸터앉은 상태에서 고개 좌측으로',
+    warning:'베드에 편히 앉아 · 고개 좌측 최대 회전',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4px;font-family:sans-serif}</style>
+    </defs>
+    <!-- BED (person seated on edge — back view of head+shoulders+torso) -->
+    <rect x="15" y="178" width="70" height="10" rx="2" fill="rgba(0,180,120,.12)" stroke="#00c890" stroke-width=".8" stroke-dasharray="3,2"/>
+    <text x="50" y="196" text-anchor="middle" class="tn">베드</text>
+    <!-- HEAD ROTATED LEFT (highlighted) — seen from behind, turned to left so right ear visible -->
+    <ellipse class="hi" cx="46" cy="34" rx="11" ry="14" transform="rotate(-18 46 34)"/>
+    <!-- Ear dot (right side of person visible since head turned left) -->
+    <circle cx="55" cy="30" r="2.4" fill="#ffd700"/>
+    <!-- NECK (rotated base stays centered on spine) -->
+    <path class="bg" d="M45,48 Q47,54 47,58 L53,58 Q53,54 55,48 Z"/>
+    <!-- UPPER TORSO back view (stays facing camera) -->
+    <path class="bg" d="M22,58 Q28,54 47,56 L53,56 Q72,54 78,58 L76,98 Q68,94 53,96 L47,96 Q32,94 24,98 Z"/>
+    <!-- SPINE line (reference for rotation measurement) -->
+    <line x1="50" y1="58" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
+    <text class="tx" x="53" y="120">척추</text>
+    <!-- SHOULDERS LINE (reference) -->
+    <line x1="15" y1="58" x2="85" y2="58" stroke="#ff6060" stroke-width=".7" stroke-dasharray="3,2" opacity=".6"/>
+    <text class="tx" x="2" y="57">어깨선</text>
+    <!-- ARMS hanging beside torso -->
+    <path class="bg" d="M24,60 Q18,76 16,96 Q16,104 20,104 Q24,104 26,98 L28,76 Q30,64 27,60 Z"/>
+    <path class="bg" d="M76,60 Q82,76 84,96 Q84,104 80,104 Q76,104 74,98 L72,76 Q70,64 73,60 Z"/>
+    <!-- LOWER TORSO to bed -->
+    <path class="bg" d="M24,98 Q32,108 50,108 Q68,108 76,98 L78,178 Q50,186 22,178 Z"/>
+    <!-- ROTATION ARROW: circular arc pointing LEFT -->
+    <path d="M36,30 Q26,22 22,28" fill="none" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
+    <path d="M22,28 L25,25 M22,28 L25,31" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
+    <text x="10" y="20" fill="#ffd700" font-size="5" font-family="sans-serif" font-weight="bold">← 좌회전</text>
+    <text x="50" y="210" text-anchor="middle" class="tn">측면/후면 촬영</text>`
+  },
+
+  neck_r: {
+    label:'경추 우회전 — 베드 걸터앉은 상태에서 고개 우측으로',
+    warning:'베드에 편히 앉아 · 고개 우측 최대 회전',
+    viewBox:'0 0 100 220',
+    svg:`<defs>
+      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4px;font-family:sans-serif}</style>
+    </defs>
+    <!-- BED -->
+    <rect x="15" y="178" width="70" height="10" rx="2" fill="rgba(0,180,120,.12)" stroke="#00c890" stroke-width=".8" stroke-dasharray="3,2"/>
+    <text x="50" y="196" text-anchor="middle" class="tn">베드</text>
+    <!-- HEAD ROTATED RIGHT -->
+    <ellipse class="hi" cx="54" cy="34" rx="11" ry="14" transform="rotate(18 54 34)"/>
+    <!-- Ear dot (left side of person visible since head turned right) -->
+    <circle cx="45" cy="30" r="2.4" fill="#ffd700"/>
+    <!-- NECK -->
+    <path class="bg" d="M45,48 Q47,54 47,58 L53,58 Q53,54 55,48 Z"/>
+    <!-- UPPER TORSO back view -->
+    <path class="bg" d="M22,58 Q28,54 47,56 L53,56 Q72,54 78,58 L76,98 Q68,94 53,96 L47,96 Q32,94 24,98 Z"/>
+    <line x1="50" y1="58" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
+    <text class="tx" x="53" y="120">척추</text>
+    <line x1="15" y1="58" x2="85" y2="58" stroke="#ff6060" stroke-width=".7" stroke-dasharray="3,2" opacity=".6"/>
+    <text class="tx" x="2" y="57">어깨선</text>
+    <path class="bg" d="M24,60 Q18,76 16,96 Q16,104 20,104 Q24,104 26,98 L28,76 Q30,64 27,60 Z"/>
+    <path class="bg" d="M76,60 Q82,76 84,96 Q84,104 80,104 Q76,104 74,98 L72,76 Q70,64 73,60 Z"/>
+    <path class="bg" d="M24,98 Q32,108 50,108 Q68,108 76,98 L78,178 Q50,186 22,178 Z"/>
+    <!-- ROTATION ARROW: right direction -->
+    <path d="M64,30 Q74,22 78,28" fill="none" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
+    <path d="M78,28 L75,25 M78,28 L75,31" stroke="#ffd700" stroke-width="1.4" opacity=".9"/>
+    <text x="62" y="20" fill="#ffd700" font-size="5" font-family="sans-serif" font-weight="bold">우회전 →</text>
+    <text x="50" y="210" text-anchor="middle" class="tn">측면/후면 촬영</text>`
+  },
+
   slr_r: {
     label:'Rt. SLR — 바로 누워 오른쪽 다리 올리기',
     warning:'침대/매트 · 무릎 완전히 펴기',
@@ -1106,21 +1175,32 @@ async function deleteSession(id){
 // ═══════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════
-// v1.9: 검사 순서 재배치 (정적 자세: 전면→측면→후면) + shoulder abduction 명명 변경
+// v1.10: 종이 양식(NPT)과 완전 일치. 수기 검사는 manual:true 플래그로 사진 없이 체크리스트만.
 // id는 그대로 유지 (저장된 데이터 호환). title/sub/tip만 변경.
 const TESTS = [
-  {id:'ant',      n:1,  sec:'static', title:'전면 (Anterior)',             sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
-  {id:'lat',      n:2,  sec:'static', title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만',           tip:'좌측면 기준'},
-  {id:'post',     n:3,  sec:'static', title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
-  {id:'sh_flex_l',n:4,  sec:'npt',    title:'Shoulder Abduction — 좌측',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 좌측 팔 옆으로 최대 거상'},
-  {id:'sh_flex_r',n:5,  sec:'npt',    title:'Shoulder Abduction — 우측',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 우측 팔 옆으로 최대 거상'},
-  {id:'trunk_b',  n:6,  sec:'npt',    title:'Trunk Flexion — 후면',        sub:'Scoliosis in motion · Muscle tone', tip:'후면, 체간 전굴 최대범위'},
-  {id:'trunk_l',  n:7,  sec:'npt',    title:'Trunk Flexion — 측면',        sub:'굴곡 ROM · 흉/요추 분리',           tip:'측면, 체간 전굴 최대범위'},
-  {id:'ohs_b',    n:8,  sec:'npt',    title:'Overhead Squat — 후면',       sub:'Ankle inversion · Pelvic rotation · Knee collapse', tip:'후면, OHS 최저점 유지'},
-  {id:'ohs_l',    n:9,  sec:'npt',    title:'Overhead Squat — 측면',       sub:'상체 전경 · 흉추 가동성 · Anterior pelvic tilt', tip:'측면, OHS 최저점 유지'},
-  {id:'sku',      n:10, sec:'npt',    title:'Standing Knee Up',           sub:'Glutes · Hip flexor · Ankle stability', tip:'전면, 무릎 최대 거상 유지'},
-  {id:'slr_l',    n:11, sec:'npt',    title:'S.L.R. — 왼쪽',              sub:'Lt. Hamstring · 다리 올림 각도 측정', tip:'좌측면, 누운 자세 왼쪽 SLR'},
-  {id:'slr_r',    n:12, sec:'npt',    title:'S.L.R. — 오른쪽',            sub:'Rt. Hamstring · 다리 올림 각도 측정', tip:'우측면, 누운 자세 오른쪽 SLR'}
+  {id:'ant',       n:1,  sec:'static', title:'전면 (Anterior)',             sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
+  {id:'lat',       n:2,  sec:'static', title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만',           tip:'좌측면 기준'},
+  {id:'post',      n:3,  sec:'static', title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
+  {id:'sh_flex_l', n:4,  sec:'npt',    title:'Shoulder Abduction — 좌측',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 좌측 팔 옆으로 최대 거상'},
+  {id:'sh_flex_r', n:5,  sec:'npt',    title:'Shoulder Abduction — 우측',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 우측 팔 옆으로 최대 거상'},
+  {id:'trunk_b',   n:6,  sec:'npt',    title:'Trunk Flexion — 후면',        sub:'Scoliosis in motion · Muscle tone', tip:'후면, 체간 전굴 최대범위'},
+  {id:'trunk_l',   n:7,  sec:'npt',    title:'Trunk Flexion — 측면',        sub:'굴곡 ROM · 흉/요추 분리',           tip:'측면, 체간 전굴 최대범위'},
+  {id:'ohs_b',     n:8,  sec:'npt',    title:'Overhead Squat — 후면',       sub:'Ankle inversion · Pelvic rotation · Knee collapse', tip:'후면, OHS 최저점 유지'},
+  {id:'ohs_l',     n:9,  sec:'npt',    title:'Overhead Squat — 측면',       sub:'상체 전경 · 흉추 가동성 · Anterior pelvic tilt', tip:'측면, OHS 최저점 유지'},
+  {id:'sku',       n:10, sec:'npt',    title:'Standing Knee Up',           sub:'Glutes · Hip flexor · Ankle stability', tip:'전면, 무릎 최대 거상 유지'},
+  {id:'slr_l',     n:11, sec:'npt',    title:'S.L.R. — 왼쪽',              sub:'Lt. Hamstring · 다리 올림 각도 측정', tip:'좌측면, 누운 자세 왼쪽 SLR'},
+  {id:'slr_r',     n:12, sec:'npt',    title:'S.L.R. — 오른쪽',            sub:'Rt. Hamstring · 다리 올림 각도 측정', tip:'우측면, 누운 자세 오른쪽 SLR'},
+  // ─── 수기 검사 (사진 없음) ───
+  {id:'patrick',   n:13, sec:'npt', manual:true, title:'Patrick Test (FABER)', sub:'고관절·천장관절 병변 평가', tip:'수기 검사 · 체크리스트 입력'},
+  {id:'prone_quad',   n:14, sec:'npt', manual:true, title:'Quadriceps — Prone',    sub:'대퇴사두근 단축/약화 (엎드린 자세)', tip:'수기 검사 · 체크리스트 입력'},
+  {id:'prone_hipext', n:15, sec:'npt', manual:true, title:'Hip Extension Test — Prone', sub:'고관절 신전 · 전/후방 경사 패턴', tip:'수기 검사 · 체크리스트 입력'},
+  {id:'prone_ql',     n:16, sec:'npt', manual:true, title:'Quadratus Lumborum',    sub:'요방형근 좌우 비대칭 (엎드린 자세)', tip:'수기 검사 · 체크리스트 입력'},
+  {id:'calf_achilles',n:17, sec:'npt', manual:true, title:'Achilles Tendon Palpation', sub:'아킬레스건 촉진', tip:'수기 촉진 · 체크리스트 입력'},
+  {id:'calf_palp',    n:18, sec:'npt', manual:true, title:'Calf Palpation',        sub:'종아리(비복근/가자미근) 촉진', tip:'수기 촉진 · 체크리스트 입력'},
+  // ─── Neck palpation (사진 + 수기) — 필살기 ───
+  {id:'neck_l',       n:19, sec:'npt', title:'경추 회전 — 좌측',  sub:'베드에 앉아 좌측 회전 · 회전각 측정', tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
+  {id:'neck_r',       n:20, sec:'npt', title:'경추 회전 — 우측',  sub:'베드에 앉아 우측 회전 · 회전각 측정', tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
+  {id:'neck_palp',    n:21, sec:'npt', manual:true, title:'Neck Palpation (필살기)', sub:'Cervical Curve · SCM · Scalene · U.Trap', tip:'수기 촉진 · 체크리스트 입력'}
 ];
 
 const TEST_CHECKLIST = {
@@ -1189,6 +1269,36 @@ const TEST_CHECKLIST = {
   slr_r: [
     {id:'slrr_ham',  label:'Rt. Hamstring',          opts:['단축 (< 70°)','정상 (70~85°)','과가동 (> 85°)'], colors:['bad','ok','warn']},
     {id:'slrr_comp', label:'Rt. 골반 보상',           opts:['후방 경사','없음'], colors:['warn','ok']},
+  ],
+  // ─── 신규 수기 검사 체크리스트 (v1.10) ───
+  patrick: [
+    {id:'patrick_side', label:'문제 있는 쪽',          opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'patrick_loc',  label:'통증 위치',            opts:['앞쪽 (서혜부·고관절)','뒤쪽 (SI joint·천장관절)','없음'], colors:['warn','warn','ok']},
+  ],
+  prone_quad: [
+    {id:'pq_side', label:'문제 있는 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'pq_type', label:'근 상태',                   opts:['단축 (Short)','약화 (Weak)','정상'], colors:['warn','warn','ok']},
+  ],
+  prone_hipext: [
+    {id:'phe_side', label:'문제 있는 쪽',              opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+    {id:'phe_tilt', label:'골반 경사 패턴',            opts:['Ant. Tilt (전방경사)','Post. Tilt (후방경사)','정상'], colors:['warn','warn','ok']},
+  ],
+  prone_ql: [
+    {id:'pql_side', label:'긴장/단축 쪽',              opts:['Lt.','Rt.','대칭'], colors:['warn','warn','ok']},
+  ],
+  calf_achilles: [
+    {id:'ca_side', label:'압통/경직 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+  ],
+  calf_palp: [
+    {id:'cp_side', label:'압통/경직 쪽',               opts:['Lt.','Rt.','양측','없음'], colors:['warn','warn','bad','ok']},
+  ],
+  // Neck rotation photo tests — 체크리스트는 none (사진+AI 분석만)
+  // Neck palpation — 수기 촉진 체크리스트
+  neck_palp: [
+    {id:'np_curve', label:'Cervical Curve (경추 커브)', opts:['일자목 / 역C형','과전만 (Hyperlordosis)','정상'], colors:['warn','warn','ok']},
+    {id:'np_scm',   label:'SCM (흉쇄유돌근) 긴장',      opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
+    {id:'np_scal',  label:'Scalene (사각근) 긴장',      opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
+    {id:'np_utrap', label:'U.Trap (상부승모근) 긴장',    opts:['Lt. 긴장','Rt. 긴장','양측 긴장','대칭'], colors:['warn','warn','bad','ok']},
   ],
 };
 
@@ -1312,8 +1422,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.9.0';
-const BUILD_TIME='2026-04-09 17:30';
+const APP_VERSION='v1.10.0';
+const BUILD_TIME='2026-04-09 18:45';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1529,39 +1639,48 @@ function buildPhaseContent(id){
 function buildSlotPhase(slot, title, hint){
   let h=`<div class="sec-hd"><h3>${title}</h3><span class="hint">${hint}</span></div>`;
   TESTS.forEach(t=>{
+    // v1.10: 수기 검사(manual:true)는 Before phase에만 표시 (After에선 스킵 — 단일 체크리스트)
+    if(t.manual && slot==='A') return;
     const slotLabel=slot==='B'?'Before':'After';
     h+=`<div class="test-card" id="tc_${t.id}_${slot}">
       <div class="tc-head">
         <div class="tc-num" id="tcn_${t.id}_${slot}">${t.n}</div>
         <div class="tc-info"><h4>${t.title}</h4><p>${t.sub}</p></div>
-        <div class="tc-badge none" id="tcb_${t.id}_${slot}">미촬영</div>
+        <div class="tc-badge ${t.manual?'manual':'none'}" id="tcb_${t.id}_${slot}">${t.manual?'수기':'미촬영'}</div>
       </div>`;
-    if(slot==='A'){
-      h+=`<div class="ref-strip" id="ref_${t.id}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg><span>Before 참고</span><img id="refimg_${t.id}" src="" alt=""></div>`;
-    }
-    h+=`<div class="photo-zone" id="zone_${t.id}_${slot}">
-      <div class="photo-add" id="add_${t.id}_${slot}">
-        <button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          카메라로 촬영
-        </button>
-        <button class="pa-btn" onclick="doUpload('${t.id}','${slot}')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          갤러리 업로드
-        </button>
-      </div>
-    </div>`;
-    // AI 버튼 영역 — Before/After 양쪽 모두에 체크리스트 AI 가이드 버튼.
-    // 자세 분석(서술형)은 Before에만 (After는 Compare에서 임상 분석으로 다룸).
-    if(slot==='B'){
-      h+=`<div class="ai-manual-bar">
-        <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','B')">📋 체크리스트 AI 가이드</button>
-        <button class="ai-manual-btn" onclick="generateBeforeNarrative('${t.id}')">🧠 AI 자세 분석</button>
+    if(t.manual){
+      // 수기 검사: 사진 없이 체크리스트만
+      h+=`<div style="padding:12px 14px;background:#fffbea;border-left:3px solid #f59e0b;color:#78350f;font-size:11px;font-weight:600;line-height:1.5">
+        📝 수기 검사 — 사진 촬영 없이 아래 체크리스트만 작성<br>
+        <span style="font-weight:400;color:#92400e">${t.tip||''}</span>
       </div>`;
     } else {
-      h+=`<div class="ai-manual-bar">
-        <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','A')">📋 체크리스트 AI 가이드</button>
+      if(slot==='A'){
+        h+=`<div class="ref-strip" id="ref_${t.id}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg><span>Before 참고</span><img id="refimg_${t.id}" src="" alt=""></div>`;
+      }
+      h+=`<div class="photo-zone" id="zone_${t.id}_${slot}">
+        <div class="photo-add" id="add_${t.id}_${slot}">
+          <button class="pa-btn cam" onclick="openCam('${t.id}','${slot}')">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            카메라로 촬영
+          </button>
+          <button class="pa-btn" onclick="doUpload('${t.id}','${slot}')">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            갤러리 업로드
+          </button>
+        </div>
       </div>`;
+      // AI 버튼 영역 — 사진 검사에만 표시
+      if(slot==='B'){
+        h+=`<div class="ai-manual-bar">
+          <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','B')">📋 체크리스트 AI 가이드</button>
+          <button class="ai-manual-btn" onclick="generateBeforeNarrative('${t.id}')">🧠 AI 자세 분석</button>
+        </div>`;
+      } else {
+        h+=`<div class="ai-manual-bar">
+          <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','A')">📋 체크리스트 AI 가이드</button>
+        </div>`;
+      }
     }
     const ckItems=TEST_CHECKLIST[t.id]||[];
     if(ckItems.length){
@@ -1935,15 +2054,28 @@ function selChk(itemId,slot,oi,cc){
   if(!item)return;
   // Multi-select toggle
   if(CHK[k].sels[oi]){
-    // deselect
     delete CHK[k].sels[oi];
     const el=document.getElementById(`cp_${itemId}_${slot}_${oi}`);
     if(el){el.className='ci-pill';delete el.dataset.confirmed}
   } else {
-    // select
     CHK[k].sels[oi]=cc;
     const el=document.getElementById(`cp_${itemId}_${slot}_${oi}`);
     if(el){el.className=`ci-pill on-${cc}`;el.dataset.confirmed='1';el.dataset.aiSug='';el.classList.remove('ci-ai-sug')}
+  }
+  // v1.10: 수기 검사는 체크리스트 하나라도 선택되면 "완료" 배지 표시
+  // itemId 는 "ant_sh" 같은 형식 — 어떤 test에 속하는지 역추적
+  const testId = Object.keys(TEST_CHECKLIST).find(tid=>
+    TEST_CHECKLIST[tid].some(i=>i.id===itemId)
+  );
+  if(testId){
+    const test=TESTS.find(t=>t.id===testId);
+    if(test?.manual){
+      // 수기 검사: Before 슬롯 배지만 업데이트
+      const bd=document.getElementById(`tcb_${testId}_B`);
+      if(bd){bd.textContent='작성됨';bd.className='tc-badge done';}
+      const nd=document.getElementById(`tcn_${testId}_B`);
+      if(nd) nd.classList.add('done');
+    }
   }
   autoSave();
 }
@@ -2644,6 +2776,8 @@ const TEST_RELEVANT_METRICS = {
   sku:    ['pelvis_drop'],
   slr_l:  ['slr_angle_left'],
   slr_r:  ['slr_angle_right'],
+  neck_l: ['neck_rotation'],
+  neck_r: ['neck_rotation'],
 };
 // 각 테스트의 간단한 "포커스" 설명 — AI 프롬프트에 명시해 다른 부위 언급 금지
 const TEST_FOCUS = {
@@ -2659,6 +2793,8 @@ const TEST_FOCUS = {
   sku:'Standing Knee Up — 오직 중둔근 약화로 인한 반대측 골반 drop(Trendelenburg sign)과 지지측 hip 안정성만 분석',
   slr_l:'좌측 S.L.R. 테스트 — 오직 좌측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
   slr_r:'우측 S.L.R. 테스트 — 오직 우측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
+  neck_l:'경추 좌회전 검사 — 오직 좌측 회전 ROM(회전각)과 이 각도가 시사하는 경추 및 상부승모근·SCM·Scalene 긴장만 분석. 어깨·골반·하지 언급 절대 금지.',
+  neck_r:'경추 우회전 검사 — 오직 우측 회전 ROM(회전각)과 이 각도가 시사하는 경추 및 상부승모근·SCM·Scalene 긴장만 분석. 어깨·골반·하지 언급 절대 금지.',
 };
 
 // v1.8: 체크리스트 AI 가이드 — 수동 실행, slot 명시 지원
@@ -2786,6 +2922,24 @@ async function generateBeforeNarrative(tid){
   if(include('pelvis_drop') && vis(23,24)){
     const dy=(dlm[23].y-dlm[24].y)*H;
     metrics.push(`골반 높이 차이(Trendelenburg 참고): ${Math.abs(dy).toFixed(0)}px (${dy>0?'우측 하강':'좌측 하강'})`);
+  }
+  if(include('neck_rotation')){
+    // 경추 회전각 추정: 귀(7/8)와 양쪽 어깨(11,12) 중간선의 각도
+    // 양 어깨가 기준 수평선이 되고, 회전한 머리의 귀 위치가 어깨 중점에서 얼마나 옆으로 벗어났는지로 근사
+    const mSh=vis(11,12)?{x:(dlm[11].x+dlm[12].x)/2*W,y:(dlm[11].y+dlm[12].y)/2*H}:null;
+    const ear=dlm[7]?.visibility>.4?dlm[7]:(dlm[8]?.visibility>.4?dlm[8]:null);
+    if(mSh && ear){
+      const earX=ear.x*W, earY=ear.y*H;
+      const dx=earX-mSh.x;
+      const dy=mSh.y-earY; // 어깨 위로 거리 (양수)
+      // 회전 각도 = 머리 수직선 대비 귀의 편차
+      // 정면: dx≈0, 회전 시 dx 증가
+      const angle = dy>1 ? Math.atan2(Math.abs(dx),dy)*180/Math.PI : 0;
+      metrics.push(`경추 회전 추정각(귀-어깨 중심 편차): ${angle.toFixed(0)}° · 귀 편차 ${Math.abs(dx).toFixed(0)}px`);
+      metrics.push(`정상 경추 회전 ROM: 60~80° (참고치)`);
+    } else {
+      metrics.push('경추 회전 각도 측정 실패 — 귀·어깨 랜드마크 가시성 낮음');
+    }
   }
   if(include('shoulder_mobility_left') && vis(11,13,15)){
     // 좌측 어깨 굴곡 각도: 견갑-주관절-손목 방향
@@ -4594,6 +4748,7 @@ function buildMetricsHTML(tid,bm,am){
     ohs_b:['kneeAlign','hipTilt'],ohs_l:['cva','spineAngle','shoulderHipAlign','devHip','devKnee'],
     sku:['hipHDiff','hipTilt'],
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
+    neck_l:['headTilt'],neck_r:['headTilt'],
   };
   const keys=relevant[tid]||Object.keys(NORMS);
   const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선',potsi:'POTSI 몸통 대칭 지수',atsi:'ATSI 전면 대칭 지수',qAngleL:'Q-angle (좌)',qAngleR:'Q-angle (우)',thoracicKyphosis:'흉추 전경사'};
