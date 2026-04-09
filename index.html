@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NationalGym — NPT 체형분석</title>
+<title>NationalGym — 바디스캔</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -296,34 +296,34 @@ input[type=range]{accent-color:var(--green)}
 </style>
 </head>
 <body>
-<!-- 랜딩 / 스타트 화면 -->
+<!-- 랜딩 / 스타트 화면 (v1.9 — 고객 친화 단순화) -->
 <div id="landingScreen">
   <div class="ls-hero">
     <div class="ls-brand">NATIONALGYM</div>
-    <div class="ls-title"><em>NPT</em> 체형분석</div>
-    <div class="ls-subtitle">Neuromuscular Pattern Test</div>
+    <div class="ls-title"><em>Body</em> Scan</div>
+    <div class="ls-subtitle">전문 체형 분석 프로그램</div>
     <div class="ls-divider"></div>
-    <div class="ls-tagline">MediaPipe 기반 스켈레톤 감지 · Claude AI 임상 분석<br>Before / After 비교로 개선 결과를 시각화합니다</div>
+    <div class="ls-tagline">전·후 비교로 개선 결과를 시각화하는<br>NationalGym 전용 체형분석 솔루션</div>
   </div>
   <div class="ls-features">
-    <div class="ls-feat"><div class="ls-feat-ic">📸</div><div class="ls-feat-txt"><div class="ls-feat-t">12가지 임상 검사</div><div class="ls-feat-s">정적 자세 · 움직임 · ROM · SLR</div></div></div>
-    <div class="ls-feat"><div class="ls-feat-ic">🧠</div><div class="ls-feat-txt"><div class="ls-feat-t">Claude Sonnet AI 분석</div><div class="ls-feat-s">자세 진단 · 교정 운동 처방 · 종합 리포트</div></div></div>
-    <div class="ls-feat"><div class="ls-feat-ic">📊</div><div class="ls-feat-txt"><div class="ls-feat-t">실시간 오버레이</div><div class="ls-feat-s">Plumb line · 각도 · 편차 mm 자동 표시</div></div></div>
-    <div class="ls-feat"><div class="ls-feat-ic">🔒</div><div class="ls-feat-txt"><div class="ls-feat-t">자동 백업 · 복원</div><div class="ls-feat-s">IndexedDB + JSON 내보내기</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">📸</div><div class="ls-feat-txt"><div class="ls-feat-t">12단계 전문 검사</div><div class="ls-feat-s">정적 자세 · 어깨 외전 · OHS · SLR</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">🧠</div><div class="ls-feat-txt"><div class="ls-feat-t">AI 자세 분석</div><div class="ls-feat-s">근긴장 · 불균형 · 맞춤 교정운동 처방</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">📊</div><div class="ls-feat-txt"><div class="ls-feat-t">실시간 임상 수치</div><div class="ls-feat-s">어깨·골반 각도 · 두개척추각 자동 측정</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">🔒</div><div class="ls-feat-txt"><div class="ls-feat-t">세션 자동 저장</div><div class="ls-feat-s">Before 사진 촬영 후 안전하게 보관</div></div></div>
   </div>
   <div class="ls-cta">
     <button class="ls-btn-primary" onclick="startAnalysis()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       체형분석 시작
     </button>
-    <button class="ls-btn-secondary" onclick="importSessionFile()">📂 백업 파일 불러오기</button>
   </div>
   <div class="ls-footer" id="lsFooter"></div>
 </div>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span>
+  <div class="logo"><em>National</em>Gym <sup>Body Scan</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
+    <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="backToLandingConfirm()">🏠 처음</button>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
   </div>
 </div>
@@ -435,7 +435,12 @@ input[type=range]{accent-color:var(--green)}
       <div class="gcv"></div>
       <div class="gch" style="top:33%"></div>
       <div class="gch" style="top:66%"></div>
-      <svg id="camGuideSvg" viewBox="0 0 100 220" preserveAspectRatio="xMidYMid meet" style="position:absolute;top:6%;bottom:4%;left:16%;right:16%;pointer-events:none;overflow:hidden"></svg>
+      <!-- v1.9: SVG를 div 래퍼로 감싸 gbox와 동일한 크기/위치 확정 -->
+      <!-- 이전 버전은 SVG 자체에 position:absolute top/right/bottom/left 줬는데,
+           iOS Safari가 viewBox의 intrinsic 크기로 렌더링해서 실루엣이 박스 밖으로 튀어나옴. -->
+      <div id="camGuideSvgWrap" style="position:absolute;top:6%;bottom:4%;left:16%;right:16%;pointer-events:none;overflow:hidden">
+        <svg id="camGuideSvg" viewBox="0 0 100 220" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;overflow:hidden"></svg>
+      </div>
       <div id="camPoseLabel" style="position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center"></div>
       <div id="camWarning" style="position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;pointer-events:none;text-align:center;line-height:1.5;max-width:90%">⚠️ 거울 앞 촬영 금지 · 단색 배경 권장</div>
       <!-- Device level indicator (phone tilt) -->
@@ -540,8 +545,8 @@ const POSE_GUIDES = {
     <!-- MIDLINE -->
     <line x1="50" y1="5" x2="50" y2="215" stroke="rgba(255,255,255,.2)" stroke-width=".5" stroke-dasharray="3,3"/>
     <!-- SHOULDER WIDTH GUIDE -->
-    <line x1="25" y1="208" x2="75" y2="208" stroke="#ffd700" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
-    <text class="tn" x="50" y="216" text-anchor="middle">← 어깨너비 기준 →</text>`
+    <line x1="25" y1="204" x2="75" y2="204" stroke="#ffd700" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
+    <text class="tn" x="50" y="212" text-anchor="middle">← 어깨너비 기준 →</text>`
   },
 
   post: {
@@ -635,8 +640,8 @@ const POSE_GUIDES = {
   },
 
   sh_flex_l: {
-    label:'Lt. Shoulder Flex — 좌측 팔 귀 옆까지 거상',
-    warning:'전신 보이도록 · 좌측 팔 최대 거상',
+    label:'Lt. Shoulder Abduction — 좌측 팔 옆으로 최대 외전',
+    warning:'전신 보이도록 · 좌측 팔 옆에서 위로',
     viewBox:'0 0 100 220',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
@@ -664,8 +669,8 @@ const POSE_GUIDES = {
   },
 
   sh_flex_r: {
-    label:'Rt. Shoulder Flex — 우측 팔 귀 옆까지 거상',
-    warning:'전신 보이도록 · 우측 팔 최대 거상',
+    label:'Rt. Shoulder Abduction — 우측 팔 옆으로 최대 외전',
+    warning:'전신 보이도록 · 우측 팔 옆에서 위로',
     viewBox:'0 0 100 220',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
@@ -678,8 +683,8 @@ const POSE_GUIDES = {
     <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
     <!-- RIGHT ARM RAISED - GOLD -->
     <path class="hi" d="M73,44 Q80,30 83,14 Q85,7 79,6 Q73,5 72,12 L69,28 Q67,40 69,46 Z"/>
-    <ellipse class="hi" cx="83" cy="8" rx="7" ry="4" transform="rotate(20 83 8)"/>
-    <text class="tx" x="86" y="12">Rt. ↑</text>
+    <ellipse class="hi" cx="82" cy="8" rx="6" ry="4" transform="rotate(20 82 8)"/>
+    <text class="tx" x="76" y="12" text-anchor="end">Rt. ↑</text>
     <!-- BODY -->
     <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
     <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
@@ -1101,12 +1106,14 @@ async function deleteSession(id){
 // ═══════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════
+// v1.9: 검사 순서 재배치 (정적 자세: 전면→측면→후면) + shoulder abduction 명명 변경
+// id는 그대로 유지 (저장된 데이터 호환). title/sub/tip만 변경.
 const TESTS = [
   {id:'ant',      n:1,  sec:'static', title:'전면 (Anterior)',             sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
-  {id:'post',     n:2,  sec:'static', title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
-  {id:'lat',      n:3,  sec:'static', title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만',           tip:'좌측면 기준'},
-  {id:'sh_flex_l',n:4,  sec:'npt',    title:'Shoulder Flex/Lat — 좌측',   sub:'좌측 Serratus ant./U.Trap/Lat/Biceps', tip:'정면, 좌측 팔 최대 거상'},
-  {id:'sh_flex_r',n:5,  sec:'npt',    title:'Shoulder Flex/Lat — 우측',   sub:'우측 Serratus ant./U.Trap/Lat/Biceps', tip:'정면, 우측 팔 최대 거상'},
+  {id:'lat',      n:2,  sec:'static', title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만',           tip:'좌측면 기준'},
+  {id:'post',     n:3,  sec:'static', title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
+  {id:'sh_flex_l',n:4,  sec:'npt',    title:'Shoulder Abduction — 좌측',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 좌측 팔 옆으로 최대 거상'},
+  {id:'sh_flex_r',n:5,  sec:'npt',    title:'Shoulder Abduction — 우측',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 우측 팔 옆으로 최대 거상'},
   {id:'trunk_b',  n:6,  sec:'npt',    title:'Trunk Flexion — 후면',        sub:'Scoliosis in motion · Muscle tone', tip:'후면, 체간 전굴 최대범위'},
   {id:'trunk_l',  n:7,  sec:'npt',    title:'Trunk Flexion — 측면',        sub:'굴곡 ROM · 흉/요추 분리',           tip:'측면, 체간 전굴 최대범위'},
   {id:'ohs_b',    n:8,  sec:'npt',    title:'Overhead Squat — 후면',       sub:'Ankle inversion · Pelvic rotation · Knee collapse', tip:'후면, OHS 최저점 유지'},
@@ -1305,8 +1312,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.8.0';
-const BUILD_TIME='2026-04-09 16:00';
+const APP_VERSION='v1.9.0';
+const BUILD_TIME='2026-04-09 17:30';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1420,10 +1427,22 @@ function startAnalysis(){
   if(ls) ls.classList.add('hidden');
   showPhase('before');
 }
-// 언제든 랜딩으로 복귀 (향후 메뉴에서 호출 가능)
+// 언제든 랜딩으로 복귀 (즉시 전환, 확인 없음)
 function backToLanding(){
   const ls=document.getElementById('landingScreen');
   if(ls) ls.classList.remove('hidden');
+}
+
+// 사용자 버튼용: confirm 받고 랜딩으로 복귀 (2번 누르는 효과 — tap + OK)
+function backToLandingConfirm(){
+  const hasData=TESTS.some(t=>SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img);
+  if(hasData){
+    const ok=confirm('처음 화면으로 돌아가시겠습니까?\n\n진행 중인 사진과 분석 결과는 자동 저장되어 있으며, 다음에 다시 복원할 수 있습니다.');
+    if(!ok) return;
+  }
+  autoSave(); // 강제 저장
+  backToLanding();
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 window.addEventListener('load', () => {
@@ -1436,7 +1455,7 @@ window.addEventListener('load', () => {
   const bb=document.getElementById('buildBadge');
   if(bb) bb.textContent=APP_VERSION+' · '+BUILD_TIME;
   const lsF=document.getElementById('lsFooter');
-  if(lsF) lsF.textContent=APP_VERSION+' · '+BUILD_TIME+' · Powered by WellnessMode';
+  if(lsF) lsF.textContent='Powered by WellnessMode';
   updateRateBadge();
   updateSaveStatusBadge('saved');
   // 이전 세션 감지 → 복원 프롬프트
@@ -1572,22 +1591,62 @@ function buildComparePhase(){
 }
 
 function buildReportPhase(){
-  return `<div class="report-hero"><div class="rh-name" id="rHeroName">NPT 체형분석 리포트</div><div class="rh-sub" id="rHeroSub">전체 결과를 확인하고 내보내세요</div><div class="rh-stats"><div class="rs"><div class="n" id="rDone">0</div><div class="l">완료</div></div><div class="rs"><div class="n" id="rPend">0</div><div class="l">미촬영</div></div><div class="rs"><div class="n" id="rChk">0</div><div class="l">체크항목</div></div></div></div>
+  // v1.9: 이 화면은 트레이너 전용 편집 모드 (고객 화면 아님)
+  return `<div class="report-hero" style="background:linear-gradient(135deg,#1e3a8a,#1e40af)"><div class="rh-name" id="rHeroName" style="display:flex;align-items:center;gap:8px">🔧 트레이너 편집 모드</div><div class="rh-sub" id="rHeroSub">AI 초안을 검수·수정한 뒤 고객에게 PDF 전송</div><div class="rh-stats"><div class="rs"><div class="n" id="rDone">0</div><div class="l">완료</div></div><div class="rs"><div class="n" id="rPend">0</div><div class="l">미촬영</div></div><div class="rs"><div class="n" id="rChk">0</div><div class="l">체크항목</div></div></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">검사 현황</div><div id="repTestList"></div></div>
-  <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트</div>
-    <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="트레이너 종합 소견 및 처방 메모를 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
+  <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트 (고객 리포트에 포함)</div>
+    <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="고객에게 전달할 종합 소견을 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
   </div>
-  <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 처방</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
-  <div class="rep-sec" id="aiReportSec"><div class="rep-sec-hd">AI 종합 분석 리포트</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 "AI 종합 분석 생성" 버튼을 누르면 Sonnet 4.5로 리포트가 생성됩니다. (최대 3회)</p></div></div>
-  <!-- 세션 히스토리 / 트렌드 -->
+  <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 처방 (편집 가능)</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
+  <div class="rep-sec" id="aiReportSec"><div class="rep-sec-hd">AI 종합 분석 초안 (편집 가능)</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 "AI 종합 분석 생성" 버튼을 누르면 초안이 생성됩니다. 편집 가능. (최대 3회)</p></div></div>
+  <div class="rep-sec" style="background:#f0f9ff;border:1px dashed #93c5fd;border-radius:var(--r2)">
+    <div style="padding:16px 20px">
+      <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:8px">📋 고객에게 전송</div>
+      <div style="font-size:11px;color:#3b5fb5;line-height:1.6;margin-bottom:14px">위 모든 섹션을 검수·수정한 뒤, 최종 PDF를 생성해 고객에게 전송합니다. 전송 전 PDF 미리보기도 가능합니다.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="exportPDF()" style="width:100%;padding:12px;background:#fff;color:#1e40af;border:1.5px solid #1e40af;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">👁 PDF 미리보기·다운로드</button>
+        <button onclick="sendPDFToCustomer()" style="width:100%;padding:14px;background:#00a878;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">📧 고객에게 PDF 전송</button>
+      </div>
+    </div>
+  </div>
   <div class="rep-sec" id="sessionHistorySec"><div class="rep-sec-hd" style="display:flex;justify-content:space-between;align-items:center">
     <span>세션 기록 & 트렌드</span>
     <button class="abtn primary" style="font-size:11px;padding:5px 12px" onclick="saveCurrentSession()">현재 세션 저장</button>
   </div>
   <div id="sessionHistoryContent" style="padding:12px 16px">
-    <p style="font-size:12px;color:var(--tx3)">이름을 입력한 뒤 "현재 세션 저장"을 누르면 종합 점수·측정치·체크리스트가 로컬에 저장됩니다. 재검사 시 점수 추이를 차트로 확인할 수 있습니다.</p>
-  </div></div>
-  <div class="rep-actions"><button class="ract pdf" onclick="exportPDF()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF 저장</button><button class="ract share" onclick="shareReportPDF()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>PDF 공유</button></div>`;
+    <p style="font-size:12px;color:var(--tx3)">회원 이름을 입력한 뒤 "현재 세션 저장"을 누르면 재검사 시 점수 추이를 확인할 수 있습니다.</p>
+  </div></div>`;
+}
+
+// v1.9: 고객 연락처로 PDF 전송 — 트레이너 연락처가 아닌 고객 연락처 사용
+// 고객 이메일/전화가 별도 필드에 없으므로, 전송 시 입력받거나 공유 시트로 처리
+async function sendPDFToCustomer(){
+  if(typeof window.jspdf==='undefined'){toast('PDF 라이브러리 로딩 중...');return}
+  showBuildingLoader('고객 전송용 PDF 생성 중...');
+  try{
+    const {doc, filename} = await buildFinalPDF();
+    hideBuildingLoader();
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], filename, {type:'application/pdf'});
+    // 고객 연락처는 별도 입력 없음 → 공유 시트로 트레이너가 직접 선택
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
+      try{
+        await navigator.share({title:'바디스캔 리포트',text:filename,files:[pdfFile]});
+        toast('공유 시트 열림 — 카카오톡/메시지 등으로 고객에게 전송');
+      }catch(e){
+        if(e.name!=='AbortError'){
+          doc.save(filename);
+          toast('공유 실패 — 다운로드됨');
+        }
+      }
+    } else {
+      doc.save(filename);
+      toast('PDF 다운로드 완료 — 다운로드 폴더에서 고객에게 전달');
+    }
+  }catch(e){
+    hideBuildingLoader();
+    toast('PDF 생성 실패: '+(e?.message||e));
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1914,7 +1973,7 @@ function snap(){
   hc.width=v.videoWidth;hc.height=v.videoHeight;
   hc.getContext('2d').drawImage(v,0,0);
   const snapData=hc.toDataURL('image/jpeg',.88);
-  const fname=`NPT_${camTid}_${camSlot}_${new Date().toISOString().slice(0,10)}.jpg`;
+  const fname=`BodyScan_${camTid}_${camSlot}_${new Date().toISOString().slice(0,10)}.jpg`;
   loadImg(camTid,camSlot,snapData);
   // iOS: Web Share API가 사용자 제스처 체인 내에 있을 때 Photos 저장 가능
   // 안드로이드/기타: 다운로드 폴더에 저장
@@ -1935,7 +1994,7 @@ function saveSnapToDevice(dataUrl, filename){
       const blob=new Blob([arr],{type:'image/jpeg'});
       const file=new File([blob],filename,{type:'image/jpeg'});
       if(navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:'NPT 체형분석 사진'}).catch(e=>{
+        navigator.share({files:[file],title:'바디스캔 사진'}).catch(e=>{
           if(e.name!=='AbortError'){
             // 공유 거부 시 다운로드 폴백
             downloadDataUrl(dataUrl,filename);
@@ -2016,7 +2075,7 @@ function autoSaveToGallery(dataUrl, filename){
   try{
     const a=document.createElement('a');
     a.href=dataUrl;
-    a.download=`NPT_${filename}_${new Date().toISOString().slice(0,10)}.jpg`;
+    a.download=`BodyScan_${filename}_${new Date().toISOString().slice(0,10)}.jpg`;
     a.style.display='none';
     document.body.appendChild(a);
     a.click();
@@ -3315,9 +3374,20 @@ function rebuildCompare(){
   repBtn.style.cssText='padding:24px 16px;text-align:center;margin-top:16px;background:linear-gradient(135deg,#064e3b,#0a5a3c);border-radius:var(--r2);color:#fff';
   repBtn.innerHTML=`<div style="font-size:12px;color:#9de8c8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">ASSESSMENT COMPLETE</div>
     <div style="font-size:18px;font-weight:800;margin-bottom:4px">체형분석 완료</div>
-    <div style="font-size:12px;color:#d1d5db;margin-bottom:16px;line-height:1.5">최종 상세 리포트는 트레이너에게 자동 전송됩니다.<br>오늘 안으로 카카오톡·메일로 받아보실 수 있습니다.</div>
-    <button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px;background:#00a878;border:none;color:#fff;font-weight:800" onclick="completeAndSendToTrainer()">📧 트레이너에게 리포트 전송</button>`;
+    <div style="font-size:12px;color:#d1d5db;margin-bottom:16px;line-height:1.5">리포트는 검수 후 오늘 안으로 전송드립니다.<br>카카오톡·메일로 받아보실 수 있습니다.</div>
+    <button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px;background:#00a878;border:none;color:#fff;font-weight:800" onclick="showClientCompleteScreen(document.getElementById('cName')?.value||'회원')">✓ 고객 완료 안내 표시</button>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
+      <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:6px">— 트레이너 전용 —</div>
+      <button onclick="openTrainerEditMode()" style="font-size:12px;padding:10px 20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:20px;font-weight:600;cursor:pointer;font-family:inherit">🔧 트레이너 리포트 편집 모드</button>
+    </div>`;
   const ctn2=document.getElementById('cmpContent');if(ctn2)ctn2.appendChild(repBtn);
+}
+
+// 트레이너 편집 모드 진입 — 숨김 report phase로 이동
+function openTrainerEditMode(){
+  showPhase('report');
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast('트레이너 편집 모드 — 검수 후 고객에게 PDF 전송하세요');
 }
 
 // v1.8: 체형분석 완료 → 종합 리포트 자동 생성 → 트레이너 연락처로 자동 전송
@@ -3360,7 +3430,7 @@ function showClientCompleteScreen(name){
       <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#00a878" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div style="font-size:26px;font-weight:900;margin-bottom:10px">체형분석 완료</div>
-    <div style="font-size:15px;color:#9de8c8;margin-bottom:28px;max-width:340px;line-height:1.6">${name} 회원님의 NPT 체형분석이<br>성공적으로 완료되었습니다.</div>
+    <div style="font-size:15px;color:#9de8c8;margin-bottom:28px;max-width:340px;line-height:1.6">${name} 회원님의 바디스캔이<br>성공적으로 완료되었습니다.</div>
     <div style="background:rgba(255,255,255,.06);border:1px solid rgba(0,168,120,.25);border-radius:14px;padding:18px 20px;max-width:360px;margin-bottom:28px">
       <div style="font-size:11px;color:#9de8c8;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px">다음 단계</div>
       <div style="font-size:13px;color:#e5e7eb;line-height:1.7;text-align:left">
@@ -4096,7 +4166,7 @@ async function sendClinicalToTrainer(tid){
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
   const dateStr=new Date().toLocaleString('ko-KR');
-  const body=`[NationalGym NPT — 트레이너 전용]
+  const body=`[NationalGym 바디스캔 — 트레이너 전용]
 검사: ${c.testTitle}
 회원: ${name}
 담당: ${trainer}
@@ -4114,8 +4184,8 @@ ${c.prescription||'(데이터 없음)'}
 ── 고객에게 한마디 ──
 ${c.message||'(데이터 없음)'}
 
-Powered by NationalGym NPT ${APP_VERSION}`;
-  await shareTextOrCopy(body, `NPT ${c.testTitle} — ${name}`);
+Powered by NationalGym 바디스캔 ${APP_VERSION}`;
+  await shareTextOrCopy(body, `Body Scan ${c.testTitle} — ${name}`);
 }
 
 // 트레이너 전송 플로우: 카톡·메일·SMS·복사 선택 팝업
@@ -4129,7 +4199,7 @@ function showTrainerSendDialog(text, title){
   const trPhone=(document.getElementById('cTrPhone')?.value||'').trim().replace(/[^0-9]/g,'');
   const m=document.createElement('div');m.id='trainerSendDialog';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
-  const subject=encodeURIComponent(title||'NationalGym NPT 리포트');
+  const subject=encodeURIComponent(title||'NationalGym 바디스캔 리포트');
   const bodyEnc=encodeURIComponent(text);
   const smsBodyEnc=encodeURIComponent(text.slice(0,500)+(text.length>500?'\n...(이어서 이메일 확인)':''));
   m.innerHTML=`<div style="background:#fff;border-radius:16px;padding:20px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:85vh;overflow-y:auto">
@@ -4189,7 +4259,7 @@ function showTrainerSendDialog(text, title){
       if(action==='share'){
         if(navigator.share){
           try{
-            await navigator.share({title:title||'NationalGym NPT',text});
+            await navigator.share({title:title||'NationalGym 바디스캔',text});
             m.remove();
             toast('공유 시트 열림');
           }catch(e){
@@ -4241,7 +4311,7 @@ async function sendFinalReportToTrainer(){
     `\n── [${c.testTitle||tid}] ──\n▶개선: ${c.improved||'-'}\n▶유지관리: ${c.maintain||'-'}\n▶운동: ${c.prescription||'-'}\n▶한마디: ${c.message||'-'}`
   ).join('\n');
 
-  const body=`[NationalGym NPT — 트레이너 전용 상세 리포트]
+  const body=`[NationalGym 바디스캔 — 트레이너 전용 상세 리포트]
 회원: ${name}
 담당: ${trainer}
 일시: ${dateStr}
@@ -4262,9 +4332,9 @@ ${exText}
 ${clinicalAll||'(없음)'}
 
 ━━━━━━━━━━━━━━━━━━━━
-Powered by NationalGym NPT ${APP_VERSION}
+Powered by NationalGym 바디스캔 ${APP_VERSION}
 다음 세션 시 고객에게 이 내용을 기반으로 전문가 코칭을 제공하세요.`;
-  await shareTextOrCopy(body, `NPT 트레이너 리포트 — ${name}`);
+  await shareTextOrCopy(body, `Body Scan 트레이너 리포트 — ${name}`);
 }
 
 function showTextModal(title,text){
@@ -4579,7 +4649,7 @@ async function genAIReport(){
     allFindings.push(`\n[${t.title}]\n측정값: ${JSON.stringify(Object.fromEntries(Object.entries(bm).map(([k,v])=>[k,typeof v==='number'?v.toFixed(1):v])))}\n→After: ${JSON.stringify(Object.fromEntries(Object.entries(am).map(([k,v])=>[k,typeof v==='number'?v.toFixed(1):v])))}\n체크리스트: ${chk||'미입력'}`);
   });
   const aiPrompt=`당신은 스포츠의학·재활 전문 물리치료사입니다.
-${name} 회원의 NPT 전체 결과를 바탕으로 "고객 전달용"과 "트레이너 전용" 두 가지 리포트를 작성합니다.
+${name} 회원의 바디스캔 전체 결과를 바탕으로 "고객 전달용"과 "트레이너 전용" 두 가지 리포트를 작성합니다.
 
 ${allFindings.join('\n')}
 
@@ -4728,7 +4798,7 @@ function navReport(dir){
 function updateReport(){
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
-  document.getElementById('rHeroName').textContent=name+' — NPT 리포트';
+  document.getElementById('rHeroName').textContent=name+' — 바디스캔 리포트';
   // Show API usage
   const rs=getRateStatus();
   const usageEl=document.getElementById('rUsageStatus');
@@ -4792,7 +4862,7 @@ function renderScoreHero(scoreB,scoreA,delta,aggB,aggA){
     rows.push(`<div class="sev-row"><div class="sev-lbl">${labels[k]}</div><div class="sev-val">${bDot}${bStr}</div><div class="sev-arrow">→</div><div class="sev-val">${aDot}${aStr}</div></div>`);
   });
   box.innerHTML=`<div class="sh-wrap">
-    <div class="sh-title">NPT 종합 자세 점수</div>
+    <div class="sh-title">종합 자세 점수</div>
     <div class="sh-scores">
       <div class="sh-col"><div class="sh-lbl">Before</div><div class="sh-num" style="color:${colB}">${scoreB??'—'}</div><div class="sh-tag" style="background:${colB}">${scoreLabel(scoreB)}</div></div>
       ${scoreA!==null?`<div class="sh-col"><div class="sh-lbl">After</div><div class="sh-num" style="color:${colA}">${scoreA}</div><div class="sh-tag" style="background:${colA}">${scoreLabel(scoreA)}</div></div>`:''}
@@ -4963,7 +5033,6 @@ function showRestorePrompt(info){
     m.remove();
     toast('이전 세션 복원 중...');
     await restoreAll();
-    // AI 히스토리 + 트레이너 전용 복원
     try{
       const snap=await idbGet(LS+'_snapshot');
       if(snap){
@@ -4974,7 +5043,25 @@ function showRestorePrompt(info){
     toast('복원 완료');
     updateSaveStatusBadge('saved');
   };
-  m.querySelector('#restoreNew').onclick=()=>{m.remove()};
+  // "새로 시작" — 이전 데이터 완전 삭제 후 페이지 새로고침
+  m.querySelector('#restoreNew').onclick=async()=>{
+    if(!confirm('새 세션을 시작하면 이전 사진·체크리스트·분석 결과가 모두 삭제됩니다. 계속하시겠습니까?')) return;
+    m.remove();
+    try{
+      // localStorage meta + 모든 이미지/마커 제거
+      localStorage.removeItem(LS+'_meta');
+      for(const t of TESTS){
+        for(const slot of ['B','A']){
+          try{await idbDel(`${LS}_img_${t.id}_${slot}`)}catch(e){}
+          try{localStorage.removeItem(`${LS}_img_${t.id}_${slot}`)}catch(e){}
+          try{localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
+        }
+      }
+      try{await idbDel(LS+'_snapshot')}catch(e){}
+    }catch(e){}
+    toast('이전 세션 삭제됨 — 새로고침');
+    setTimeout(()=>location.reload(),500);
+  };
 }
 
 // ─ 수동 익스포트 / 임포트 (USB 백업) ─
@@ -5007,13 +5094,13 @@ async function exportSessionFile(){
     }
     const json=JSON.stringify(snap);
     const blob=new Blob([json],{type:'application/json'});
-    const fname=(snap.meta.name||'회원')+'_NPT_backup_'+new Date().toISOString().slice(0,10)+'.json';
+    const fname=(snap.meta.name||'회원')+'_BodyScan_backup_'+new Date().toISOString().slice(0,10)+'.json';
     hideBuildingLoader();
     // 공유 시트로 저장 (iOS 파일 앱 / Android 파일 선택)
     const file=new File([blob],fname,{type:'application/json'});
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
       try{
-        await navigator.share({title:'NationalGym NPT 백업',text:fname,files:[file]});
+        await navigator.share({title:'NationalGym 바디스캔 백업',text:fname,files:[file]});
         toast('백업 파일 저장 완료');
       }catch(e){
         if(e.name!=='AbortError'){
@@ -5376,7 +5463,7 @@ async function buildFinalPDF(){
       srcY+=sliceH;remaining-=chunk;
     }
   }
-  const filename=(document.getElementById('cName')?.value||'회원')+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf';
+  const filename=(document.getElementById('cName')?.value||'회원')+'_BodyScan_'+new Date().toISOString().slice(0,10)+'.pdf';
   return {doc, filename};
 }
 
@@ -5454,7 +5541,7 @@ function showPDFSaveDialog(doc, pdfFile, filename){
       const mode=btn.getAttribute('data-mode');
       if(mode==='share'){
         try{
-          await navigator.share({title:'NationalGym NPT 리포트',text:filename,files:[pdfFile]});
+          await navigator.share({title:'NationalGym 바디스캔 리포트',text:filename,files:[pdfFile]});
           m.remove();
           toast('공유 완료');
         }catch(e){
@@ -5523,7 +5610,7 @@ async function buildPDFCanvas(){
   let inner=`<!-- 커버 페이지 -->
   <div style="padding:60px 40px;height:1000px;background:linear-gradient(135deg,#0a0a0a 0%,#1f2937 100%);color:#fff;position:relative;page-break-after:always">
     <div style="font-size:14px;color:#9de8c8;letter-spacing:.12em;font-weight:700">NATIONALGYM</div>
-    <div style="font-size:56px;font-weight:900;margin-top:6px;letter-spacing:-.02em">NPT 체형분석</div>
+    <div style="font-size:56px;font-weight:900;margin-top:6px;letter-spacing:-.02em">바디스캔</div>
     <div style="font-size:20px;color:#7dd4b4;margin-top:2px;font-weight:500">Neuromuscular Pattern Test Report</div>
     <div style="margin-top:60px;padding:30px;background:rgba(255,255,255,.06);border-radius:16px;border-left:4px solid #00a878">
       <div style="font-size:14px;color:#9de8c8;letter-spacing:.08em">CLIENT</div>
@@ -5535,12 +5622,12 @@ async function buildPDFCanvas(){
       </div>
     </div>
     ${cvrScore!==null?`<div style="margin-top:36px;padding:30px;background:rgba(255,255,255,.04);border-radius:16px;text-align:center">
-      <div style="font-size:11px;color:#9de8c8;letter-spacing:.1em;text-transform:uppercase">NPT 종합 자세 점수</div>
+      <div style="font-size:11px;color:#9de8c8;letter-spacing:.1em;text-transform:uppercase">종합 자세 점수</div>
       <div style="font-size:110px;font-weight:900;color:${cvrScoreCol};line-height:1;margin-top:6px;font-variant-numeric:tabular-nums">${cvrScore}</div>
       <div style="display:inline-block;padding:6px 18px;border-radius:30px;background:${cvrScoreCol};color:#fff;font-weight:700;font-size:14px;margin-top:8px">${cvrScoreLbl}</div>
     </div>`:''}
     <div style="position:absolute;bottom:40px;left:40px;right:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.15);font-size:11px;color:#6b7280;display:flex;justify-content:space-between">
-      <span>Powered by WellnessMode · NationalGym NPT System</span>
+      <span>Powered by WellnessMode · NationalGym 바디스캔 System</span>
       <span>${APP_VERSION} · ${BUILD_TIME}</span>
     </div>
   </div>
@@ -5599,7 +5686,7 @@ async function buildPDFCanvas(){
     });
     inner+='</div>';
   }
-  inner+=`<div style="text-align:center;color:#aaa;font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid #eee">NationalGym | NPT 체형분석 | Powered by WellnessMode · ${APP_VERSION}</div>
+  inner+=`<div style="text-align:center;color:#aaa;font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid #eee">NationalGym | 바디스캔 | Powered by WellnessMode · ${APP_VERSION}</div>
   </div>`; // close body padding div
   container.innerHTML=inner;
   document.body.appendChild(container);
@@ -5644,7 +5731,7 @@ function _exportPDF_UNUSED(){
   const trainer=document.getElementById('cTrainer')?.value||'';
   const ts=document.getElementById('tsDispFull')?.textContent||'';
   doc.setFillColor(10,10,10);doc.rect(0,0,pw,24,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('NationalGym — NPT 체형분석 리포트',pw/2,15,{align:'center'});
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('NationalGym — 바디스캔 리포트',pw/2,15,{align:'center'});
   doc.setFontSize(8);doc.setFont(undefined,'normal');doc.setTextColor(120,200,160);doc.text(ts,pw/2,21,{align:'center'});
   doc.setTextColor(50,50,50);doc.setFontSize(9);doc.text('회원: '+name,14,32);if(trainer)doc.text('트레이너: '+trainer,90,32);
   doc.setDrawColor(200,200,200);doc.setLineWidth(.3);doc.line(14,36,pw-14,36);
@@ -5665,8 +5752,8 @@ function _exportPDF_UNUSED(){
   });
   const tc=document.getElementById('trainerComment')?.value;
   if(tc){if(yPos>ph-40){doc.addPage();yPos=20}doc.setDrawColor(200,200,200);doc.line(14,yPos,pw-14,yPos);yPos+=5;doc.setFontSize(9);doc.setFont(undefined,'bold');doc.setTextColor(30,30,30);doc.text('트레이너 코멘트',14,yPos);yPos+=5;doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(50,50,50);doc.text(doc.splitTextToSize(tc,pw-28),14,yPos)}
-  doc.setFontSize(7);doc.setTextColor(170,170,170);doc.text('NationalGym  |  NPT 체형분석  |  Powered by WellnessMode',pw/2,ph-5,{align:'center'});
-  doc.save(name+'_NPT_'+new Date().toISOString().slice(0,10)+'.pdf');
+  doc.setFontSize(7);doc.setTextColor(170,170,170);doc.text('NationalGym  |  바디스캔  |  Powered by WellnessMode',pw/2,ph-5,{align:'center'});
+  doc.save(name+'_BodyScan_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('PDF 저장 완료');
 }
 // ─ 전문 공유카드 합성 (v2: 전체 테스트 + AI 종합리포트 포함) ─
@@ -5706,7 +5793,7 @@ async function buildShareCard(name,trainer){
   c.fillText('NationalGym',pad,54);
   c.fillStyle='#9de8c8';
   c.font='600 28px -apple-system,"Apple SD Gothic Neo",sans-serif';
-  c.fillText('NPT 체형분석 리포트',pad,122);
+  c.fillText('바디스캔 리포트',pad,122);
   // 이름/날짜/트레이너 (우측)
   c.textAlign='right';
   c.fillStyle='#ffffff';
@@ -5810,7 +5897,7 @@ async function buildShareCard(name,trainer){
   c.fillStyle='#555';
   c.font='600 20px -apple-system,sans-serif';
   c.textAlign='center';
-  c.fillText('NationalGym · NPT 체형분석',CW/2,footY+24);
+  c.fillText('NationalGym · 바디스캔',CW/2,footY+24);
   c.fillStyle='#888';
   c.font='400 16px -apple-system,sans-serif';
   c.fillText('Powered by WellnessMode · '+APP_VERSION,CW/2,footY+54);
@@ -5856,17 +5943,17 @@ async function doShare(){
   toast('공유 카드 생성 중...');
   const cardCv=await buildShareCard(name,trainer);
   if(!cardCv){toast('공유 카드 생성 실패');return}
-  const shareText=`[NationalGym NPT] ${name}님 체형분석 결과\n${new Date().toLocaleDateString('ko-KR')} · 트레이너 ${trainer||'-'}`;
+  const shareText=`[NationalGym 바디스캔] ${name}님 체형분석 결과\n${new Date().toLocaleDateString('ko-KR')} · 트레이너 ${trainer||'-'}`;
   cardCv.toBlob(async blob=>{
     if(!blob){toast('이미지 변환 실패');return}
-    const fname=name+'_NPT_'+new Date().toISOString().slice(0,10)+'.jpg';
+    const fname=name+'_BodyScan_'+new Date().toISOString().slice(0,10)+'.jpg';
     const file=new File([blob],fname,{type:'image/jpeg'});
     // ─ iOS 공유시트에서 카톡 노출 유도 ─
     // 팁: text+file 동시 전달 시, 메시징 앱이 공유 대상으로 더 자주 노출됨
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
       try{
         await navigator.share({
-          title:'NationalGym NPT 체형분석',
+          title:'NationalGym 바디스캔',
           text:shareText,
           files:[file]
         });
