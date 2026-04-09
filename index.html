@@ -244,6 +244,27 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .fs-body{flex:1;display:flex;align-items:center;justify-content:center;background:#050505;overflow:hidden}
 canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .fs-ctrl{background:#0d0d0d;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.08)}
+#landingScreen{position:fixed;inset:0;z-index:9000;background:linear-gradient(145deg,#050505 0%,#0f1e1a 40%,#0a1412 100%);display:flex;flex-direction:column;color:#fff;overflow-y:auto;padding:40px 24px 32px}
+#landingScreen.hidden{display:none}
+.ls-hero{text-align:center;margin-top:30px;margin-bottom:40px}
+.ls-brand{font-size:12px;letter-spacing:.22em;color:#9de8c8;font-weight:700;margin-bottom:6px}
+.ls-title{font-size:46px;font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-bottom:6px}
+.ls-title em{font-style:normal;color:#00d48b}
+.ls-subtitle{font-size:15px;color:#7dd4b4;margin-top:4px;font-weight:500}
+.ls-divider{width:40px;height:3px;background:#00a878;margin:22px auto;border-radius:2px}
+.ls-tagline{font-size:13px;color:#d1d5db;line-height:1.6;max-width:360px;margin:0 auto 14px;text-align:center}
+.ls-features{max-width:360px;margin:0 auto 36px;display:flex;flex-direction:column;gap:10px}
+.ls-feat{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(0,168,120,.2);border-radius:12px}
+.ls-feat-ic{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.ls-feat-txt{flex:1}
+.ls-feat-t{font-size:12px;font-weight:800;color:#fff;margin-bottom:2px}
+.ls-feat-s{font-size:10px;color:#9ca3af;line-height:1.4}
+.ls-cta{max-width:360px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.ls-btn-primary{background:#00a878;color:#fff;border:none;padding:18px;font-size:17px;font-weight:800;border-radius:14px;cursor:pointer;font-family:inherit;box-shadow:0 8px 32px rgba(0,168,120,.4);display:flex;align-items:center;justify-content:center;gap:10px}
+.ls-btn-primary:active{transform:scale(.97);background:#059669}
+.ls-btn-secondary{background:rgba(255,255,255,.08);color:#d1d5db;border:1px solid rgba(255,255,255,.15);padding:12px;font-size:12px;font-weight:600;border-radius:10px;cursor:pointer;font-family:inherit}
+.ls-btn-secondary:active{background:rgba(255,255,255,.12)}
+.ls-footer{text-align:center;font-size:9px;color:rgba(255,255,255,.3);margin-top:32px;letter-spacing:.05em}
 .fs-ctrl label{color:#888;font-size:11px;white-space:nowrap}
 .fs-range{flex:1;min-width:80px;max-width:120px;accent-color:var(--green)}
 .drag-ov{display:none;position:fixed;inset:0;z-index:700;flex-direction:column;background:#000;touch-action:none}
@@ -275,8 +296,32 @@ input[type=range]{accent-color:var(--green)}
 </style>
 </head>
 <body>
+<!-- 랜딩 / 스타트 화면 -->
+<div id="landingScreen">
+  <div class="ls-hero">
+    <div class="ls-brand">NATIONALGYM</div>
+    <div class="ls-title"><em>NPT</em> 체형분석</div>
+    <div class="ls-subtitle">Neuromuscular Pattern Test</div>
+    <div class="ls-divider"></div>
+    <div class="ls-tagline">MediaPipe 기반 스켈레톤 감지 · Claude AI 임상 분석<br>Before / After 비교로 개선 결과를 시각화합니다</div>
+  </div>
+  <div class="ls-features">
+    <div class="ls-feat"><div class="ls-feat-ic">📸</div><div class="ls-feat-txt"><div class="ls-feat-t">12가지 임상 검사</div><div class="ls-feat-s">정적 자세 · 움직임 · ROM · SLR</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">🧠</div><div class="ls-feat-txt"><div class="ls-feat-t">Claude Sonnet AI 분석</div><div class="ls-feat-s">자세 진단 · 교정 운동 처방 · 종합 리포트</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">📊</div><div class="ls-feat-txt"><div class="ls-feat-t">실시간 오버레이</div><div class="ls-feat-s">Plumb line · 각도 · 편차 mm 자동 표시</div></div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">🔒</div><div class="ls-feat-txt"><div class="ls-feat-t">자동 백업 · 복원</div><div class="ls-feat-s">IndexedDB + JSON 내보내기</div></div></div>
+  </div>
+  <div class="ls-cta">
+    <button class="ls-btn-primary" onclick="startAnalysis()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      체형분석 시작
+    </button>
+    <button class="ls-btn-secondary" onclick="importSessionFile()">📂 백업 파일 불러오기</button>
+  </div>
+  <div class="ls-footer" id="lsFooter"></div>
+</div>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer" onclick="resetRateLimit()" title="탭하면 리셋"></span>
+  <div class="logo"><em>National</em>Gym <sup>NPT</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap"></span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="clearAll()">초기화</button>
@@ -1140,11 +1185,16 @@ const TEST_CHECKLIST = {
   ],
 };
 
+// v1.8: 고객 화면은 Compare까지. 최종 리포트는 트레이너 전용 — 고객에게 보이지 않음.
+// 'report' 페이즈는 여전히 존재하지만 네비게이션 메뉴에는 표시 안 함 (트레이너 내부 접근용).
 const PHASES = [
   {id:'before',   label:'Before 촬영'},
   {id:'after',    label:'After 촬영'},
   {id:'compare',  label:'비교 분석'},
-  {id:'report',   label:'최종 리포트'}
+];
+// 내부용 (탭 숨김) — 고객 화면엔 안 보임. 트레이너는 compare의 버튼으로 리포트 생성/전송.
+const HIDDEN_PHASES = [
+  {id:'report', label:'트레이너 리포트'}
 ];
 
 const LS = 'ng_npt_v3';
@@ -1255,8 +1305,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.7.0';
-const BUILD_TIME='2026-04-09 14:00';
+const APP_VERSION='v1.8.0';
+const BUILD_TIME='2026-04-09 16:00';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1364,16 +1414,35 @@ let poseEng=null,poseOk=false;
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+// 랜딩 화면에서 시작 버튼 클릭 시 호출
+function startAnalysis(){
+  const ls=document.getElementById('landingScreen');
+  if(ls) ls.classList.add('hidden');
+  showPhase('before');
+}
+// 언제든 랜딩으로 복귀 (향후 메뉴에서 호출 가능)
+function backToLanding(){
+  const ls=document.getElementById('landingScreen');
+  if(ls) ls.classList.remove('hidden');
+}
+
 window.addEventListener('load', () => {
   buildNav();
   buildPanels();
-  showPhase('before');
+  showPhase('before'); // 내부 상태만 설정 (랜딩이 덮어씀)
   setInterval(tickTS,1000); tickTS();
   restoreAll();
   // 버전/빌드 배지
   const bb=document.getElementById('buildBadge');
   if(bb) bb.textContent=APP_VERSION+' · '+BUILD_TIME;
+  const lsF=document.getElementById('lsFooter');
+  if(lsF) lsF.textContent=APP_VERSION+' · '+BUILD_TIME+' · Powered by WellnessMode';
   updateRateBadge();
+  updateSaveStatusBadge('saved');
+  // 이전 세션 감지 → 복원 프롬프트
+  checkPreviousSession().then(info=>{
+    if(info) showRestorePrompt(info);
+  }).catch(()=>{});
   let _scTm=null;
   window.addEventListener('scroll',()=>{
     clearTimeout(_scTm);_scTm=setTimeout(()=>{
@@ -1425,7 +1494,9 @@ function showPhase(id){
 
 function buildPanels(){
   const c=document.getElementById('phasePanels');
-  c.innerHTML=PHASES.map(p=>`<div class="phase" id="phase_${p.id}">${buildPhaseContent(p.id)}</div>`).join('');
+  // 가시 + 숨김 페이즈 모두 DOM은 렌더 (네비 탭만 제한)
+  const all=[...PHASES, ...HIDDEN_PHASES];
+  c.innerHTML=all.map(p=>`<div class="phase" id="phase_${p.id}">${buildPhaseContent(p.id)}</div>`).join('');
 }
 
 function buildPhaseContent(id){
@@ -1461,9 +1532,17 @@ function buildSlotPhase(slot, title, hint){
         </button>
       </div>
     </div>`;
-    // Before 슬롯: AI 자세 분석 버튼 영역 (수동 트리거, 최대 3회)
+    // AI 버튼 영역 — Before/After 양쪽 모두에 체크리스트 AI 가이드 버튼.
+    // 자세 분석(서술형)은 Before에만 (After는 Compare에서 임상 분석으로 다룸).
     if(slot==='B'){
-      h+=`<div class="ai-manual-bar"><button class="ai-manual-btn" onclick="runChecklistAI('${t.id}')">📋 체크리스트 AI 자동</button><button class="ai-manual-btn" onclick="generateBeforeNarrative('${t.id}')">🧠 AI 자세 분석하기</button></div>`;
+      h+=`<div class="ai-manual-bar">
+        <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','B')">📋 체크리스트 AI 가이드</button>
+        <button class="ai-manual-btn" onclick="generateBeforeNarrative('${t.id}')">🧠 AI 자세 분석</button>
+      </div>`;
+    } else {
+      h+=`<div class="ai-manual-bar">
+        <button class="ai-manual-btn" onclick="runChecklistAI('${t.id}','A')">📋 체크리스트 AI 가이드</button>
+      </div>`;
     }
     const ckItems=TEST_CHECKLIST[t.id]||[];
     if(ckItems.length){
@@ -2523,11 +2602,14 @@ const TEST_FOCUS = {
   slr_r:'우측 S.L.R. 테스트 — 오직 우측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
 };
 
-// v1.7: 체크리스트 AI 자동 채우기 — 수동 실행 래퍼 (Before/After 어느 쪽이든 현재 로드된 슬롯)
-function runChecklistAI(tid){
-  const s=SHOTS[tid]?.B||SHOTS[tid]?.A;
-  if(!s?.pose||!s?.canvas){toast('사진과 스켈레톤이 필요합니다');return}
-  const slot=SHOTS[tid]?.B?.pose?'B':'A';
+// v1.8: 체크리스트 AI 가이드 — 수동 실행, slot 명시 지원
+function runChecklistAI(tid, slot){
+  slot = slot || 'B';
+  const s=SHOTS[tid]?.[slot];
+  if(!s?.pose||!s?.canvas){
+    toast(`${slot==='B'?'Before':'After'} 사진과 스켈레톤이 필요합니다`);
+    return;
+  }
   autoFillChecklist(tid,slot,s.pose,s.canvas.width,s.canvas.height);
 }
 
@@ -2691,20 +2773,29 @@ ${metrics.join('\n')||'(측정 실패 — 전신 가시성 낮음)'}
       renderNarrativeBox(tid,false);
       return;
     }
-    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+    let res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
       body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
+    if(!res.ok && (res.status===400||res.status===403||res.status===404)){
+      // Sonnet 미지원 → Haiku 폴백
+      res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-app-password':_pw},
+        body:JSON.stringify({model:AI_MODEL_HAIKU,max_tokens:400,messages:[{role:'user',content:prompt}]})
+      });
+    }
     if(!res.ok){
-      hist.results.push({text:'AI 분석 실패 ('+res.status+')',ts:Date.now(),model:'error'});
+      const errText=await res.text().catch(()=>res.statusText);
+      hist.results.push({text:`HTTP ${res.status}: ${errText.slice(0,120)}`,ts:Date.now(),model:'error'});
       hist.active=hist.results.length-1;
       renderNarrativeBox(tid,false);
       return;
     }
     const data=await res.json();
-    const text=data.content?.[0]?.text||'분석 실패';
-    hist.results.push({text,ts:Date.now(),model:'sonnet-4.5'});
+    const text=data.content?.[0]?.text||data.error?.message||'분석 실패';
+    hist.results.push({text,ts:Date.now(),model:data.model||'unknown'});
     hist.active=hist.results.length-1;
     renderNarrativeBox(tid,false);
   }catch(e){
@@ -3216,12 +3307,70 @@ function rebuildCompare(){
     buildClinical(t.id);
     addOLClick(t.id);
   });
-  // Add report button at bottom
+  // v1.8: Compare가 고객 화면 종점 — "체형분석 완료 → 트레이너에게 전송" 버튼
+  // 고객은 이 버튼을 누르면 세션 종료 안내만 보고, 트레이너는 백그라운드에서
+  // 종합 리포트를 생성해 본인 연락처로 받음.
   const existingRepBtn=document.getElementById('gotoReportBtn');if(existingRepBtn)existingRepBtn.remove();
   const repBtn=document.createElement('div');repBtn.id='gotoReportBtn';
-  repBtn.style.cssText='padding:20px 0;text-align:center;margin-top:8px';
-  repBtn.innerHTML=`<button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px" onclick="showPhase('report');window.scrollTo({top:0,behavior:'smooth'})">최종 리포트 보기 →</button>`;
+  repBtn.style.cssText='padding:24px 16px;text-align:center;margin-top:16px;background:linear-gradient(135deg,#064e3b,#0a5a3c);border-radius:var(--r2);color:#fff';
+  repBtn.innerHTML=`<div style="font-size:12px;color:#9de8c8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">ASSESSMENT COMPLETE</div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:4px">체형분석 완료</div>
+    <div style="font-size:12px;color:#d1d5db;margin-bottom:16px;line-height:1.5">최종 상세 리포트는 트레이너에게 자동 전송됩니다.<br>오늘 안으로 카카오톡·메일로 받아보실 수 있습니다.</div>
+    <button class="abtn primary" style="font-size:14px;padding:14px 32px;border-radius:40px;background:#00a878;border:none;color:#fff;font-weight:800" onclick="completeAndSendToTrainer()">📧 트레이너에게 리포트 전송</button>`;
   const ctn2=document.getElementById('cmpContent');if(ctn2)ctn2.appendChild(repBtn);
+}
+
+// v1.8: 체형분석 완료 → 종합 리포트 자동 생성 → 트레이너 연락처로 자동 전송
+// 고객은 리포트 내용을 보지 못함. 트레이너가 세션 뒤 따로 확인.
+async function completeAndSendToTrainer(){
+  const name=(document.getElementById('cName')?.value||'회원').trim();
+  const trEmail=(document.getElementById('cTrEmail')?.value||'').trim();
+  const trPhone=(document.getElementById('cTrPhone')?.value||'').trim();
+  if(!trEmail && !trPhone){
+    const ok=confirm('⚠️ 트레이너 이메일/전화번호가 입력되지 않았습니다.\n\n회원 정보 화면으로 돌아가 트레이너 연락처를 먼저 입력하시겠습니까?');
+    if(ok){
+      backToLanding();
+      setTimeout(()=>startAnalysis(),100);
+    }
+    return;
+  }
+  showBuildingLoader('트레이너 리포트 생성 중... (Sonnet 4.5)');
+  try{
+    // 1) 아직 종합 리포트가 없으면 먼저 생성
+    if(!AI_HISTORY.report.results.length){
+      await genAIReport();
+    }
+    // 2) 생성된 TRAINER_ONLY.finalReport + 각 테스트별 Clinical + 운동 처방 패키징
+    hideBuildingLoader();
+    await sendFinalReportToTrainer();
+    // 3) 고객 화면에는 완료 안내 (리포트 내용 노출 금지)
+    showClientCompleteScreen(name);
+  }catch(e){
+    hideBuildingLoader();
+    toast('전송 실패: '+(e?.message||e));
+  }
+}
+
+// 고객용 완료 안내 화면 (비교분석 위 overlay)
+function showClientCompleteScreen(name){
+  const existing=document.getElementById('completeOverlay');if(existing)existing.remove();
+  const m=document.createElement('div');m.id='completeOverlay';
+  m.style.cssText='position:fixed;inset:0;background:linear-gradient(145deg,#050505,#0f1e1a);color:#fff;z-index:8500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center';
+  m.innerHTML=`<div style="width:84px;height:84px;border-radius:50%;background:rgba(0,168,120,.15);display:flex;align-items:center;justify-content:center;margin-bottom:22px;border:3px solid #00a878">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#00a878" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div style="font-size:26px;font-weight:900;margin-bottom:10px">체형분석 완료</div>
+    <div style="font-size:15px;color:#9de8c8;margin-bottom:28px;max-width:340px;line-height:1.6">${name} 회원님의 NPT 체형분석이<br>성공적으로 완료되었습니다.</div>
+    <div style="background:rgba(255,255,255,.06);border:1px solid rgba(0,168,120,.25);border-radius:14px;padding:18px 20px;max-width:360px;margin-bottom:28px">
+      <div style="font-size:11px;color:#9de8c8;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px">다음 단계</div>
+      <div style="font-size:13px;color:#e5e7eb;line-height:1.7;text-align:left">
+        • 담당 트레이너가 상세 리포트를 검토합니다<br>
+        • 오늘 안으로 카카오톡 또는 메일로 리포트를 받아보실 수 있습니다<br>
+        • 다음 세션 시 맞춤 교정 운동을 안내받으실 수 있습니다
+      </div>
+    </div>
+    <button onclick="document.getElementById('completeOverlay').remove()" style="padding:12px 28px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">닫기</button>`;
+  document.body.appendChild(m);
 }
 
 function initOL(tid){
@@ -4277,21 +4426,33 @@ ${Object.entries(bm).filter(([k])=>NORMS[k]).map(([k,v])=>`- ${k}: ${typeof v===
       renderClinicalBox(tid);
       return;
     }
-    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+    // Sonnet → Haiku 폴백
+    let res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
       body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:800,messages:[{role:'user',content:aiPrompt}]})
     });
+    if(!res.ok && (res.status===400||res.status===403||res.status===404)){
+      res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-app-password':_pw},
+        body:JSON.stringify({model:AI_MODEL_HAIKU,max_tokens:800,messages:[{role:'user',content:aiPrompt}]})
+      });
+    }
+    if(!res.ok){
+      const errText=await res.text().catch(()=>res.statusText);
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0,200)}`);
+    }
     const data=await res.json();
-    const text=data.content?.[0]?.text||'분석 실패';
+    const text=data.content?.[0]?.text||data.error?.message||'분석 실패';
     const sections=parseClinicalSections(text);
-    hist.results.push({text,sections,testTitle,ts:Date.now(),model:'sonnet-4.5'});
+    hist.results.push({text,sections,testTitle,ts:Date.now(),model:data.model||'unknown'});
     hist.active=hist.results.length-1;
-    // TRAINER_ONLY 에도 현재 active 기준으로 반영 (전송 시 최신 선택 사용)
     TRAINER_ONLY.clinical[tid]={...sections, raw:text, testTitle};
     renderClinicalBox(tid);
   }catch(e){
-    hist.results.push({text:'네트워크 오류: '+(e?.message||e),sections:{improved:'네트워크 오류',maintain:'',prescription:'',message:''},ts:Date.now(),model:'error'});
+    const msg=e?.message||String(e);
+    hist.results.push({text:msg,sections:{improved:'⚠️ 생성 오류\n\n'+msg,maintain:'',prescription:'',message:''},testTitle,ts:Date.now(),model:'error'});
     hist.active=hist.results.length-1;
     renderClinicalBox(tid);
   }
@@ -4466,26 +4627,49 @@ ${allFindings.join('\n')}
       renderReportBox(false);
       return;
     }
-    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+    // Sonnet 시도 → 실패 시 Haiku 폴백 (백엔드 whitelisting 대응)
+    let res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
       method:'POST',
       mode:'cors',
       headers:{'Content-Type':'application/json','x-app-password':_pw},
       body:JSON.stringify({model:AI_MODEL_SONNET,max_tokens:1800,messages:[{role:'user',content:aiPrompt}]})
     });
+    if(!res.ok){
+      const errText=await res.text().catch(()=>'');
+      console.warn('Sonnet 실패 ('+res.status+'):',errText);
+      // Worker가 Sonnet 미지원인 경우 Haiku 폴백
+      if(res.status===400||res.status===403||res.status===404){
+        toast('Sonnet 미지원 — Haiku 폴백 시도');
+        res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{
+          method:'POST',mode:'cors',
+          headers:{'Content-Type':'application/json','x-app-password':_pw},
+          body:JSON.stringify({model:AI_MODEL_HAIKU,max_tokens:1800,messages:[{role:'user',content:aiPrompt}]})
+        });
+      }
+    }
+    if(!res.ok){
+      const errText=await res.text().catch(()=>res.statusText);
+      throw new Error(`HTTP ${res.status}: ${errText.slice(0,200)}`);
+    }
     const data=await res.json();
-    const text=data.content?.[0]?.text||'생성 실패';
+    const text=data.content?.[0]?.text||data.error?.message||'생성 실패 (응답 비정상)';
+    if(!text || text==='생성 실패 (응답 비정상)'){
+      throw new Error('AI 응답 파싱 실패: '+JSON.stringify(data).slice(0,200));
+    }
     const split=text.split(/={3,}\s*TRAINER_ONLY\s*={3,}/);
     const clientPart=(split[0]||text).trim();
     const trainerPart=(split[1]||'').trim();
-    hist.results.push({text,clientPart,trainerPart,ts:Date.now(),model:'sonnet-4.5'});
+    hist.results.push({text,clientPart,trainerPart,ts:Date.now(),model:data.model||'unknown'});
     hist.active=hist.results.length-1;
     TRAINER_ONLY.finalReport = trainerPart || '(트레이너 섹션 파싱 실패)\n\n'+text;
     renderReportBox(false);
-    toast('AI 리포트 생성 완료 — 고객 화면에는 요약만 표시됨');
+    toast('AI 리포트 생성 완료');
   }catch(e){
-    hist.results.push({text:'네트워크 오류: '+(e?.message||e),clientPart:'네트워크 오류',trainerPart:'',ts:Date.now(),model:'error'});
+    const msg=e?.message||String(e);
+    hist.results.push({text:'오류: '+msg,clientPart:'⚠️ 생성 오류\n\n'+msg,trainerPart:'',ts:Date.now(),model:'error'});
     hist.active=hist.results.length-1;
     renderReportBox(false);
+    toast('리포트 오류: '+msg.slice(0,60));
   }
 }
 
@@ -4650,18 +4834,259 @@ function saveMarkers(tid,slot){
   const s=SHOTS[tid]?.[slot];if(!s)return;
   try{localStorage.setItem(`${LS}_mk_${tid}_${slot}`,JSON.stringify({markers:s.markers||[],lines:s.lines||[],guides:s.guides||[]}))}catch(e){}
 }
+// ═══════════════════════════════════════════
+// BACKUP / PERSISTENCE (v1.8)
+// ═══════════════════════════════════════════
+// 목적: 와이파이/배터리 문제, 브라우저 크래시, 탭 닫힘 등으로 인한 데이터 손실 방지.
+// 10만원 체험 고객이 중간에 데이터가 사라지면 안 됨 — 다중 백업 레이어.
+//
+// 레이어:
+// 1) localStorage 메타 (client/trainer/checklist) — 작고 빠른 폴링
+// 2) IndexedDB 이미지 (기존) — 사진 base64 저장
+// 3) IndexedDB 스냅샷 (새로 추가) — AI 히스토리, 트레이너 내용, 전체 상태
+// 4) 수동 다운로드 JSON 백업 — 최후 방어선 (USB 백업 느낌)
+// 5) 복원 프롬프트 — 앱 시작 시 이전 세션 감지하면 복원 선택 모달
+const SAVE_STATUS = {lastSave:null, pending:false};
+
+function updateSaveStatusBadge(state){
+  const el=document.getElementById('saveBadge');
+  if(!el) return;
+  if(state==='saving'){el.textContent='💾 저장 중';el.style.color='#fbbf24';}
+  else if(state==='saved'){
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    el.textContent=`💾 저장됨 ${hh}:${mm}`;
+    el.style.color='#10b981';
+  }
+  else if(state==='error'){el.textContent='⚠️ 저장 실패';el.style.color='#ef4444';}
+}
+
 function autoSave(){
-  try{localStorage.setItem(LS+'_meta',JSON.stringify({
-    name:document.getElementById('cName')?.value||'',
-    trainer:document.getElementById('cTrainer')?.value||'',
-    height:document.getElementById('cHeight')?.value||'',
-    trEmail:document.getElementById('cTrEmail')?.value||'',
-    trPhone:document.getElementById('cTrPhone')?.value||'',
-    faceBlur:FACE_BLUR_ON,
-    gridOn:GRID_ON,
-    assess:ASSESS,
-    chk:CHK
-  }))}catch(e){}
+  if(SAVE_STATUS.pending) return; // 디바운스
+  SAVE_STATUS.pending=true;
+  updateSaveStatusBadge('saving');
+  setTimeout(()=>{
+    try{
+      // 1) 메타 + 체크리스트 (localStorage, 빠른 접근)
+      localStorage.setItem(LS+'_meta',JSON.stringify({
+        name:document.getElementById('cName')?.value||'',
+        trainer:document.getElementById('cTrainer')?.value||'',
+        height:document.getElementById('cHeight')?.value||'',
+        trEmail:document.getElementById('cTrEmail')?.value||'',
+        trPhone:document.getElementById('cTrPhone')?.value||'',
+        faceBlur:FACE_BLUR_ON,
+        gridOn:GRID_ON,
+        assess:ASSESS,
+        chk:CHK,
+        savedAt:Date.now()
+      }));
+      // 2) 확장 스냅샷 (IDB, AI 히스토리 + 트레이너 전용 포함)
+      const snapshot={
+        version:APP_VERSION,
+        savedAt:Date.now(),
+        meta:{
+          name:document.getElementById('cName')?.value||'',
+          trainer:document.getElementById('cTrainer')?.value||'',
+          height:document.getElementById('cHeight')?.value||'',
+          trEmail:document.getElementById('cTrEmail')?.value||'',
+          trPhone:document.getElementById('cTrPhone')?.value||''
+        },
+        chk:CHK,
+        assess:ASSESS,
+        aiHistory:AI_HISTORY,
+        trainerOnly:TRAINER_ONLY
+      };
+      idbSet(LS+'_snapshot',snapshot).catch(()=>{});
+      updateSaveStatusBadge('saved');
+      SAVE_STATUS.lastSave=Date.now();
+    }catch(e){
+      console.warn('autoSave failed',e);
+      updateSaveStatusBadge('error');
+    }
+    SAVE_STATUS.pending=false;
+  },300);
+}
+
+// 주기적으로도 저장 (혹시나 autoSave 호출 누락된 경우)
+setInterval(()=>{
+  if(Date.now()-(SAVE_STATUS.lastSave||0) > 30000){
+    autoSave();
+  }
+},30000);
+
+// 앱 시작 시 이전 세션 감지 → 복원 프롬프트
+async function checkPreviousSession(){
+  try{
+    const metaRaw=localStorage.getItem(LS+'_meta');
+    if(!metaRaw) return false;
+    const m=JSON.parse(metaRaw);
+    if(!m.name && !m.savedAt) return false;
+    // 사진 개수 체크
+    let photoCount=0;
+    for(const t of TESTS){
+      for(const slot of ['B','A']){
+        const src=await idbGet(`${LS}_img_${t.id}_${slot}`).catch(()=>null);
+        if(src) photoCount++;
+      }
+    }
+    if(photoCount===0) return false; // 사진 없으면 복원 안 함
+    const lastSave=m.savedAt?new Date(m.savedAt):null;
+    const ageMin=lastSave?Math.round((Date.now()-lastSave.getTime())/60000):999;
+    // 24시간 이내 데이터만 자동 프롬프트
+    if(ageMin > 60*24) return false;
+    return {name:m.name||'회원',photoCount,lastSave,ageMin};
+  }catch(e){console.warn('checkPreviousSession failed',e);return false}
+}
+
+function showRestorePrompt(info){
+  const m=document.createElement('div');m.id='restoreModal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px';
+  const timeStr=info.lastSave?info.lastSave.toLocaleString('ko-KR'):'—';
+  const ageStr=info.ageMin<60?`${info.ageMin}분 전`:`${Math.round(info.ageMin/60)}시간 전`;
+  m.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="font-size:18px;font-weight:800;color:#111;margin-bottom:6px">이전 세션이 감지됐습니다</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:16px">이전에 진행하던 체형분석 데이터가 남아있습니다.</div>
+    <div style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px"><span style="color:#6b7280">회원</span><span style="font-weight:700;color:#111">${info.name}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px"><span style="color:#6b7280">저장된 사진</span><span style="font-weight:700;color:#111">${info.photoCount}장</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#6b7280">마지막 저장</span><span style="font-weight:700;color:#111">${timeStr}<br><span style="font-weight:400;color:#6b7280">(${ageStr})</span></span></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="restoreYes" style="flex:2;padding:14px;background:#00a878;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">✅ 이전 세션 복원</button>
+      <button id="restoreNew" style="flex:1;padding:14px;background:#e5e7eb;color:#111;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">새로 시작</button>
+    </div>
+    <div style="margin-top:12px;font-size:10px;color:#9ca3af;text-align:center">새로 시작을 누르면 이전 데이터는 유지되지만 화면이 초기화됩니다.<br>완전히 삭제하려면 좌측 상단 "초기화" 버튼을 사용하세요.</div>
+  </div>`;
+  document.body.appendChild(m);
+  m.querySelector('#restoreYes').onclick=async()=>{
+    m.remove();
+    toast('이전 세션 복원 중...');
+    await restoreAll();
+    // AI 히스토리 + 트레이너 전용 복원
+    try{
+      const snap=await idbGet(LS+'_snapshot');
+      if(snap){
+        if(snap.aiHistory) Object.assign(AI_HISTORY, snap.aiHistory);
+        if(snap.trainerOnly) Object.assign(TRAINER_ONLY, snap.trainerOnly);
+      }
+    }catch(e){}
+    toast('복원 완료');
+    updateSaveStatusBadge('saved');
+  };
+  m.querySelector('#restoreNew').onclick=()=>{m.remove()};
+}
+
+// ─ 수동 익스포트 / 임포트 (USB 백업) ─
+async function exportSessionFile(){
+  showBuildingLoader('백업 파일 생성 중...');
+  try{
+    const snap={
+      version:APP_VERSION,
+      exportedAt:new Date().toISOString(),
+      meta:{
+        name:document.getElementById('cName')?.value||'',
+        trainer:document.getElementById('cTrainer')?.value||'',
+        height:document.getElementById('cHeight')?.value||'',
+        trEmail:document.getElementById('cTrEmail')?.value||'',
+        trPhone:document.getElementById('cTrPhone')?.value||''
+      },
+      chk:CHK,
+      assess:ASSESS,
+      aiHistory:AI_HISTORY,
+      trainerOnly:TRAINER_ONLY,
+      images:{}
+    };
+    // 모든 이미지를 base64로 포함
+    for(const t of TESTS){
+      for(const slot of ['B','A']){
+        const src=await idbGet(`${LS}_img_${t.id}_${slot}`).catch(()=>null);
+        const mk=localStorage.getItem(`${LS}_mk_${t.id}_${slot}`);
+        if(src) snap.images[`${t.id}_${slot}`]={img:src, markers:mk?JSON.parse(mk):null};
+      }
+    }
+    const json=JSON.stringify(snap);
+    const blob=new Blob([json],{type:'application/json'});
+    const fname=(snap.meta.name||'회원')+'_NPT_backup_'+new Date().toISOString().slice(0,10)+'.json';
+    hideBuildingLoader();
+    // 공유 시트로 저장 (iOS 파일 앱 / Android 파일 선택)
+    const file=new File([blob],fname,{type:'application/json'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({title:'NationalGym NPT 백업',text:fname,files:[file]});
+        toast('백업 파일 저장 완료');
+      }catch(e){
+        if(e.name!=='AbortError'){
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+          setTimeout(()=>URL.revokeObjectURL(url),2000);
+          toast('백업 파일 다운로드됨');
+        }
+      }
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=fname;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      toast('백업 파일 다운로드됨');
+    }
+  }catch(e){
+    hideBuildingLoader();
+    toast('백업 실패: '+(e?.message||e));
+  }
+}
+
+function importSessionFile(){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='application/json,.json';
+  inp.onchange=async(e)=>{
+    const file=e.target.files[0];if(!file)return;
+    if(!confirm('백업 파일을 복원하시겠습니까? 현재 데이터는 덮어쓰기됩니다.'))return;
+    showBuildingLoader('백업 복원 중...');
+    try{
+      const text=await file.text();
+      const snap=JSON.parse(text);
+      if(!snap.version||!snap.meta) throw new Error('유효하지 않은 백업 파일');
+      // 메타 복원
+      if(snap.meta.name) document.getElementById('cName').value=snap.meta.name;
+      if(snap.meta.trainer) document.getElementById('cTrainer').value=snap.meta.trainer;
+      if(snap.meta.height) document.getElementById('cHeight').value=snap.meta.height;
+      if(snap.meta.trEmail) document.getElementById('cTrEmail').value=snap.meta.trEmail;
+      if(snap.meta.trPhone) document.getElementById('cTrPhone').value=snap.meta.trPhone;
+      // 체크리스트/어세스
+      Object.keys(CHK).forEach(k=>delete CHK[k]);
+      if(snap.chk) Object.assign(CHK, snap.chk);
+      if(snap.assess) ASSESS=snap.assess;
+      // AI 히스토리
+      if(snap.aiHistory){
+        AI_HISTORY.narrative = snap.aiHistory.narrative || {};
+        AI_HISTORY.clinical = snap.aiHistory.clinical || {};
+        AI_HISTORY.report = snap.aiHistory.report || {results:[],active:0};
+      }
+      if(snap.trainerOnly) Object.assign(TRAINER_ONLY, snap.trainerOnly);
+      // 이미지 복원
+      if(snap.images){
+        for(const key of Object.keys(snap.images)){
+          const [tid,slot]=key.split('_').slice(-2).length===2?[key.split('_').slice(0,-1).join('_'),key.split('_').slice(-1)[0]]:[null,null];
+          if(!tid||!slot) continue;
+          const d=snap.images[key];
+          if(d.img){
+            await idbSet(`${LS}_img_${tid}_${slot}`,d.img);
+            if(d.markers) localStorage.setItem(`${LS}_mk_${tid}_${slot}`,JSON.stringify(d.markers));
+          }
+        }
+      }
+      // autoSave + reload
+      autoSave();
+      hideBuildingLoader();
+      toast('복원 완료 — 페이지 새로고침');
+      setTimeout(()=>location.reload(),1000);
+    }catch(e){
+      hideBuildingLoader();
+      toast('복원 실패: '+(e?.message||e));
+    }
+  };
+  inp.click();
 }
 async function restoreAll(){
   try{
@@ -4913,16 +5338,32 @@ function hideBuildingLoader(){
 }
 
 async function buildFinalPDF(){
-  const dataUrl=await buildPDFCanvas();
+  let dataUrl;
+  try{
+    dataUrl = await buildPDFCanvas();
+  }catch(e){
+    throw new Error('PDF 캔버스 생성 실패: '+(e?.message||String(e)));
+  }
+  if(!dataUrl || typeof dataUrl!=='string' || !dataUrl.startsWith('data:image')){
+    throw new Error('PDF 이미지 데이터 유효하지 않음');
+  }
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const pw=210;
   const img=new Image();
-  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=dataUrl});
+  try{
+    await new Promise((res,rej)=>{
+      img.onload=()=>res();
+      img.onerror=()=>rej(new Error('PDF 이미지 로드 실패 — dataUrl 길이: '+(dataUrl?.length||0)));
+      img.src=dataUrl;
+    });
+  }catch(e){
+    throw e; // preserves the Error message
+  }
   const imgW=pw-20;const imgH=imgW*img.height/img.width;
   const pageH=297-20;
   if(imgH<=pageH){
-    doc.addImage(dataUrl,'PNG',10,10,imgW,imgH);
+    doc.addImage(dataUrl,'JPEG',10,10,imgW,imgH);
   } else {
     let remaining=imgH,srcY=0;
     while(remaining>0){
@@ -5163,9 +5604,35 @@ async function buildPDFCanvas(){
   container.innerHTML=inner;
   document.body.appendChild(container);
   await new Promise(r=>setTimeout(r,500));
-  const canvas=await html2canvas(container,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#fff'});
+  // html2canvas는 scale이 클수록 메모리 부담. Safari 모바일은 canvas 면적 제한이 있어
+  // scale:2에서 긴 리포트(수천 px) 렌더 시 toDataURL이 빈 문자열 반환하며 silent fail.
+  // scale:1.3 으로 낮추고 명시적 에러 핸들링.
+  let canvas;
+  try{
+    canvas=await html2canvas(container,{
+      scale:1.3,
+      useCORS:true,
+      allowTaint:true,
+      backgroundColor:'#fff',
+      logging:false
+    });
+  }catch(e){
+    document.body.removeChild(container);
+    throw new Error('html2canvas 실패: '+(e?.message||String(e)));
+  }
   document.body.removeChild(container);
-  return canvas.toDataURL('image/png');
+  if(!canvas || !canvas.width || !canvas.height){
+    throw new Error('캔버스 크기 유효하지 않음 (html2canvas 반환값 비정상)');
+  }
+  // 매우 큰 캔버스는 JPEG로 폴백 (PNG는 iOS에서 빈 값 반환 가능)
+  let url;
+  try{
+    url=canvas.toDataURL('image/jpeg',0.92);
+    if(!url || url.length<100) throw new Error('toDataURL empty');
+  }catch(e){
+    throw new Error('캔버스→이미지 변환 실패: '+(e?.message||String(e))+' (크기 '+canvas.width+'x'+canvas.height+')');
+  }
+  return url;
 }
 
 function _exportPDF_UNUSED(){
