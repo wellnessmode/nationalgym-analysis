@@ -303,7 +303,7 @@ input[type=range]{accent-color:var(--green)}
 <!-- 랜딩 / 스타트 화면 (v1.9 — 고객 친화 단순화) -->
 <div id="landingScreen">
   <div class="ls-hero">
-    <div class="ls-brand">NATIONALGYM</div>
+    <div class="ls-brand">NATIONAL GYM</div>
     <div class="ls-title"><em>Body</em> Scan</div>
     <div class="ls-subtitle">전문 체형 분석 프로그램</div>
     <div class="ls-divider"></div>
@@ -1317,8 +1317,8 @@ const TEST_CHECKLIST = {
     {id:'np_scm_rt',   label:'Rt. SCM (흉쇄유돌근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
     {id:'np_scal_lt',  label:'Lt. Scalene (사각근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
     {id:'np_scal_rt',  label:'Rt. Scalene (사각근)',     opts:['긴장/단축','정상'], colors:['warn','ok']},
-    {id:'np_scal_neuro_lt', label:'Lt. 상완신경총 / 팔 저림 (신경통)', opts:['있음','없음'], colors:['bad','ok']},
-    {id:'np_scal_neuro_rt', label:'Rt. 상완신경총 / 팔 저림 (신경통)', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'np_scal_neuro_lt', label:'  ↳ Lt. Scalene 압박 → 상완신경총 저림', opts:['있음','없음'], colors:['bad','ok']},
+    {id:'np_scal_neuro_rt', label:'  ↳ Rt. Scalene 압박 → 상완신경총 저림', opts:['있음','없음'], colors:['bad','ok']},
     {id:'np_utrap_lt', label:'Lt. U.Trap (상부승모근)',  opts:['긴장/단축','정상'], colors:['warn','ok']},
     {id:'np_utrap_rt', label:'Rt. U.Trap (상부승모근)',  opts:['긴장/단축','정상'], colors:['warn','ok']},
   ],
@@ -5786,7 +5786,7 @@ async function buildPDFCanvas(){
   const cvrScoreLbl=scoreLabel(cvrScore);
   let inner=`<!-- 커버 페이지 -->
   <div style="padding:60px 40px;height:1000px;background:linear-gradient(135deg,#0a0a0a 0%,#1f2937 100%);color:#fff;position:relative;page-break-after:always">
-    <div style="font-size:14px;color:#9de8c8;letter-spacing:.12em;font-weight:700">NATIONALGYM</div>
+    <div style="font-size:14px;color:#9de8c8;letter-spacing:.12em;font-weight:700">NATIONAL GYM</div>
     <div style="font-size:56px;font-weight:900;margin-top:6px;letter-spacing:-.02em">바디스캔</div>
     <div style="font-size:20px;color:#7dd4b4;margin-top:2px;font-weight:500">Neuromuscular Pattern Test Report</div>
     <div style="margin-top:60px;padding:30px;background:rgba(255,255,255,.06);border-radius:16px;border-left:4px solid #00a878">
