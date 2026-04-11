@@ -1471,8 +1471,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.11.0';
-const BUILD_TIME='2026-04-10 04:30';
+const APP_VERSION='v1.12.0';
+const BUILD_TIME='2026-04-10 05:15';
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1758,7 +1758,10 @@ function buildSlotPhase(slot, title, hint){
   return h;
 }
 
-// 일괄 저장: 해당 슬롯의 모든 촬영된 사진을 한 번에 다운로드/공유
+// v1.12: 일괄 저장 — 모든 사진을 단일 multi-file Web Share로 공유
+// iOS Safari: 공유 시트에서 "이미지 저장" 선택 시 모든 사진이 Photos 앱에 저장
+// Android: 갤러리/드라이브 등 선택 가능
+// 폴백 (Web Share 미지원): 순차 다운로드 + 안내 모달
 async function batchSavePhotos(slot){
   const photos=[];
   for(const t of TESTS){
@@ -1768,15 +1771,62 @@ async function batchSavePhotos(slot){
     photos.push({tid:t.id,title:t.title,canvas:s.canvas});
   }
   if(!photos.length){toast('저장할 사진이 없습니다');return}
-  // 각 사진을 순차 다운로드
-  toast(`${photos.length}장 저장 시작...`);
+  showBuildingLoader(`${photos.length}장 준비 중...`);
+  // 각 canvas → Blob → File
+  const files=[];
+  const dateStr=new Date().toISOString().slice(0,10);
   for(const p of photos){
-    const dataUrl=p.canvas.toDataURL('image/jpeg',.88);
-    const fname=`BodyScan_${slot}_${p.tid}_${new Date().toISOString().slice(0,10)}.jpg`;
-    downloadDataUrl(dataUrl,fname);
-    await new Promise(r=>setTimeout(r,300)); // iOS 다운로드 간격 확보
+    const blob=await new Promise(r=>p.canvas.toBlob(r,'image/jpeg',.9));
+    if(blob){
+      const fname=`BodyScan_${slot}_${p.tid}_${dateStr}.jpg`;
+      files.push(new File([blob],fname,{type:'image/jpeg'}));
+    }
   }
-  toast(`${photos.length}장 저장 완료`);
+  hideBuildingLoader();
+  if(!files.length){toast('파일 변환 실패');return}
+  // 1) Multi-file Web Share 시도 (iOS 14+ / Android 지원)
+  if(navigator.share && navigator.canShare && navigator.canShare({files})){
+    try{
+      await navigator.share({
+        title:`Body Scan ${slot==='B'?'Before':'After'} 사진 ${files.length}장`,
+        text:`${files.length}장 일괄 저장`,
+        files
+      });
+      toast(`공유 시트 열림 — "이미지 저장" 선택 시 사진첩에 저장`);
+      return;
+    }catch(e){
+      if(e.name==='AbortError') return;
+      console.warn('Multi-file share failed:',e);
+    }
+  }
+  // 2) 폴백: 안내 모달 + 순차 다운로드
+  showBatchSaveFallback(files);
+}
+
+function showBatchSaveFallback(files){
+  const m=document.createElement('div');m.id='batchFallback';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  m.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px;max-width:380px;width:100%">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px">⚠️ 사진첩 자동 저장 미지원</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:14px;line-height:1.5">이 브라우저는 multi-file 공유를 지원하지 않아 사진첩에 직접 저장할 수 없습니다.<br><br><b>대안</b>:<br>• ${files.length}장을 다운로드 폴더에 저장<br>• 사진첩 저장이 필요하면 각 사진 카드에서 길게 눌러 "이미지 저장" 선택</div>
+    <div style="display:flex;gap:8px">
+      <button id="bfDl" style="flex:1;padding:12px;background:#00a878;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">📥 다운로드 폴더 저장</button>
+      <button id="bfCancel" style="flex:0 0 auto;padding:12px 16px;background:#e5e7eb;color:#111;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">취소</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.querySelector('#bfCancel').onclick=()=>m.remove();
+  m.querySelector('#bfDl').onclick=async()=>{
+    m.remove();
+    toast(`${files.length}장 다운로드 시작...`);
+    for(const f of files){
+      const url=URL.createObjectURL(f);
+      const a=document.createElement('a');a.href=url;a.download=f.name;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      await new Promise(r=>setTimeout(r,400));
+    }
+    toast(`${files.length}장 다운로드 폴더에 저장됨`);
+  };
 }
 
 function buildComparePhase(){
@@ -2175,18 +2225,86 @@ function openCam(tid,slot){
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
   startDeviceLevel();
 }
-function snap(){
+// v1.12: 영상 캡처 모드 — 1.5초 동안 여러 프레임 캡처해서 MediaPipe로
+// 각 프레임 분석 후 가장 많은 landmark가 감지된 프레임을 최종 사진으로 사용.
+// 정지 사진 1장보다 훨씬 안정적인 스켈레톤 감지.
+async function snap(){
+  if(!poseOk){
+    // MediaPipe 로딩 안 됨 → 일반 단일 프레임 캡처
+    return snapSingle();
+  }
+  const v=document.getElementById('camVid'),hc=document.getElementById('hc');
+  if(!v.videoWidth){toast('카메라 준비 안 됨');return}
+  hc.width=v.videoWidth;hc.height=v.videoHeight;
+  const ctx=hc.getContext('2d');
+  // 진행 상태 UI
+  const camOv=document.getElementById('camOv');
+  const progressEl=document.createElement('div');
+  progressEl.id='captureProgress';
+  progressEl.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.85);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;font-family:inherit';
+  progressEl.innerHTML='<div style="font-size:14px;font-weight:700;margin-bottom:14px">📹 영상 캡처 중...</div><div id="captureStage" style="font-size:11px;color:#9de8c8">프레임 수집 시작</div><div style="margin-top:20px;width:200px;height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden"><div id="captureBar" style="width:0%;height:100%;background:#00a878;transition:width .12s"></div></div>';
+  camOv.appendChild(progressEl);
+  const stageEl=document.getElementById('captureStage');
+  const barEl=document.getElementById('captureBar');
+  const setStage=(text,pct)=>{if(stageEl)stageEl.textContent=text;if(barEl)barEl.style.width=pct+'%'};
+  // ── 1단계: 1.5초 동안 15프레임 캡처 (메모리 부담 줄이기) ──
+  const FRAME_COUNT=15;
+  const INTERVAL=100; // ms
+  const frames=[];
+  for(let i=0;i<FRAME_COUNT;i++){
+    ctx.drawImage(v,0,0);
+    frames.push(hc.toDataURL('image/jpeg',.85));
+    setStage(`프레임 수집 ${i+1}/${FRAME_COUNT}`, (i+1)/FRAME_COUNT*40);
+    await new Promise(r=>setTimeout(r,INTERVAL));
+  }
+  // ── 2단계: 각 프레임에 pose 감지 → best 선택 ──
+  let bestFrame=frames[0];
+  let bestPose=null;
+  let bestScore=0;
+  for(let i=0;i<frames.length;i++){
+    setStage(`AI 포즈 분석 ${i+1}/${FRAME_COUNT}`, 40+(i+1)/FRAME_COUNT*55);
+    // 이미지 로드
+    const img=new Image();
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=frames[i]});
+    // MediaPipe 호출
+    const result=await runPose(img);
+    if(result?.landmarks){
+      // 가시 랜드마크 수 + 핵심 랜드마크 보너스
+      const keyPts=[0,11,12,23,24,25,26,27,28]; // nose+shoulders+hips+knees+ankles
+      const visAll=result.landmarks.filter(l=>l&&l.visibility>.5).length;
+      const visKey=keyPts.filter(i=>result.landmarks[i]?.visibility>.5).length;
+      const score=visAll+visKey*3; // 핵심 포인트에 가중치
+      if(score>bestScore){
+        bestScore=score;
+        bestPose=result;
+        bestFrame=frames[i];
+      }
+      // 조기 종료: 핵심 9개 + 25개 가시 = 거의 완벽
+      if(visKey>=9 && visAll>=25) break;
+    }
+  }
+  setStage(`최적 프레임 선택 (${bestScore}점)`, 100);
+  await new Promise(r=>setTimeout(r,200));
+  progressEl.remove();
+  // ── 3단계: 최적 프레임 사용 ──
+  const fname=`BodyScan_${camTid}_${camSlot}_${new Date().toISOString().slice(0,10)}.jpg`;
+  loadImg(camTid,camSlot,bestFrame);
+  saveSnapToDevice(bestFrame,fname);
+  closeCam();
+  toast((camSlot==='B'?'Before':'After')+` 촬영 완료 — 영상 ${FRAME_COUNT}프레임 중 최적 선택 (${bestScore}점)`);
+}
+
+// 폴백: MediaPipe 미로딩 시 단일 프레임 캡처
+function snapSingle(){
   const v=document.getElementById('camVid'),hc=document.getElementById('hc');
   hc.width=v.videoWidth;hc.height=v.videoHeight;
   hc.getContext('2d').drawImage(v,0,0);
   const snapData=hc.toDataURL('image/jpeg',.88);
   const fname=`BodyScan_${camTid}_${camSlot}_${new Date().toISOString().slice(0,10)}.jpg`;
   loadImg(camTid,camSlot,snapData);
-  // iOS: Web Share API가 사용자 제스처 체인 내에 있을 때 Photos 저장 가능
-  // 안드로이드/기타: 다운로드 폴더에 저장
   saveSnapToDevice(snapData,fname);
   closeCam();
-  toast((camSlot==='B'?'Before':'After')+' 촬영 완료 — 기기 저장 시도됨');
+  toast((camSlot==='B'?'Before':'After')+' 촬영 완료 (단일 프레임)');
 }
 
 // 촬영 사진을 기기에 저장: iOS에서는 Web Share로 Photos 저장 제안, 그 외는 다운로드
