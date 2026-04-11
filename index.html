@@ -576,7 +576,7 @@ const POSE_GUIDES = {
     <line x1="50" y1="5" x2="50" y2="215" stroke="rgba(255,255,255,.2)" stroke-width=".5" stroke-dasharray="3,3"/>
     <!-- SHOULDER WIDTH GUIDE -->
     <line x1="25" y1="204" x2="75" y2="204" stroke="#ffd700" stroke-width=".7" stroke-dasharray="2,2" opacity=".6"/>
-    <text class="tn" x="50" y="212" text-anchor="middle">← 어깨너비 기준 →</text>`
+    <text class="tn" x="50" y="212" text-anchor="middle">정상: 좌우 대칭 · 기울기 ≤ 3°</text>`
   },
 
   post: {
@@ -617,7 +617,8 @@ const POSE_GUIDES = {
     <text class="tx" x="2" y="41">어깨선</text>
     <!-- PELVIS LINE -->
     <line class="ln" x1="15" y1="106" x2="85" y2="106"/>
-    <text class="tx" x="2" y="105">골반선</text>`
+    <text class="tx" x="2" y="105">골반선</text>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 견갑 대칭 · 골반 수평 · POTSI &lt; 27</text>`
   },
 
   lat: {
@@ -666,7 +667,10 @@ const POSE_GUIDES = {
     <!-- Key landmark labels -->
     <text x="61" y="16" fill="#ffd700" font-size="3.5" font-family="sans-serif">귀</text>
     <text x="63" y="44" fill="#ff6060" font-size="3.5" font-family="sans-serif">견봉</text>
-    <text x="68" y="112" fill="#ff6060" font-size="3.5" font-family="sans-serif">대전자</text>`
+    <text x="68" y="112" fill="#ff6060" font-size="3.5" font-family="sans-serif">대전자</text>
+    <!-- 정상범위 하단 라벨 -->
+    <text x="50" y="196" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: CVA ≥ 50° · 귀-어깨-대전자 일직선</text>
+    <text x="50" y="204" text-anchor="middle" fill="#9de8c8" font-size="3.5">※ 고객 좌측에서 촬영</text>`
   },
 
   sh_flex_l: {
@@ -695,7 +699,8 @@ const POSE_GUIDES = {
     <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
     <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
     <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
-    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>`
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: Lt. 팔 180° 외전 · 견갑 리듬 자연스럽게</text>`
   },
 
   sh_flex_r: {
@@ -723,7 +728,8 @@ const POSE_GUIDES = {
     <path class="bg" d="M24,144 Q22,160 23,172 Q24,177 30,177 Q36,177 37,172 L38,144 Q38,140 31,140 Z"/>
     <path class="bg" d="M62,144 Q62,140 69,140 Q76,140 76,144 L77,172 Q78,177 70,177 Q64,177 62,172 Z"/>
     <path class="bg" d="M21,174 Q20,181 31,182 Q40,182 42,178 Q43,175 40,173 Z"/>
-    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>`
+    <path class="bg" d="M58,178 Q60,182 69,182 Q80,181 79,174 L60,173 Z"/>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: Rt. 팔 180° 외전 · 견갑 리듬 자연스럽게</text>`
   },
 
   trunk_b: {
@@ -789,7 +795,8 @@ const POSE_GUIDES = {
     <text x="26" y="80" fill="#ff6060" font-size="4.5" font-family="sans-serif" opacity=".85">ROM↗</text>
     <!-- SPINE CURVE -->
     <path d="M50,60 Q46,70 50,84 Q54,96 64,106" fill="none" stroke="#ffd700" stroke-width=".9" stroke-dasharray="3,2" opacity=".8"/>
-    <text class="tx" x="54" y="78">척추</text>`
+    <text class="tx" x="54" y="78">척추</text>
+    <text x="50" y="198" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 전굴 ROM ≥ 70° · 고객 좌측에서 촬영</text>`
   },
 
   ohs_b: {
@@ -825,7 +832,8 @@ const POSE_GUIDES = {
     <!-- KNEE ALIGNMENT GUIDES -->
     <line x1="25" y1="126" x2="21" y2="165" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
     <line x1="75" y1="126" x2="79" y2="165" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
-    <text x="50" y="175" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">무릎 수직선 체크</text>`
+    <text x="50" y="175" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">무릎 수직선 체크</text>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 무릎 수직 · 내측 collapse 없음</text>`
   },
 
   ohs_l: {
@@ -858,7 +866,8 @@ const POSE_GUIDES = {
     <text class="tx" x="24" y="52">전경각</text>
     <!-- IDEAL ALIGNMENT LABELS -->
     <text x="62" y="22" fill="#00c890" font-size="3.5" font-family="sans-serif">바 위치</text>
-    <text x="60" y="70" fill="#00c890" font-size="3.5" font-family="sans-serif">수직 유지</text>`
+    <text x="60" y="70" fill="#00c890" font-size="3.5" font-family="sans-serif">수직 유지</text>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 전경각 &lt; 45° · 발꿈치 유지 · 고객 좌측</text>`
   },
 
   sku: {
@@ -888,7 +897,8 @@ const POSE_GUIDES = {
     <path class="bg" d="M59,171 Q58,179 69,180 Q79,180 80,172 L62,172 Z"/>
     <!-- PELVIC LEVEL LINE -->
     <line x1="20" y1="114" x2="80" y2="114" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
-    <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>`
+    <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 무릎 90° · 지지측 골반 수평</text>`
   },
 
   sku_r: {
@@ -910,12 +920,13 @@ const POSE_GUIDES = {
     <path class="bg" d="M24,148 Q24,144 31,144 Q38,144 38,148 L38,170 Q38,176 31,176 Q25,176 24,170 Z"/>
     <path class="bg" d="M21,171 Q20,179 31,180 Q41,180 42,172 L38,172 Z"/>
     <line x1="20" y1="114" x2="80" y2="114" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
-    <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>`
+    <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>
+    <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 무릎 90° · 지지측 골반 수평</text>`
   },
 
   slr_l: {
-    label:'Lt. SLR — 바로 누워 왼쪽 다리 올리기',
-    warning:'침대/매트 · 무릎 완전히 펴기',
+    label:'📱 가로 촬영 — Lt. SLR (정상 70~85°)',
+    warning:'📱 휴대폰을 가로로 돌려서 촬영 · 무릎 완전히 펴기',
     viewBox:'0 0 200 110',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5.5px;font-family:sans-serif}</style>
@@ -942,7 +953,9 @@ const POSE_GUIDES = {
     <!-- ANGLE INDICATOR -->
     <path d="M90,65 Q98,65 103,58" fill="none" stroke="#ff6060" stroke-width=".9" opacity=".85"/>
     <line x1="90" y1="65" x2="115" y2="65" stroke="#ff6060" stroke-width=".6" stroke-dasharray="2,1" opacity=".55"/>
-    <text class="tx" x="108" y="46">70~85°</text>
+    <text class="tx" x="108" y="46" font-weight="bold">정상 70~85°</text>
+    <!-- 가로 촬영 안내 -->
+    <text x="100" y="10" text-anchor="middle" fill="#ffd700" font-size="6" font-weight="bold" font-family="sans-serif">📱 휴대폰 가로로 돌려 촬영</text>
     <text x="8" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">← 머리</text>
     <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
@@ -985,6 +998,7 @@ const POSE_GUIDES = {
     <text x="8" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">← 좌회전</text>
     <!-- BOTTOM NOTE -->
     <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
+    <text x="50" y="188" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상 경추 회전 ROM: 70~80°</text>
     <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
   },
 
@@ -1023,12 +1037,13 @@ const POSE_GUIDES = {
     <path d="M86,36 L83,31 M86,36 L81,38" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
     <text x="56" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">우회전 →</text>
     <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
+    <text x="50" y="188" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상 경추 회전 ROM: 70~80°</text>
     <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
   },
 
   slr_r: {
-    label:'Rt. SLR — 바로 누워 오른쪽 다리 올리기',
-    warning:'침대/매트 · 무릎 완전히 펴기',
+    label:'📱 가로 촬영 — Rt. SLR (정상 70~85°)',
+    warning:'📱 휴대폰을 가로로 돌려서 촬영 · 무릎 완전히 펴기',
     viewBox:'0 0 200 110',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5.5px;font-family:sans-serif}</style>
@@ -1051,7 +1066,9 @@ const POSE_GUIDES = {
     <!-- ANGLE INDICATOR -->
     <path d="M90,65 Q98,65 103,58" fill="none" stroke="#ff6060" stroke-width=".9" opacity=".85"/>
     <line x1="90" y1="65" x2="115" y2="65" stroke="#ff6060" stroke-width=".6" stroke-dasharray="2,1" opacity=".55"/>
-    <text class="tx" x="108" y="46">70~85°</text>
+    <text class="tx" x="108" y="46" font-weight="bold">정상 70~85°</text>
+    <!-- 가로 촬영 안내 -->
+    <text x="100" y="10" text-anchor="middle" fill="#ffd700" font-size="6" font-weight="bold" font-family="sans-serif">📱 휴대폰 가로로 돌려 촬영</text>
     <text x="8" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">← 머리</text>
     <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
@@ -1240,19 +1257,19 @@ async function deleteSession(id){
 // v1.10: 종이 양식(NPT)과 완전 일치. 수기 검사는 manual:true 플래그로 사진 없이 체크리스트만.
 // id는 그대로 유지 (저장된 데이터 호환). title/sub/tip만 변경.
 const TESTS = [
-  {id:'ant',       n:1,  sec:'static', title:'전면 (Anterior)',             sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
-  {id:'lat',       n:2,  sec:'static', title:'측면 (Lateral)',              sub:'거북목·흉추후만·요추전만',           tip:'좌측면 기준'},
-  {id:'post',      n:3,  sec:'static', title:'후면 (Posterior)',            sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
+  {id:'ant',       n:1,  sec:'static', title:'스탠딩 - 전면 (Anterior)',    sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
+  {id:'lat',       n:2,  sec:'static', title:'스탠딩 - 좌측면 (Lateral)',   sub:'거북목·흉추후만·요추전만',           tip:'고객 좌측에서 촬영 (좌측면 카메라 쪽)'},
+  {id:'post',      n:3,  sec:'static', title:'스탠딩 - 후면 (Posterior)',   sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
   {id:'sh_flex_l', n:4,  sec:'npt',    title:'Shoulder Abduction — 좌측',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 좌측 팔 옆으로 최대 거상'},
   {id:'sh_flex_r', n:5,  sec:'npt',    title:'Shoulder Abduction — 우측',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 우측 팔 옆으로 최대 거상'},
-  {id:'trunk_b',   n:6,  sec:'npt',    title:'Trunk Flexion — 후면',        sub:'Scoliosis in motion · Muscle tone', tip:'⚡ 허리~등 높이에서 촬영 (아래에서 X) · 체간 전굴 최대범위'},
-  {id:'trunk_l',   n:7,  sec:'npt',    title:'Trunk Flexion — 측면',        sub:'굴곡 ROM · 흉/요추 분리',           tip:'⚡ 허리~등 높이에서 촬영 · 척추 커브가 보이도록'},
+  {id:'trunk_b',   n:6,  sec:'npt', manual:true, title:'Trunk Flexion — 후면 (수기)', sub:'Scoliosis in motion · Muscle tone', tip:'수기 검사 · 체크리스트 입력'},
+  {id:'trunk_l',   n:7,  sec:'npt',    title:'Trunk Flexion — 좌측면',      sub:'전굴 ROM · 흉/요추 분리 · 정상 70°+', tip:'⚡ 허리~등 높이에서 고객 좌측 촬영'},
   {id:'ohs_b',     n:8,  sec:'npt',    title:'Overhead Squat — 후면',       sub:'Ankle inversion · Pelvic rotation · Knee collapse', tip:'후면, OHS 최저점 유지'},
-  {id:'ohs_l',     n:9,  sec:'npt',    title:'Overhead Squat — 측면',       sub:'상체 전경 · 흉추 가동성 · Anterior pelvic tilt', tip:'측면, OHS 최저점 유지'},
-  {id:'sku',       n:10, sec:'npt',    title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · Ankle stability', tip:'전면, 좌측 무릎 최대 거상 유지'},
-  {id:'sku_r',     n:11, sec:'npt',    title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · Ankle stability', tip:'전면, 우측 무릎 최대 거상 유지'},
-  {id:'slr_l',     n:12, sec:'npt',    title:'S.L.R. — 왼쪽',              sub:'Lt. Hamstring · 다리 올림 각도 측정', tip:'⚡ 가로(옆으로 눕혀) 촬영 권장 · 다리 전체가 나오도록'},
-  {id:'slr_r',     n:13, sec:'npt',    title:'S.L.R. — 오른쪽',            sub:'Rt. Hamstring · 다리 올림 각도 측정', tip:'⚡ 가로(옆으로 눕혀) 촬영 권장 · 다리 전체가 나오도록'},
+  {id:'ohs_l',     n:9,  sec:'npt',    title:'Overhead Squat — 좌측면',     sub:'상체 전경 · 정상 <45° · 흉추 가동성', tip:'⚡ 고객 좌측 촬영, OHS 최저점'},
+  {id:'sku',       n:10, sec:'npt',    title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · 정상 무릎 90°', tip:'전면, 좌측 무릎 최대 거상'},
+  {id:'sku_r',     n:11, sec:'npt',    title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · 정상 무릎 90°', tip:'전면, 우측 무릎 최대 거상'},
+  {id:'slr_l',     n:12, sec:'npt',    title:'S.L.R. — 좌측 (가로 촬영)',  sub:'Lt. Hamstring · 정상 70~85°', tip:'📱 휴대폰 가로로 돌려 촬영 · 고객 좌측'},
+  {id:'slr_r',     n:13, sec:'npt',    title:'S.L.R. — 우측 (가로 촬영)',  sub:'Rt. Hamstring · 정상 70~85°', tip:'📱 휴대폰 가로로 돌려 촬영 · 고객 우측'},
   // ─── 수기 검사 (사진 없음) ───
   {id:'patrick',   n:14, sec:'npt', manual:true, title:'Patrick Test (FABER)', sub:'고관절·천장관절 병변 평가', tip:'수기 검사 · 체크리스트 입력'},
   {id:'prone_quad',   n:15, sec:'npt', manual:true, title:'Quadriceps — Prone',    sub:'대퇴사두근 단축/약화 (엎드린 자세)', tip:'수기 검사 · 체크리스트 입력'},
@@ -1497,8 +1514,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.13.0';
-const BUILD_TIME='2026-04-11 04:00';
+const APP_VERSION='v1.13.1';
+const BUILD_TIME='2026-04-11 05:00';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1549,6 +1566,13 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.13.1', date:'2026-04-11', items:[
+    '검사 타이틀 정리 — 스탠딩-전면/좌측면/후면 접두, 측면 검사는 "좌측" 명시',
+    'Trunk Flexion 후면 → 수기 검사로 전환 (사진 촬영 불편)',
+    'Trunk Flexion 좌측면 / OHS 좌측면 / 스탠딩 좌측면 모두 고객 좌측 기준으로 통일',
+    '모든 포즈 가이드에 정상범위 라벨 추가 (CVA ≥50°, 전굴 70°+, 무릎 90°, 어깨 외전 180°, 경추 회전 70~80° 등)',
+    'SLR 가이드 — "📱 휴대폰 가로로 돌려 촬영" 프롬프트 상단 강조',
+  ]},
   {ver:'v1.13.0', date:'2026-04-11', items:[
     '🛡 트레이너 배포 전 QA 버그 픽스 — 체크리스트 데이터 유실 방지',
     'getChkSummary — 체크리스트를 AI 프롬프트에 올바르게 전달 (이전: 빈 문자열 전달됨)',
