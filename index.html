@@ -1497,8 +1497,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.12.4';
-const BUILD_TIME='2026-04-11 03:00';
+const APP_VERSION='v1.13.0';
+const BUILD_TIME='2026-04-11 04:00';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1549,6 +1549,16 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.13.0', date:'2026-04-11', items:[
+    '🛡 트레이너 배포 전 QA 버그 픽스 — 체크리스트 데이터 유실 방지',
+    'getChkSummary — 체크리스트를 AI 프롬프트에 올바르게 전달 (이전: 빈 문자열 전달됨)',
+    '체크리스트 복원 로직 — 다중 선택(sels) 구조 기반으로 재작성 (이전: 페이지 새로고침 시 체크 날아감)',
+    'SKU CHK_PROMPTS — Lt/Rt 분리된 신규 체크리스트 ID에 맞춰 수정',
+    'SKU 우측 — TEST_FOCUS / TEST_RELEVANT_METRICS / CHK_PROMPTS 누락 보완',
+    'AI_HISTORY 복원 후 narrative 박스 자동 리렌더',
+    'genAIReport 사전 조건 검사 — 사진/체크리스트 전무할 때 토스트 안내',
+    'updateReport DOM null check 추가',
+  ]},
   {ver:'v1.12.4', date:'2026-04-11', items:[
     '업데이트 노트 날짜 수정 — 실제 날짜(4/11)로 정정',
   ]},
@@ -2923,21 +2933,33 @@ JSON만.
 - ohsl_pelv: [0="있음", 1="없음"]
 - ohsl_ank: [0="있음(발꿈치 들림)", 1="없음"]`,
 
-  sku:`당신은 근거중심 스포츠 물리치료사입니다. Standing Knee Up 사진 분석.
+  sku:`당신은 근거중심 스포츠 물리치료사입니다. 좌측 Standing Knee Up 사진 분석 (좌측 무릎 거상).
 
 [임상 기준]
-1. Trendelenburg Sign: 무릎 들 때 반대측 골반 하강. 지지측 중둔근 약화.
-   예: 우측 무릎 들 때 좌측 골반 처짐 → 우측 지지 불안정.
-2. Hip flexor 단축: 무릎 올릴 때 상체 후방 기울거나 요추 과전만.
-3. 발목 불안정: 지지발 흔들림·외반·내반.
-4. Pelvic drop 방향.
+1. Lt. Glutes 약화: 좌측 무릎 들 때 반대측(우측) 골반 하강 = 좌측 지지측 중둔근 약화.
+2. Lt. Hip flexor 단축: 좌측 무릎 올릴 때 상체 후방 기울 or 요추 과전만.
+3. Lt. 발목 불안정: 좌측 지지발 흔들림.
+4. Lt. Pelvic drop.
 
-JSON만.
-항목:
-- sku_glut: [0="Lt. 약함", 1="Rt. 약함", 2="양측", 3="정상"]
-- sku_hf: [0="Lt. 단축", 1="Rt. 단축", 2="양측", 3="정상"]
-- sku_ank: [0="Lt. 불안정", 1="Rt. 불안정", 2="양측", 3="정상"]
-- sku_pel: [0="Lt. drop", 1="Rt. drop", 2="없음"]`,
+JSON만. 항목:
+- sku_glut_l: [0="약함", 1="정상"]
+- sku_hf_l: [0="단축", 1="정상"]
+- sku_ank_l: [0="불안정", 1="정상"]
+- sku_pel_l: [0="있음", 1="없음"]`,
+
+  sku_r:`당신은 근거중심 스포츠 물리치료사입니다. 우측 Standing Knee Up 사진 분석 (우측 무릎 거상).
+
+[임상 기준]
+1. Rt. Glutes 약화: 우측 무릎 들 때 반대측(좌측) 골반 하강 = 우측 지지측 중둔근 약화.
+2. Rt. Hip flexor 단축: 우측 무릎 올릴 때 상체 후방 기울 or 요추 과전만.
+3. Rt. 발목 불안정: 우측 지지발 흔들림.
+4. Rt. Pelvic drop.
+
+JSON만. 항목:
+- sku_glut_r: [0="약함", 1="정상"]
+- sku_hf_r: [0="단축", 1="정상"]
+- sku_ank_r: [0="불안정", 1="정상"]
+- sku_pel_r: [0="있음", 1="없음"]`,
 
   slr_l:`당신은 근거중심 스포츠 물리치료사입니다. 왼쪽 SLR 사진 분석.
 
@@ -3174,6 +3196,7 @@ const TEST_RELEVANT_METRICS = {
   ohs_b:  ['knee','pelvis'],
   ohs_l:  ['trunk_lean','cva'],
   sku:    ['pelvis_drop'],
+  sku_r:  ['pelvis_drop'],
   slr_l:  ['slr_angle_left'],
   slr_r:  ['slr_angle_right'],
   neck_l: ['neck_rotation'],
@@ -3190,7 +3213,8 @@ const TEST_FOCUS = {
   trunk_l:'Trunk Flexion 측면 — 오직 전굴 ROM(가동범위), 흉추/요추 분리, Hip Hinge 패턴만 분석',
   ohs_b:'Overhead Squat 후면 — 오직 발목 내번, 무릎 내측 collapse(valgus), 골반 rotation만 분석',
   ohs_l:'Overhead Squat 측면 — 오직 상체 전경각, 팔 전방이동, 발목 배측굴곡 제한만 분석',
-  sku:'Standing Knee Up — 오직 중둔근 약화로 인한 반대측 골반 drop(Trendelenburg sign)과 지지측 hip 안정성만 분석',
+  sku:'좌측 Standing Knee Up — 오직 좌측 무릎 거상 시 우측 골반 drop(Trendelenburg sign)과 좌측 지지측 hip 안정성만 분석. 우측 언급 금지.',
+  sku_r:'우측 Standing Knee Up — 오직 우측 무릎 거상 시 좌측 골반 drop(Trendelenburg sign)과 우측 지지측 hip 안정성만 분석. 좌측 언급 금지.',
   slr_l:'좌측 S.L.R. 테스트 — 오직 좌측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
   slr_r:'우측 S.L.R. 테스트 — 오직 우측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
   neck_l:'경추 좌회전 검사 — 오직 좌측 회전 ROM(회전각)과 이 각도가 시사하는 경추 및 상부승모근·SCM·Scalene 긴장만 분석. 어깨·골반·하지 언급 절대 금지.',
@@ -4692,13 +4716,25 @@ function calcM(lm,W,H){
   return m;
 }
 
+// v1.13: CHK[k].sels (multi-select 인덱스 맵) 기반으로 체크리스트 요약 생성.
+// selChk() 가 {sels:{optIdx:colorClass}} 구조로 저장하므로 val 필드는 존재하지 않음.
 function getChkSummary(tid){
   const items=TEST_CHECKLIST[tid]||[];
+  const fmtSlot=(item,slot)=>{
+    const k=item.id+'_'+slot;
+    const sels=CHK[k]?.sels;
+    if(!sels || !Object.keys(sels).length) return '미체크';
+    // 선택된 옵션 인덱스들 → opts 레이블로 변환
+    return Object.keys(sels)
+      .map(oi=>item.opts[parseInt(oi)])
+      .filter(Boolean)
+      .join(' / ') || '미체크';
+  };
   return items.map(item=>{
-    const k=item.id+'_B';const k2=item.id+'_A';
-    const bv=CHK[k]?.val||null;const av=CHK[k2]?.val||null;
-    const note=CHK[k]?.note||CHK[k2]?.note||'';
-    return `${item.label}: Before=${bv||'미체크'}, After=${av||'미체크'}${note?', 메모: '+note:''}`;
+    const bv=fmtSlot(item,'B');
+    const av=fmtSlot(item,'A');
+    const note=CHK[item.id+'_B']?.note||CHK[item.id+'_A']?.note||'';
+    return `${item.label}: Before=${bv}, After=${av}${note?', 메모: '+note:''}`;
   }).join('\n');
 }
 
@@ -5157,7 +5193,7 @@ function buildMetricsHTML(tid,bm,am){
     sh_flex_l:['shoulderTilt','shoulderHDiff'],sh_flex_r:['shoulderTilt','shoulderHDiff'],
     trunk_b:['spineAngle','shoulderHipAlign'],trunk_l:['trunkFlex','spineAngle'],
     ohs_b:['kneeAlign','hipTilt'],ohs_l:['cva','spineAngle','shoulderHipAlign','devHip','devKnee'],
-    sku:['hipHDiff','hipTilt'],
+    sku:['hipHDiff','hipTilt'],sku_r:['hipHDiff','hipTilt'],
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
     neck_l:['headTilt'],neck_r:['headTilt'],
   };
@@ -5195,6 +5231,13 @@ function buildMetricsHTML(tid,bm,am){
 async function genAIReport(){
   const el=document.getElementById('aiReportContent');if(!el)return;
   const sec=document.getElementById('aiReportSec');if(sec)sec.style.display='block';
+  // v1.13: 사전 조건 검사 — 사진이 하나도 없으면 생성 불가
+  const hasAnyPhoto=TESTS.some(t=>!t.manual && (SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img));
+  const hasAnyCheckBlist=Object.keys(CHK).some(k=>CHK[k]?.sels&&Object.keys(CHK[k].sels).length>0);
+  if(!hasAnyPhoto && !hasAnyCheckBlist){
+    toast('사진 촬영 또는 체크리스트 입력 후 시도하세요');
+    return;
+  }
   // 시도 횟수 확인
   const hist = AI_HISTORY.report;
   if(hist.results.length >= AI_MAX_ATTEMPTS){
@@ -5362,20 +5405,21 @@ function navReport(dir){
 // REPORT
 // ═══════════════════════════════════════════
 function updateReport(){
+  // v1.13: 모든 DOM 참조에 null check 추가
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
-  document.getElementById('rHeroName').textContent=name+' — 바디스캔 리포트';
-  // Show API usage
+  const heroName=document.getElementById('rHeroName');
+  if(heroName) heroName.textContent=name+' — 바디스캔 리포트';
   const rs=getRateStatus();
   const usageEl=document.getElementById('rUsageStatus');
   if(usageEl) usageEl.innerHTML=`<span style="font-size:11px;color:#9de8c8">오늘 AI 사용: ${rs.daily}/${rs.dailyMax}회</span>`;
-  // v1.7: 리포트 박스를 히스토리 기반으로 렌더 (버튼 포함)
   renderReportBox(false);
-  document.getElementById('rHeroSub').textContent=trainer?'담당: '+trainer:'';
+  const heroSub=document.getElementById('rHeroSub');
+  if(heroSub) heroSub.textContent=trainer?'담당: '+trainer:'';
   const done=TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img).length;
-  document.getElementById('rDone').textContent=done;
-  document.getElementById('rPend').textContent=TESTS.length-done;
-  document.getElementById('rChk').textContent=Object.keys(CHK).length;
+  const rDone=document.getElementById('rDone');if(rDone) rDone.textContent=done;
+  const rPend=document.getElementById('rPend');if(rPend) rPend.textContent=TESTS.length-done;
+  const rChk=document.getElementById('rChk');if(rChk) rChk.textContent=Object.keys(CHK).length;
   // ─ Composite posture score (Before 기준) ─
   const aggB={},aggA={};
   TESTS.forEach(t=>{
@@ -5602,10 +5646,29 @@ function showRestorePrompt(info){
     try{
       const snap=await idbGet(LS+'_snapshot');
       if(snap){
-        if(snap.aiHistory) Object.assign(AI_HISTORY, snap.aiHistory);
-        if(snap.trainerOnly) Object.assign(TRAINER_ONLY, snap.trainerOnly);
+        // AI_HISTORY 구조 보존: narrative/clinical/report 각각 머지
+        if(snap.aiHistory){
+          if(snap.aiHistory.narrative) Object.assign(AI_HISTORY.narrative, snap.aiHistory.narrative);
+          if(snap.aiHistory.clinical)  Object.assign(AI_HISTORY.clinical,  snap.aiHistory.clinical);
+          if(snap.aiHistory.report && Array.isArray(snap.aiHistory.report.results)){
+            AI_HISTORY.report = snap.aiHistory.report;
+          }
+        }
+        if(snap.trainerOnly){
+          if(snap.trainerOnly.clinical) Object.assign(TRAINER_ONLY.clinical, snap.trainerOnly.clinical);
+          if(snap.trainerOnly.finalReport) TRAINER_ONLY.finalReport = snap.trainerOnly.finalReport;
+        }
       }
-    }catch(e){}
+      // v1.13: 복원 후 narrative / clinical / report 박스를 화면 리렌더
+      setTimeout(()=>{
+        // narrative 박스 리렌더 (Before 슬롯에 존재)
+        Object.keys(AI_HISTORY.narrative||{}).forEach(tid=>{
+          if(AI_HISTORY.narrative[tid]?.results?.length && typeof renderNarrativeBox==='function'){
+            renderNarrativeBox(tid, false);
+          }
+        });
+      }, 800);
+    }catch(e){console.warn('Snapshot restore error:',e)}
     toast('복원 완료');
     updateSaveStatusBadge('saved');
   };
@@ -5756,21 +5819,48 @@ async function restoreAll(){
       if(m.assess){ASSESS=m.assess;const tc=document.getElementById('trainerComment');if(tc&&ASSESS.text)tc.value=ASSESS.text}
       if(m.chk){
         Object.assign(CHK,m.chk);
-        // restore checklist UI after rebuild
+        // v1.13: CHK 구조는 {sels:{optIdx:colorClass}, note:text} — sels 기반으로 UI 복원
         setTimeout(()=>{
+          const manualBadgeTests=new Set();
           Object.entries(CHK).forEach(([key,val])=>{
-            if(val.sel===undefined)return;
+            if(!val || (!val.sels && !val.note)) return;
             const parts=key.split('_');
-            const slot=parts[parts.length-1];
+            const slot=parts[parts.length-1]; // 'B' or 'A'
             const itemId=parts.slice(0,-1).join('_');
             const item=Object.values(TEST_CHECKLIST).flat().find(i=>i.id===itemId);
-            if(!item||val.sel>=item.opts.length)return;
-            item.opts.forEach((_,i)=>{const el=document.getElementById(`cp_${itemId}_${slot}_${i}`);if(el)el.className='ci-pill'});
-            const el=document.getElementById(`cp_${itemId}_${slot}_${val.sel}`);
-            if(el)el.className=`ci-pill on-${val.cc||'ok'}`;
-            const ne2=document.getElementById(`cn_${itemId}_${slot}`);if(ne2&&val.note)ne2.value=val.note;
+            if(!item) return;
+            // sels 딕셔너리 복원 (여러 옵션 선택 가능)
+            if(val.sels){
+              Object.entries(val.sels).forEach(([oi,cc])=>{
+                const optIdx=parseInt(oi);
+                if(optIdx>=item.opts.length) return;
+                const el=document.getElementById(`cp_${itemId}_${slot}_${optIdx}`);
+                if(el){
+                  el.className=`ci-pill on-${cc||'ok'}`;
+                  el.dataset.confirmed='1';
+                }
+              });
+              // 수기 검사 배지 업데이트 대상 추적
+              const testId=Object.keys(TEST_CHECKLIST).find(tid=>
+                TEST_CHECKLIST[tid].some(i=>i.id===itemId)
+              );
+              if(testId && Object.keys(val.sels).length>0){
+                const test=TESTS.find(t=>t.id===testId);
+                if(test?.manual) manualBadgeTests.add(testId);
+              }
+            }
+            // 노트 복원
+            const ne2=document.getElementById(`cn_${itemId}_${slot}`);
+            if(ne2 && val.note) ne2.value=val.note;
           });
-        },500);
+          // 수기 검사 배지 업데이트
+          manualBadgeTests.forEach(testId=>{
+            const bd=document.getElementById(`tcb_${testId}_B`);
+            if(bd){bd.textContent='작성됨';bd.className='tc-badge done';}
+            const nd=document.getElementById(`tcn_${testId}_B`);
+            if(nd) nd.classList.add('done');
+          });
+        },600);
       }
     }
     for(const t of TESTS){
