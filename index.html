@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- v1.12.2: 캐시 방지 — Safari가 구버전 HTML 캐시 사용하지 않도록 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>NationalGym — 바디스캔</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1493,14 +1497,62 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.12.1';
-const BUILD_TIME='2026-04-10 06:00';
+const APP_VERSION='v1.12.2';
+const BUILD_TIME='2026-04-10 06:30';
+
+// ═══════════════════════════════════════════
+// AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
+// ═══════════════════════════════════════════
+// 60초마다 서버에서 최신 index.html을 fetch (no-cache) → APP_VERSION 추출 →
+// 현재 로드된 버전과 다르면 상단 배너로 새 버전 알림
+async function checkForUpdate(){
+  try{
+    const res=await fetch(location.pathname+'?_='+Date.now(),{
+      cache:'no-store',
+      headers:{'Cache-Control':'no-cache'}
+    });
+    if(!res.ok) return;
+    const text=await res.text();
+    const m=text.match(/const APP_VERSION='(v[\d.]+)'/);
+    if(!m) return;
+    const latestVer=m[1];
+    if(latestVer!==APP_VERSION){
+      showUpdateBanner(latestVer);
+    }
+  }catch(e){/* 네트워크 오류 무시 */}
+}
+
+function showUpdateBanner(newVer){
+  if(document.getElementById('updateBanner')) return;
+  const b=document.createElement('div');
+  b.id='updateBanner';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#00a878,#059669);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 16px rgba(0,168,120,.4);font-family:inherit;animation:slideDown .35s ease-out';
+  b.innerHTML=`<div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:800;line-height:1.3">🆕 새 버전 사용 가능</div>
+      <div style="font-size:10px;opacity:.85;margin-top:2px">현재 ${APP_VERSION} → 최신 ${newVer}</div>
+    </div>
+    <button id="updateRefresh" style="background:#fff;color:#059669;border:none;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0">새로고침</button>
+    <button id="updateClose" style="background:rgba(255,255,255,.2);color:#fff;border:none;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>`;
+  document.body.appendChild(b);
+  const style=document.createElement('style');
+  style.textContent='@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
+  document.head.appendChild(style);
+  document.getElementById('updateRefresh').onclick=()=>{
+    // 캐시 무시 강제 새로고침
+    location.reload();
+  };
+  document.getElementById('updateClose').onclick=()=>{b.remove()};
+}
 
 // ═══════════════════════════════════════════
 // CHANGELOG — 최근 업데이트 내역 (랜딩 페이지에 표시)
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.12.2', date:'2026-04-10', items:[
+    '캐시 방지 메타 태그 적용 — 새 로드 시 항상 최신 버전',
+    '자동 버전 감지 — 60초마다 서버 확인 → 새 버전 시 상단 배너 알림',
+  ]},
   {ver:'v1.12.1', date:'2026-04-10', items:[
     '랜딩 페이지에 업데이트 노트 섹션 추가',
   ]},
@@ -1747,6 +1799,9 @@ window.addEventListener('load', () => {
   const lsF=document.getElementById('lsFooter');
   if(lsF) lsF.textContent='Powered by WellnessMode';
   renderChangelog();
+  // v1.12.2: 60초마다 새 버전 자동 체크 (앱 시작 5초 후 첫 체크)
+  setTimeout(checkForUpdate,5000);
+  setInterval(checkForUpdate,60000);
   updateRateBadge();
   updateSaveStatusBadge('saved');
   // 이전 세션 감지 → 복원 프롬프트
