@@ -268,7 +268,21 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-btn-primary:active{transform:scale(.97);background:#059669}
 .ls-btn-secondary{background:rgba(255,255,255,.08);color:#d1d5db;border:1px solid rgba(255,255,255,.15);padding:12px;font-size:12px;font-weight:600;border-radius:10px;cursor:pointer;font-family:inherit}
 .ls-btn-secondary:active{background:rgba(255,255,255,.12)}
-.ls-footer{text-align:center;font-size:9px;color:rgba(255,255,255,.3);margin-top:32px;letter-spacing:.05em}
+.ls-changelog{max-width:360px;margin:32px auto 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden}
+.ls-cl-hd{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:#9de8c8;letter-spacing:.04em;cursor:pointer;user-select:none}
+.ls-cl-arrow{font-size:9px;color:rgba(255,255,255,.4);transition:transform .25s}
+.ls-cl-hd.open .ls-cl-arrow{transform:rotate(180deg)}
+.ls-cl-body{display:none;padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.06);max-height:340px;overflow-y:auto}
+.ls-cl-body.open{display:block}
+.ls-cl-entry{padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.ls-cl-entry:last-child{border-bottom:none}
+.ls-cl-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.ls-cl-ver{font-size:11px;font-weight:800;color:#00d48b;font-variant-numeric:tabular-nums}
+.ls-cl-date{font-size:10px;color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums}
+.ls-cl-items{font-size:11px;color:#d1d5db;line-height:1.55;padding-left:6px}
+.ls-cl-items li{list-style:none;position:relative;padding-left:10px;margin-bottom:2px}
+.ls-cl-items li::before{content:'·';position:absolute;left:0;color:#00a878;font-weight:800}
+.ls-footer{text-align:center;font-size:9px;color:rgba(255,255,255,.3);margin-top:18px;letter-spacing:.05em}
 .fs-ctrl label{color:#888;font-size:11px;white-space:nowrap}
 .fs-range{flex:1;min-width:80px;max-width:120px;accent-color:var(--green)}
 .drag-ov{display:none;position:fixed;inset:0;z-index:700;flex-direction:column;background:#000;touch-action:none}
@@ -320,6 +334,14 @@ input[type=range]{accent-color:var(--green)}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       체형분석 시작
     </button>
+  </div>
+  <!-- 업데이트 노트 -->
+  <div id="lsChangelog" class="ls-changelog">
+    <div class="ls-cl-hd" onclick="toggleChangelog()">
+      <span>📋 최근 업데이트</span>
+      <span class="ls-cl-arrow" id="lsClArrow">▼</span>
+    </div>
+    <div class="ls-cl-body" id="lsClBody"></div>
   </div>
   <div class="ls-footer" id="lsFooter"></div>
 </div>
@@ -1471,8 +1493,100 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.12.0';
-const BUILD_TIME='2026-04-10 05:15';
+const APP_VERSION='v1.12.1';
+const BUILD_TIME='2026-04-10 06:00';
+
+// ═══════════════════════════════════════════
+// CHANGELOG — 최근 업데이트 내역 (랜딩 페이지에 표시)
+// ═══════════════════════════════════════════
+// 새 버전 배포 시 맨 위에 항목 추가
+const CHANGELOG = [
+  {ver:'v1.12.1', date:'2026-04-10', items:[
+    '랜딩 페이지에 업데이트 노트 섹션 추가',
+  ]},
+  {ver:'v1.12.0', date:'2026-04-10', items:[
+    '카메라 셔터 → 1.5초 영상 캡처(15프레임)에서 최적 프레임 선택 → 스켈레톤 안정성 대폭 향상',
+    '사진 일괄 저장 → 단일 공유 시트로 사진첩에 한 번에 저장 (iOS Photos 저장 가능)',
+  ]},
+  {ver:'v1.11.0', date:'2026-04-10', items:[
+    'Standing Knee Up 우측(반대쪽) 분리 추가',
+    'AI 체크리스트 가이드 — 수기/CHK_PROMPTS 미정의 검사 네트워크 오류 수정',
+    '스켈레톤 자동 반복 감지 — 최대 8회 시도 후 best 결과 선택',
+    'SLR/Trunk Flexion 촬영 안내 텍스트 보강',
+    'OHS 측면 전경각 — "부족(상체 뒤로)" 옵션 추가',
+  ]},
+  {ver:'v1.10.2', date:'2026-04-10', items:[
+    '"NATIONAL GYM" 띄어쓰기 적용',
+    'Scalene 항목에 "긴장+신경통(저림)" 옵션 통합',
+  ]},
+  {ver:'v1.10.1', date:'2026-04-10', items:[
+    '헤더 버튼 가로 스크롤 처리 (오버플로우 방지)',
+    'Patrick / Hip Extension / Quadriceps / QL — Lt/Rt 별도 항목 분리',
+    'Achilles / Calf 촉진 — Lt/Rt 각각 medial/lateral 분리',
+    '경추 회전 가이드 — 앉은 자세, 머리만 회전 (벤딩 제거)',
+    'Cervical Curve 옵션 — Lt/Rt/일자목 분리',
+  ]},
+  {ver:'v1.10.0', date:'2026-04-09', items:[
+    '종이 양식 완전 일치 — Patrick, Prone(Quad/HipExt/QL), Calf, Neck 검사 추가',
+    '경추 회전 사진 검사(좌/우) 신규 추가',
+    '수기 검사 모드 — 사진 없이 체크리스트만 입력 가능',
+  ]},
+  {ver:'v1.9.0', date:'2026-04-09', items:[
+    '포즈 가이드 SVG 박스 안에 정확히 들어가도록 wrapper div 적용',
+    'NPT → Body Scan 리브랜딩',
+    '랜딩 페이지 단순화 (고객 친화 표현)',
+    '트레이너 리포트 편집 모드 → 검수 후 고객 PDF 전송 플로우',
+    '시작 화면(랜딩 페이지) 도입',
+  ]},
+  {ver:'v1.8.0', date:'2026-04-08', items:[
+    '백업 시스템 5중 방어 (자동 IDB 스냅샷 + 복원 프롬프트 + 수동 백업/복원)',
+    'PDF 생성 [object Event] 오류 수정 (scale 다운 + 명시적 에러 핸들링)',
+    'Sonnet → Haiku 자동 폴백 (백엔드 호환성)',
+    'Compare 단계에서 고객 화면 종료 + 트레이너 전용 리포트 분리',
+  ]},
+  {ver:'v1.7.0', date:'2026-04-09', items:[
+    'AI 자세 분석 수동 트리거 + 검사당 최대 3회 + 이전 결과 ◀▶ 네비',
+    'narrative / Clinical / 종합 리포트 모두 Sonnet 4.5로 업그레이드',
+    '재분석 폭주 방지 — 스켈레톤 재감지 시 AI 호출 분리',
+  ]},
+  {ver:'v1.6.0', date:'2026-04-09', items:[
+    'SLR 각도 공식 버그 수정 (수직 다리가 0°로 잘못 계산되던 문제)',
+    'SLR 임계값 60° → 70° 상향',
+    'Rate limit 헤더 배지 + 리셋 버튼 + 일일 한도 500',
+    'PDF 저장 — 미리 빌드 후 모달 표시 (iOS gesture chain 보존)',
+  ]},
+  {ver:'v1.5.0', date:'2026-04-09', items:[
+    '포즈 가이드 실루엣을 박스 안으로 정확히 배치',
+    'Before/Compare AI 분석 — 테스트별 관련 메트릭만 사용 (엉뚱한 부위 언급 차단)',
+    'Clinical Analysis 분리 — 고객은 "개선 항목"만, 트레이너는 전체 상세 전송',
+    '플랫폼별 PDF 저장 다이얼로그 (iOS/Android/Desktop)',
+  ]},
+  {ver:'v1.4.0', date:'2026-04-08', items:[
+    'Q-angle / 흉추 후만 / ATSI / POTSI 등 임상 지표 추가',
+    '격자 오버레이 토글',
+    '브랜드 PDF 커버 페이지',
+  ]},
+  {ver:'v1.3.0', date:'2026-04-08', items:[
+    'POTSI 몸통 대칭 지수 (측만 스크리닝)',
+    '얼굴 자동 블러 (프라이버시)',
+    '7개 패턴 × 21 운동 교정 라이브러리',
+  ]},
+  {ver:'v1.2.0', date:'2026-04-08', items:[
+    'CVA(두개척추각) · Head tilt · Plumb 편차 측정',
+    '멀티 세션 히스토리 + 트렌드 차트',
+  ]},
+  {ver:'v1.1.0', date:'2026-04-08', items:[
+    'Plumb line · 수평 기준선 · 각도 라벨 사진 위 직접 표시',
+    '0~100 종합 자세 점수 + 5단계 색상',
+    '키(cm) 기반 px → mm 자동 calibration',
+    'Device level (기기 수평) 인디케이터',
+  ]},
+  {ver:'v1.0.0', date:'2026-04-08', items:[
+    'NationalGym 전용 체형분석 시스템 첫 정식 배포',
+    '12개 전문 검사 + Before/After 비교',
+    'AI 자세 분석 + 종합 리포트 + 카톡 공유',
+  ]},
+];
 
 // ═══════════════════════════════════════════
 // ACROMION EXTRAPOLATION
@@ -1581,6 +1695,23 @@ let poseEng=null,poseOk=false;
 // INIT
 // ═══════════════════════════════════════════
 // 랜딩 화면에서 시작 버튼 클릭 시 호출
+// 랜딩 페이지의 업데이트 노트 렌더링
+function renderChangelog(){
+  const body=document.getElementById('lsClBody');
+  if(!body || typeof CHANGELOG==='undefined') return;
+  body.innerHTML=CHANGELOG.map(c=>`<div class="ls-cl-entry">
+    <div class="ls-cl-meta"><span class="ls-cl-ver">${c.ver}</span><span class="ls-cl-date">${c.date}</span></div>
+    <ul class="ls-cl-items">${c.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+  </div>`).join('');
+}
+function toggleChangelog(){
+  const hd=document.querySelector('#lsChangelog .ls-cl-hd');
+  const bd=document.getElementById('lsClBody');
+  if(!hd||!bd) return;
+  hd.classList.toggle('open');
+  bd.classList.toggle('open');
+}
+
 function startAnalysis(){
   const ls=document.getElementById('landingScreen');
   if(ls) ls.classList.add('hidden');
@@ -1615,6 +1746,7 @@ window.addEventListener('load', () => {
   if(bb) bb.textContent=APP_VERSION+' · '+BUILD_TIME;
   const lsF=document.getElementById('lsFooter');
   if(lsF) lsF.textContent='Powered by WellnessMode';
+  renderChangelog();
   updateRateBadge();
   updateSaveStatusBadge('saved');
   // 이전 세션 감지 → 복원 프롬프트
