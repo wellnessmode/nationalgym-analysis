@@ -105,6 +105,16 @@ canvas.pc{display:block;width:100%;height:auto}
 .oc-head h4{font-size:13px;font-weight:700}
 .oc-canvas-wrap{position:relative;background:#0a0a0a;overflow:hidden}
 canvas.main-oc{display:block;width:100%;height:auto}
+.oc-view-toggle{display:flex;background:var(--bg3);border-radius:8px;padding:2px;gap:0;margin-left:auto}
+.oc-vt-btn{padding:5px 11px;border-radius:6px;border:none;background:transparent;color:var(--tx3);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.oc-vt-btn.on{background:#fff;color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.oc-sxs{display:none;grid-template-columns:1fr 1fr;gap:4px;background:#0a0a0a}
+.oc-sxs.show{display:grid}
+.oc-sxs-col{position:relative;background:#0a0a0a;overflow:hidden}
+.oc-sxs-col canvas{display:block;width:100%;height:auto}
+.oc-sxs-lbl{position:absolute;top:6px;left:6px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;color:#fff;letter-spacing:.05em}
+.oc-sxs-lbl.B{background:rgba(190,20,20,.85)}
+.oc-sxs-lbl.A{background:rgba(15,70,200,.85)}
 .oc-legend{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);border-radius:8px;padding:5px 10px;display:flex;gap:10px;pointer-events:none}
 .leg-item{font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px}
 .leg-dot{width:8px;height:8px;border-radius:50%}
@@ -118,20 +128,35 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cb-hd{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .cb-hd::before{content:'';width:3px;height:12px;background:var(--green);border-radius:2px;flex-shrink:0}
 .ai-loading{display:flex;align-items:center;gap:10px;padding:12px 0;color:var(--tx3);font-size:13px}
-.fr-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd)}
-.fr-row:last-child{border-bottom:none}
-.fr-main{flex:1}
-.fr-name{font-size:13px;font-weight:700}
-.fr-norm{font-size:11px;color:var(--tx3);margin-top:2px}
+.fr-grid{display:grid;grid-template-columns:1.5fr 56px 56px 54px;gap:6px;align-items:center}
+.fr-head{display:contents}
+.fr-head>div{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;padding:6px 0 6px;border-bottom:1.5px solid var(--brd2)}
+.fr-head .fh-b{color:#991b1b;text-align:center}
+.fr-head .fh-a{color:#1e40af;text-align:center}
+.fr-head .fh-d{color:var(--tx3);text-align:center}
+.fr-group-hd{grid-column:1/-1;font-size:10px;font-weight:800;color:var(--tx3);letter-spacing:.08em;text-transform:uppercase;margin-top:10px;padding:5px 0 4px;border-bottom:1px dashed var(--brd)}
+.fr-group-hd:first-of-type{margin-top:0}
+.fr-row{display:contents}
+.fr-row>div{padding:7px 0;border-bottom:1px solid var(--brd)}
+.fr-row:last-of-type>div{border-bottom:none}
+.fr-main{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.fr-name{font-size:12.5px;font-weight:700}
+.fr-info{display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--bg3);color:var(--tx3);font-size:10px;font-weight:700;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;font-family:inherit}
+.fr-info:active{background:#dbeafe;color:var(--blue)}
+.fr-info.on{background:#dbeafe;color:var(--blue)}
+.fr-norm{flex-basis:100%;font-size:10.5px;color:var(--tx3)}
 .fr-norm.ab{color:var(--red);font-weight:700}
-.fr-vals{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-left:auto}
-.fv{font-size:12px;padding:4px 9px;border-radius:8px;font-weight:600;white-space:nowrap}
+.fr-desc{grid-column:1/-1;background:#f0f7ff;border:1px solid #c7ddf7;border-radius:6px;padding:7px 10px;margin:2px 0 4px;font-size:11px;color:#1a3a5c;line-height:1.5}
+.fr-desc.hidden{display:none}
+.fv{font-size:11.5px;padding:4px 0;border-radius:8px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fv.B{background:#fde8e8;color:#991b1b}
 .fv.A{background:#e0edfd;color:#1e40af}
-.fv.ok{background:var(--g3);color:var(--g2)}
-.fv.bad{background:var(--r3);color:var(--red)}
-.fv.same{background:var(--bg3);color:var(--tx3)}
-.fv.abnorm{background:var(--r3);color:var(--red);font-weight:700}
+.fv.ok{background:var(--g3);color:var(--g2);font-size:10.5px}
+.fv.bad{background:var(--r3);color:var(--red);font-size:10.5px}
+.fv.same{background:var(--bg3);color:var(--tx3);font-size:10.5px}
+.fv.abnorm{background:var(--r3);color:var(--red);font-weight:800}
+.fr-tilt-note{margin-top:12px;padding:8px 11px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:11px;color:#78350f;line-height:1.5}
+.fr-tilt-note b{color:#92400e}
 .ai-box{background:#f0f7ff;border:1px solid #93c5fd;border-radius:var(--r);padding:13px 14px;margin-top:10px}
 .ai-box-title{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
 .ai-line{font-size:12px;color:#1a3a5c;margin-bottom:5px;line-height:1.55;display:flex;gap:6px}
@@ -1517,7 +1542,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.14.1';
+const APP_VERSION='v1.15.0';
 const BUILD_TIME='2026-04-11 08:00';
 
 // ═══════════════════════════════════════════
@@ -1569,6 +1594,14 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.15.0', date:'2026-04-25', items:[
+    '🧪 트레이너 피드백 반영 — Before/After 결과지 가독성 + 좌우 비교 + 측정선 안정화',
+    'Compare 카드에 "오버랩 / 좌우" 뷰 토글 추가 — 좌우 나란히 보기 지원',
+    '결과지 측정값 표 — Before/After 컬럼 헤더 + 그룹별 분류(어깨·골반·체간·하지·플럼라인·종합) + 그리드 정렬',
+    '측정 항목별 ⓘ 버튼 — 클릭 시 간단한 임상 설명 펼침',
+    '측정선 기능 수정 — 첫 탭 시 시각 피드백(파란 점·"1") + lines localStorage 저장 누락 수정',
+    '카메라 기울기 정확도 안내 메시지 — 결과 표 하단에 노란 주의 박스',
+  ]},
   {ver:'v1.14.1', date:'2026-04-11', items:[
     '트레이너별 세션 분리 — 본인 세션만 보임 (R2 폴더 구조)',
     '관리자 모드 — 관리자 비밀번호로 전체 트레이너 세션 열람 가능',
@@ -3950,6 +3983,9 @@ function redrawSlot(tid,slot){
     c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
     c.font=`bold ${Math.max(12,W*.016)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
   });
+  // v1.15: 좌우 뷰 자동 동기화 (트레이너 피드백 #1)
+  const sxs=document.getElementById('sxs_'+tid);
+  if(sxs&&sxs.classList.contains('show')) renderSxs(tid);
 }
 
 // ═══════════════════════════════════════════
@@ -3964,8 +4000,12 @@ function rebuildCompare(){
     h+=`<div class="overlap-card" id="ocard_${t.id}">
       <div class="oc-head">
         <div class="tc-num done">${t.n}</div>
-        <div class="tc-info"><h4>${t.title}</h4><p>오버랩 비교 · 마커 분석</p></div>
-        <button class="abtn" style="font-size:11px;padding:5px 11px;margin-left:auto" onclick="openFS('${t.id}')">전체화면</button>
+        <div class="tc-info"><h4>${t.title}</h4><p>오버랩 / 좌우 비교</p></div>
+        <div class="oc-view-toggle" role="tablist">
+          <button class="oc-vt-btn on" id="vt_${t.id}_ovl" onclick="setOcView('${t.id}','ovl')">오버랩</button>
+          <button class="oc-vt-btn" id="vt_${t.id}_sxs" onclick="setOcView('${t.id}','sxs')">좌우</button>
+        </div>
+        <button class="abtn" style="font-size:11px;padding:5px 11px" onclick="openFS('${t.id}')">전체화면</button>
       </div>
       <div class="oc-canvas-wrap" id="ocwrap_${t.id}">
         <canvas class="main-oc" id="oc_${t.id}"></canvas>
@@ -3973,6 +4013,10 @@ function rebuildCompare(){
           <div class="leg-item"><div class="leg-dot" style="background:#ff8080"></div><span style="color:#ffaaaa;font-size:10px">Before</span></div>
           <div class="leg-item"><div class="leg-dot" style="background:#8080ff"></div><span style="color:#aaaaff;font-size:10px">After</span></div>
         </div>
+      </div>
+      <div class="oc-sxs" id="sxs_${t.id}">
+        <div class="oc-sxs-col"><canvas id="sxsB_${t.id}"></canvas><div class="oc-sxs-lbl B">BEFORE</div></div>
+        <div class="oc-sxs-col"><canvas id="sxsA_${t.id}"></canvas><div class="oc-sxs-lbl A">AFTER</div></div>
       </div>
       <div class="oc-actions">
         <button class="abtn primary" id="aiSyncBtn_${t.id}" onclick="aiSyncImages('${t.id}')">
@@ -4170,6 +4214,15 @@ function redrawOL(tid){
     c.font=`bold ${Math.max(14,W*.02)}px -apple-system,sans-serif`;c.textAlign='center';
     c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-9);c.fillStyle='#0f46c8';c.fillText(dist+'px',mx,my-9);
   });
+  // v1.15: 측정선 첫 탭 시각 피드백 — 시작점에 점멸 마크 (트레이너 피드백 #3)
+  if(activeMode==='meas' && activeModeTest===tid && msStart && msStart.tid===tid){
+    const r=Math.max(8,W*.012);
+    c.beginPath();c.arc(msStart.x,msStart.y,r,0,Math.PI*2);
+    c.fillStyle='rgba(15,70,200,.85)';c.fill();
+    c.strokeStyle='#fff';c.lineWidth=3;c.stroke();
+    c.font=`bold ${Math.max(11,W*.014)}px -apple-system,sans-serif`;c.textAlign='center';c.textBaseline='middle';
+    c.fillStyle='#fff';c.fillText('1',msStart.x,msStart.y);c.textBaseline='alphabetic';
+  }
 }
 
 async function aiSyncImages(tid){
@@ -4556,6 +4609,36 @@ function applyDrag(){
   toast('위치 조정 완료');
 }
 
+// v1.15: 오버랩 / 좌우 비교 뷰 토글 (트레이너 피드백 #1)
+function setOcView(tid,mode){
+  const ovl=document.getElementById('ocwrap_'+tid);
+  const sxs=document.getElementById('sxs_'+tid);
+  const btnO=document.getElementById('vt_'+tid+'_ovl');
+  const btnS=document.getElementById('vt_'+tid+'_sxs');
+  if(!ovl||!sxs)return;
+  if(mode==='sxs'){
+    ovl.style.display='none';
+    sxs.classList.add('show');
+    btnO?.classList.remove('on');
+    btnS?.classList.add('on');
+    renderSxs(tid);
+  }else{
+    ovl.style.display='';
+    sxs.classList.remove('show');
+    btnO?.classList.add('on');
+    btnS?.classList.remove('on');
+  }
+}
+function renderSxs(tid){
+  ['B','A'].forEach(slot=>{
+    const s=SHOTS[tid]?.[slot];
+    const dst=document.getElementById('sxs'+slot+'_'+tid);
+    if(!s?.canvas||!dst)return;
+    dst.width=s.canvas.width;dst.height=s.canvas.height;
+    dst.getContext('2d').drawImage(s.canvas,0,0);
+  });
+}
+
 // ─ MODE & CLICK on OL canvas ─
 function setMode(m,tid){
   activeMode=m;activeModeTest=tid;msStart=null;gsStart=null;
@@ -4580,13 +4663,22 @@ function handleOLClick(ev,tid){
   const pos={x:(cx-r.left)*aS.canvas.width/r.width,y:(cy-r.top)*aS.canvas.height/r.height};
   if(activeMode==='eras'){
     const mi=aS.markers.findIndex(m=>Math.hypot(m.x-pos.x,m.y-pos.y)<22);
-    if(mi>=0){aS.markers.splice(mi,1);redrawSlot(tid,'A');redrawOL(tid);saveMarkers(tid,'A');return}
-    const li=aS.lines.findIndex(l=>ptSeg(pos,l)<16);if(li>=0){aS.lines.splice(li,1);redrawSlot(tid,'A');redrawOL(tid);return}
+    if(mi>=0){aS.markers.splice(mi,1);redrawSlot(tid,'A');redrawOL(tid);saveMarkers(tid,'A');toast('마커 삭제');return}
+    const li=aS.lines.findIndex(l=>ptSeg(pos,l)<16);if(li>=0){aS.lines.splice(li,1);redrawSlot(tid,'A');redrawOL(tid);saveMarkers(tid,'A');toast('측정선 삭제');return}
     return;
   }
   if(activeMode==='meas'){
-    if(!msStart)msStart={...pos,tid};
-    else if(msStart.tid===tid){aS.lines.push({x1:msStart.x,y1:msStart.y,x2:pos.x,y2:pos.y});msStart=null;redrawSlot(tid,'A');redrawOL(tid)}
+    // v1.15: 첫 탭 시각 피드백 + lines persistence (트레이너 피드백 #3)
+    if(!msStart){
+      msStart={x:pos.x,y:pos.y,tid};
+      redrawSlot(tid,'A');redrawOL(tid);
+      const hint=document.getElementById('modeHint_'+tid);if(hint)hint.textContent='시작점 ✓ — 끝점을 한 번 더 탭하세요';
+    }else if(msStart.tid===tid){
+      aS.lines.push({x1:msStart.x,y1:msStart.y,x2:pos.x,y2:pos.y});
+      msStart=null;
+      redrawSlot(tid,'A');redrawOL(tid);saveMarkers(tid,'A');
+      const hint=document.getElementById('modeHint_'+tid);if(hint)hint.textContent='시작점 → 끝점 클릭으로 측정선';
+    }
     return;
   }
   if(activeMode==='mark'){
@@ -5237,6 +5329,48 @@ function navClinical(tid,dir){
   renderClinicalBox(tid);
 }
 
+// v1.15: 항목별 간단 설명 — ⓘ 버튼 클릭 시 펼쳐짐 (트레이너 피드백 #5)
+const METRIC_DESC={
+  shoulderTilt:'양쪽 어깨를 잇는 직선이 수평선 대비 기울어진 각도. 한쪽 어깨가 올라갈수록 값이 커집니다.',
+  shoulderHDiff:'좌우 어깨의 픽셀 단위 높이 차이. 사진 해상도/거리에 따라 절댓값보다 변화 추세가 중요합니다.',
+  hipTilt:'양쪽 골반(ASIS·전상장골극)을 잇는 직선의 수평 대비 각도.',
+  hipHDiff:'좌우 골반의 픽셀 단위 높이 차이.',
+  headOffset:'머리 중심이 어깨선 대비 앞으로 나간 정도(전방 머리 자세, FHP).',
+  headTilt:'눈/귀선 기준 좌우 기울기. 사경(torticollis) 평가에 사용됩니다.',
+  cva:'귀-목 연결선과 수평선 사이 각도(Craniovertebral Angle). 50° 이상이 정상.',
+  spineAngle:'어깨 중점-골반 중점-수직선 사이의 몸통 기울기 각도.',
+  shoulderHipAlign:'어깨 중점과 골반 중점의 수평 편차(키 대비 %).',
+  kneeAlign:'OHS 시 무릎 폭 대비 골반 폭 비율(%). 100%면 무릎이 골반과 같은 폭.',
+  slrAngle:'SLR(다리 들기) 동작 시 다리와 바닥 사이 각도. 햄스트링 유연성 지표.',
+  trunkFlex:'전굴 자세에서 척추가 수직 대비 얼마나 굽혀졌는지 각도. 70° 이상이면 양호.',
+  devEar:'발목 기준 수직 플럼라인에서 귀가 좌우(앞/뒤)로 벗어난 거리.',
+  devShoulder:'발목 플럼라인에서 어깨가 벗어난 거리.',
+  devHip:'발목 플럼라인에서 대전자(고관절)가 벗어난 거리.',
+  devKnee:'발목 플럼라인에서 무릎이 벗어난 거리.',
+  potsi:'몸통 후면의 좌우 비대칭을 종합한 측만 지수(Suzuki POTSI). 27 이하 정상.',
+  atsi:'몸통 전면의 좌우 비대칭 지수. 27 이하 정상.',
+  qAngleL:'대전자-슬개골 중심-경골조면을 이은 각도(좌). 슬관절 정렬 지표.',
+  qAngleR:'대전자-슬개골 중심-경골조면을 이은 각도(우).',
+  thoracicKyphosis:'흉추 상부 전방 경사 각도. 굽은 등(round shoulder) 지표.',
+};
+
+// v1.15: 측정 항목 그룹 — 결과지 가독성 향상 (트레이너 피드백 #7)
+const METRIC_GROUPS=[
+  {label:'어깨 / 머리', keys:['shoulderTilt','shoulderHDiff','headTilt','headOffset','cva','thoracicKyphosis']},
+  {label:'골반', keys:['hipTilt','hipHDiff']},
+  {label:'체간', keys:['spineAngle','shoulderHipAlign','trunkFlex']},
+  {label:'무릎 / 하지', keys:['kneeAlign','slrAngle','qAngleL','qAngleR']},
+  {label:'플럼라인 편차', keys:['devEar','devShoulder','devHip','devKnee']},
+  {label:'종합 대칭 지수', keys:['potsi','atsi']},
+];
+
+function toggleMetricDesc(id){
+  const el=document.getElementById(id);if(!el)return;
+  const btn=document.getElementById(id+'_btn');
+  const isHidden=el.classList.toggle('hidden');
+  if(btn)btn.classList.toggle('on',!isHidden);
+}
+
 function buildMetricsHTML(tid,bm,am){
   const relevant={
     ant:['shoulderTilt','shoulderHDiff','headTilt','hipTilt','hipHDiff','headOffset','shoulderHipAlign','kneeAlign','atsi','qAngleL','qAngleR'],
@@ -5249,31 +5383,57 @@ function buildMetricsHTML(tid,bm,am){
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
     neck_l:['headTilt'],neck_r:['headTilt'],
   };
-  const keys=relevant[tid]||Object.keys(NORMS);
+  const allowed=relevant[tid]||Object.keys(NORMS);
   const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선',potsi:'POTSI 몸통 대칭 지수',atsi:'ATSI 전면 대칭 지수',qAngleL:'Q-angle (좌)',qAngleR:'Q-angle (우)',thoracicKyphosis:'흉추 전경사'};
-  let rows='';
-  keys.forEach(k=>{
-    const bv=bm[k],av=am[k];if(bv===undefined&&av===undefined)return;
-    const n=NORMS[k];
-    const prec=n?.unit==='°'?1:n?.unit==='%'?1:0;
-    const bStr=bv!==undefined?bv.toFixed(prec)+(n?.unit||''):'—';
-    const aStr=av!==undefined?av.toFixed(prec)+(n?.unit||''):'—';
-    const bAb=n&&(n.max!==undefined&&bv>n.max||(n.min!==undefined&&bv<n.min));
-    const aAb=n&&(n.max!==undefined&&av>n.max||(n.min!==undefined&&av<n.min));
-    const delta=bv!==undefined&&av!==undefined?av-bv:null;
-    const hb=n?.min!==undefined&&n?.max===undefined;
-    const better=delta!==null&&(hb?delta>=1:delta<=-1);
-    const worse=delta!==null&&(hb?delta<=-1:delta>=1);
-    rows+=`<div class="fr-row">
-      <div class="fr-main"><div class="fr-name">${labels[k]||k}</div>${n?`<div class="fr-norm${bAb?' ab':''}">${n.lbl}</div>`:''}</div>
-      <div class="fr-vals">
-        <span class="fv B${bAb?' abnorm':''}">${bStr}</span>
-        <span class="fv A${aAb?' abnorm':''}">${aStr}</span>
-        ${delta!==null?`<span class="fv ${better?'ok':worse?'bad':'same'}">${delta>0?'+':''}${delta.toFixed(prec)}${n?.unit||''}</span>`:''}
-      </div>
-    </div>`;
+
+  // 측정값이 있고 + 이 검사에 해당되는 키만 통과
+  const has=k=>(bm[k]!==undefined||am[k]!==undefined)&&allowed.includes(k);
+
+  let body='';
+  body+=`<div class="fr-head"><div>측정 항목</div><div class="fh-b">Before</div><div class="fh-a">After</div><div class="fh-d">Δ 변화</div></div>`;
+
+  let anyRow=false;
+  METRIC_GROUPS.forEach(g=>{
+    const groupKeys=g.keys.filter(has);
+    if(!groupKeys.length)return;
+    body+=`<div class="fr-group-hd">${g.label}</div>`;
+    groupKeys.forEach(k=>{
+      anyRow=true;
+      const bv=bm[k],av=am[k];
+      const n=NORMS[k];
+      const prec=n?.unit==='°'?1:n?.unit==='%'?1:0;
+      const bStr=bv!==undefined?bv.toFixed(prec)+(n?.unit||''):'—';
+      const aStr=av!==undefined?av.toFixed(prec)+(n?.unit||''):'—';
+      const bAb=n&&((n.max!==undefined&&bv!==undefined&&(n.signed?Math.abs(bv):bv)>n.max)||(n.min!==undefined&&bv!==undefined&&bv<n.min));
+      const aAb=n&&((n.max!==undefined&&av!==undefined&&(n.signed?Math.abs(av):av)>n.max)||(n.min!==undefined&&av!==undefined&&av<n.min));
+      const delta=bv!==undefined&&av!==undefined?av-bv:null;
+      const hb=n?.min!==undefined&&n?.max===undefined;
+      const better=delta!==null&&(hb?delta>=1:delta<=-1);
+      const worse=delta!==null&&(hb?delta<=-1:delta>=1);
+      const descId=`mdesc_${tid}_${k}`;
+      const desc=METRIC_DESC[k];
+      body+=`<div class="fr-row">
+        <div class="fr-main">
+          <div class="fr-name">${labels[k]||k}</div>
+          ${desc?`<button class="fr-info" id="${descId}_btn" onclick="toggleMetricDesc('${descId}')" aria-label="설명">?</button>`:''}
+          ${n?`<div class="fr-norm${bAb?' ab':''}">${n.lbl}</div>`:''}
+        </div>
+        <div class="fv B${bAb?' abnorm':''}">${bStr}</div>
+        <div class="fv A${aAb?' abnorm':''}">${aStr}</div>
+        <div class="fv ${delta!==null?(better?'ok':worse?'bad':'same'):'same'}">${delta!==null?(delta>0?'+':'')+delta.toFixed(prec)+(n?.unit||''):'—'}</div>
+        ${desc?`<div class="fr-desc hidden" id="${descId}">${desc}</div>`:''}
+      </div>`;
+    });
   });
-  return rows+`<div class="ai-box" id="aiClin_${tid}"><div class="ai-loading"><div class="spin"></div><span>AI 분석 생성 중...</span></div></div>`;
+
+  if(!anyRow){
+    return `<div style="text-align:center;padding:20px 12px;color:var(--tx3);font-size:12px">측정값이 산출되지 않았습니다.</div>`;
+  }
+
+  // v1.15: 카메라 기울기 안내 (트레이너 피드백 #6)
+  const tiltNote=`<div class="fr-tilt-note"><b>📐 정확도 안내</b> · 같은 자세라도 카메라 기울기·거리·렌즈 왜곡이 수치에 영향을 줍니다. Before/After는 가능한 동일 위치·삼각대·휴대폰 수평계(Device level)로 촬영하세요.</div>`;
+
+  return `<div class="fr-grid">${body}</div>${tiltNote}<div class="ai-box" id="aiClin_${tid}"><div class="ai-loading"><div class="spin"></div><span>AI 분석 생성 중...</span></div></div>`;
 }
 
 // ═══════════════════════════════════════════
