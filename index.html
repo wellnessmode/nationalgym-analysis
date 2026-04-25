@@ -68,6 +68,10 @@ button,input,select,textarea{font-family:inherit}
 .photo-retake{position:absolute;bottom:8px;right:8px;z-index:20;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px)}
 .photo-retake:active{background:rgba(0,0,0,.85)}
 canvas.pc{display:block;width:100%;height:auto}
+canvas.pc.pose-edit{outline:3px dashed #f59e0b;outline-offset:-3px;cursor:grab;touch-action:none}
+canvas.pc.pose-edit:active{cursor:grabbing}
+.pose-edit-btn{position:absolute;right:185px;background:rgba(245,158,11,.9)!important}
+.pose-edit-btn.on{background:rgba(217,119,6,1)!important;box-shadow:0 0 0 2px rgba(245,158,11,.4)}
 .photo-add{display:flex;flex-direction:column;gap:8px;padding:16px;width:100%;max-width:300px}
 .pa-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:var(--r);border:1px solid var(--brd);background:#fff;font-size:13px;color:var(--tx2);transition:all .15s;width:100%;cursor:pointer}
 .pa-btn:active{background:var(--bg3)}
@@ -1542,7 +1546,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.15.0';
+const APP_VERSION='v1.15.1';
 const BUILD_TIME='2026-04-11 08:00';
 
 // ═══════════════════════════════════════════
@@ -1594,6 +1598,13 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.15.1', date:'2026-04-25', items:[
+    '🦴 스켈레톤 포인트 직접 수정 — 잘못 잡힌 관절을 손가락/마우스로 드래그해 정확한 위치로 이동 (트레이너 피드백 #2)',
+    '슬롯 사진 우상단 "스켈레톤 편집" 버튼 — 켜면 13개 주요 점이 주황색 큰 핸들로 표시',
+    '편집 위치는 자동 저장 — 새로고침/세션 복원 후에도 유지',
+    '"스켈레톤 재분석" 누르면 편집 내용 폐기 후 AI 재감지',
+    '드래그 종료 시 측정값 자동 재계산 + 좌우/오버랩 뷰 즉시 갱신',
+  ]},
   {ver:'v1.15.0', date:'2026-04-25', items:[
     '🧪 트레이너 피드백 반영 — Before/After 결과지 가독성 + 좌우 비교 + 측정선 안정화',
     'Compare 카드에 "오버랩 / 좌우" 뷰 토글 추가 — 좌우 나란히 보기 지원',
@@ -1829,6 +1840,9 @@ function renderMD(md){
 let activeMode = null;
 let activeModeTest = null;
 let msStart=null,gsStart=null;
+// v1.15.1: 스켈레톤 포인트 드래그 편집 (트레이너 피드백 #2)
+let editPose=null; // {tid, slot} when editing; null otherwise
+let dragLm=null;   // {idx} during active drag
 let camTid=null,camSlot=null,camStream=null;
 let pendUp=null;
 let fsTestId=null;
@@ -2748,6 +2762,15 @@ async function loadImg(tid,slot,src,skipSave){
     raBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> 스켈레톤 재분석';
     if(poseR?.landmarks){
       _s.pose=poseR.landmarks;
+      // v1.15.1: 재분석 = 사용자 편집 폐기
+      _s.poseEdited=false;
+      try{localStorage.removeItem(`${LS}_pose_${_tid}_${_slot}`)}catch(e){}
+      // 편집 모드가 켜져 있었다면 종료
+      if(editPose&&editPose.tid===_tid&&editPose.slot===_slot){
+        editPose=null;
+        _s.canvas.classList.remove('pose-edit');
+        const peb=document.getElementById(`pe_${_tid}_${_slot}`);if(peb)peb.classList.remove('on');
+      }
       if(poseR.segMask){const mc2=document.createElement('canvas');mc2.width=_s.canvas.width;mc2.height=_s.canvas.height;mc2.getContext('2d').drawImage(poseR.segMask,0,0,mc2.width,mc2.height);_s.segMask=mc2;}
       redrawSlot(_tid,_slot); saveMarkers(_tid,_slot);
       // v1.7: 스켈레톤 재분석은 스켈레톤 좌표만 갱신. AI 호출은 "AI 자세 분석하기" 버튼을 눌러야 실행됨.
@@ -2759,6 +2782,13 @@ async function loadImg(tid,slot,src,skipSave){
     }
   };
   zone.appendChild(raBtn);
+  // ─ Skeleton point-drag edit button (v1.15.1, 트레이너 피드백 #2) ─
+  const peBtn=document.createElement('button');
+  peBtn.className='photo-retake pose-edit-btn';
+  peBtn.id=`pe_${_tid}_${_slot}`;
+  peBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="2"/><circle cx="6" cy="14" r="2"/><circle cx="18" cy="14" r="2"/><circle cx="9" cy="20" r="1.5"/><circle cx="15" cy="20" r="1.5"/><path d="M12 8v4M9 13l-2 1M15 13l2 1M7 16l1 4M17 16l-1 4"/></svg> 스켈레톤 편집';
+  peBtn.onclick=ev=>{ev.stopPropagation();togglePoseEdit(_tid,_slot)};
+  zone.appendChild(peBtn);
   const img=new Image();
   img.onload=async()=>{
     // ─ Safari/iOS 메모리 보호: 긴변 1600px로 리사이즈 ─
@@ -2781,6 +2811,9 @@ async function loadImg(tid,slot,src,skipSave){
     if(!saved.markers)saved.markers=[];
     if(!saved.lines)saved.lines=[];
     if(!saved.guides)saved.guides=[];
+    // v1.15.1: 저장된 편집 pose 복원 + 드래그 핸들러 부착 (트레이너 피드백 #2)
+    restorePose(tid,slot);
+    attachPoseDrag(canvas,tid,slot);
     redrawSlot(tid,slot);
     // no click handler for auto-markers - removed
     updateSlotBadge(tid,slot);
@@ -2792,7 +2825,8 @@ async function loadImg(tid,slot,src,skipSave){
     }
     if(!skipSave)saveImg(tid,slot,src);
     updateCompareCta();
-    if(poseOk){
+    // v1.15.1: 사용자가 수동 편집한 pose가 복원되어 있으면 자동 재감지 건너뛰기
+    if(poseOk && !SHOTS[tid][slot].poseEdited){
       const loader=document.createElement('div');loader.className='pload';
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
@@ -3964,8 +3998,18 @@ function redrawSlot(tid,slot){
     drawClinicalReferences(c,lm,W,H,tid,slot);
     const lw2=Math.max(3,W*.005);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);
     CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
-    const pr=Math.max(7,W*.009);
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=ptCol;c.fill();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;c.stroke()});
+    // v1.15.1: 편집 모드일 때 점을 더 크게 + 호 표시
+    const isEditing=editPose&&editPose.tid===tid&&editPose.slot===slot;
+    const pr=isEditing?Math.max(14,W*.018):Math.max(7,W*.009);
+    KEY.forEach(i=>{
+      const pt=lm[i];if(!pt||pt.visibility<.4)return;
+      const x=pt.x*W,y=pt.y*H;
+      if(isEditing){
+        c.beginPath();c.arc(x,y,pr+5,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.95)';c.lineWidth=3;c.setLineDash([4,3]);c.stroke();c.setLineDash([]);
+      }
+      c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=isEditing?'rgba(245,158,11,.9)':ptCol;c.fill();
+      c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=isEditing?2.5:2;c.stroke();
+    });
   }
   s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(170,110,0,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,6,0,Math.PI*2);c.fillStyle='rgba(190,120,0,.9)';c.fill()})});
   s.lines.forEach(l=>{
@@ -4607,6 +4651,96 @@ function applyDrag(){
   wrap.removeEventListener('pointerup',onDragUp);
   redrawOL(dragTid2);
   toast('위치 조정 완료');
+}
+
+// v1.15.1: 스켈레톤 포인트 드래그 편집 (트레이너 피드백 #2)
+function togglePoseEdit(tid,slot){
+  const wasActive=editPose&&editPose.tid===tid&&editPose.slot===slot;
+  // 다른 슬롯이 편집 중이면 그 슬롯 먼저 정리
+  if(editPose&&!wasActive){
+    const prev=editPose;editPose=null;
+    const c0=SHOTS[prev.tid]?.[prev.slot]?.canvas;if(c0)c0.classList.remove('pose-edit');
+    const b0=document.getElementById(`pe_${prev.tid}_${prev.slot}`);if(b0)b0.classList.remove('on');
+    redrawSlot(prev.tid,prev.slot);
+  }
+  const s=SHOTS[tid]?.[slot];
+  if(!s?.canvas){toast('사진을 먼저 업로드하세요');return}
+  if(!s.pose){toast('스켈레톤이 감지되지 않았습니다 — "스켈레톤 재분석" 먼저 실행');return}
+  editPose=wasActive?null:{tid,slot};
+  s.canvas.classList.toggle('pose-edit',!wasActive);
+  const btn=document.getElementById(`pe_${tid}_${slot}`);if(btn)btn.classList.toggle('on',!wasActive);
+  redrawSlot(tid,slot);
+  toast(wasActive?'편집 종료':'점을 드래그해서 위치를 수정하세요');
+}
+
+function attachPoseDrag(canvas,tid,slot){
+  if(canvas._poseDragAttached)return;
+  canvas._poseDragAttached=true;
+  const getPos=ev=>{
+    const r=canvas.getBoundingClientRect();
+    return{x:(ev.clientX-r.left)*canvas.width/r.width,y:(ev.clientY-r.top)*canvas.height/r.height};
+  };
+  canvas.addEventListener('pointerdown',ev=>{
+    if(!editPose||editPose.tid!==tid||editPose.slot!==slot)return;
+    const s=SHOTS[tid]?.[slot];if(!s?.pose)return;
+    const pos=getPos(ev);
+    let bestIdx=-1,bestDist=Infinity;
+    KEY.forEach(i=>{
+      const lm=s.pose[i];if(!lm)return;
+      const px=lm.x*canvas.width,py=lm.y*canvas.height;
+      const d=Math.hypot(px-pos.x,py-pos.y);
+      if(d<bestDist){bestDist=d;bestIdx=i}
+    });
+    const tol=Math.max(40,canvas.width*0.05);
+    if(bestIdx>=0&&bestDist<=tol){
+      dragLm={idx:bestIdx};
+      try{canvas.setPointerCapture(ev.pointerId)}catch(e){}
+      ev.preventDefault();
+    }
+  });
+  canvas.addEventListener('pointermove',ev=>{
+    if(!dragLm||!editPose||editPose.tid!==tid||editPose.slot!==slot)return;
+    const s=SHOTS[tid]?.[slot];if(!s?.pose)return;
+    const pos=getPos(ev);
+    const lm=s.pose[dragLm.idx];if(!lm)return;
+    lm.x=Math.max(0,Math.min(1,pos.x/canvas.width));
+    lm.y=Math.max(0,Math.min(1,pos.y/canvas.height));
+    lm.visibility=Math.max(lm.visibility||0,0.9);
+    redrawSlot(tid,slot);
+    ev.preventDefault();
+  });
+  const endDrag=ev=>{
+    if(!dragLm)return;
+    dragLm=null;
+    savePose(tid,slot);
+    try{canvas.releasePointerCapture?.(ev.pointerId)}catch(e){}
+    // 비교 카드/측정값 자동 갱신
+    if(document.getElementById('oc_'+tid)){
+      try{redrawOL(tid)}catch(e){}
+      try{buildClinical(tid)}catch(e){}
+    }
+  };
+  canvas.addEventListener('pointerup',endDrag);
+  canvas.addEventListener('pointercancel',endDrag);
+}
+
+function savePose(tid,slot){
+  const s=SHOTS[tid]?.[slot];if(!s?.pose)return;
+  try{
+    const compact=s.pose.map(lm=>lm?{x:+lm.x.toFixed(4),y:+lm.y.toFixed(4),z:+(lm.z||0).toFixed(4),visibility:+(lm.visibility||0).toFixed(2)}:null);
+    localStorage.setItem(`${LS}_pose_${tid}_${slot}`,JSON.stringify(compact));
+    s.poseEdited=true;
+  }catch(e){}
+}
+
+function restorePose(tid,slot){
+  const s=SHOTS[tid]?.[slot];if(!s)return;
+  try{
+    const raw=localStorage.getItem(`${LS}_pose_${tid}_${slot}`);
+    if(!raw)return;
+    const arr=JSON.parse(raw);
+    if(Array.isArray(arr)){s.pose=arr;s.poseEdited=true}
+  }catch(e){}
 }
 
 // v1.15: 오버랩 / 좌우 비교 뷰 토글 (트레이너 피드백 #1)
@@ -5896,6 +6030,7 @@ function showRestorePrompt(info){
           try{await idbDel(`${LS}_img_${t.id}_${slot}`)}catch(e){}
           try{localStorage.removeItem(`${LS}_img_${t.id}_${slot}`)}catch(e){}
           try{localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
+          try{localStorage.removeItem(`${LS}_pose_${t.id}_${slot}`)}catch(e){}
         }
       }
       try{await idbDel(LS+'_snapshot')}catch(e){}
@@ -7049,7 +7184,7 @@ async function clearAll(){
 6 10 5 21"/></svg>갤러리 업로드</button></div>`;
       const b=document.getElementById(`tcb_${t.id}_${slot}`);if(b){b.textContent='미촬영';b.className='tc-badge none'}
       const n=document.getElementById(`tcn_${t.id}_${slot}`);if(n)n.classList.remove('done');
-      try{await idbDel(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`)}catch(e){}
+      try{await idbDel(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_img_${t.id}_${slot}`);localStorage.removeItem(`${LS}_mk_${t.id}_${slot}`);localStorage.removeItem(`${LS}_pose_${t.id}_${slot}`)}catch(e){}
     }
     if(SHOTS[t.id])SHOTS[t.id]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
   }
