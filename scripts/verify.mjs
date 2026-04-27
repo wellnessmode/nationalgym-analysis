@@ -31,7 +31,11 @@ if (!url || url.includes('YOUR_')) {
   process.exit(1);
 }
 
-const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+const isLocal = /(localhost|127\.0\.0\.1|\/var\/run\/postgresql)/.test(url);
+const client = new pg.Client({
+  connectionString: url,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
+});
 await client.connect();
 
 const checks = [

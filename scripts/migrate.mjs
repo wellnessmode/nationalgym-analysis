@@ -46,9 +46,11 @@ if (!url || url.includes('YOUR_')) {
   process.exit(1);
 }
 
+// localhost 는 SSL 안 씀, Supabase 등 원격은 SSL (자가서명 허용)
+const isLocal = /(localhost|127\.0\.0\.1|\/var\/run\/postgresql)/.test(url);
 const client = new pg.Client({
   connectionString: url,
-  ssl: { rejectUnauthorized: false },
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
 console.log('▶ Supabase DB 연결 중...');
