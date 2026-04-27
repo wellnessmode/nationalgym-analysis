@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- iOS 푸시 필수: standalone 모드 활성화 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NG푸시검증">
+  <link rel="apple-touch-icon" href="icon-180.png">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a1628">
+
+  <title>NG iOS 푸시 검증</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 16px; max-width: 640px; margin: 0 auto; color: #111; line-height: 1.5; }
+    h1 { font-size: 20px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    .step { margin: 16px 0; padding: 14px; border: 1px solid #ddd; border-radius: 10px; }
+    button { display: block; width: 100%; padding: 14px; font-size: 16px; margin: 8px 0; border: 0; border-radius: 8px; background: #0a1628; color: #fff; }
+    button:disabled { background: #aaa; }
+    pre { background: #f3f3f3; padding: 10px; border-radius: 6px; font-size: 11px; word-break: break-all; white-space: pre-wrap; }
+    .log { font-size: 13px; color: #444; margin-top: 8px; }
+    .ok { color: #0a8f3d; font-weight: 600; }
+    .err { color: #c0392b; font-weight: 600; }
+    ol { padding-left: 20px; }
+    li { margin: 6px 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>NG iOS 웹푸시 검증</h1>
+
+  <div class="step">
+    <h3>0. 환경 체크</h3>
+    <div id="env-status"></div>
+  </div>
+
+  <div class="step">
+    <h3>1. 알림 권한</h3>
+    <button id="btn-request">권한 요청</button>
+    <div id="permission-status" class="log"></div>
+  </div>
+
+  <div class="step">
+    <h3>2. FCM 토큰 발급</h3>
+    <button id="btn-token" disabled>토큰 발급</button>
+    <pre id="token-display">(아직 없음)</pre>
+    <button id="btn-copy" disabled>토큰 복사</button>
+  </div>
+
+  <div class="step">
+    <h3>3. 푸시 수신 대기</h3>
+    <p class="log">Firebase Console &gt; Cloud Messaging &gt; 새 캠페인 &gt; "테스트 메시지 보내기"에 위 토큰 입력 후 발송. iPhone 잠금 화면에 알림 떠야 통과.</p>
+    <div id="message-display" class="log">(아직 없음)</div>
+  </div>
+
+  <div class="step">
+    <h3>4. iOS 설치 절차</h3>
+    <ol>
+      <li>이 페이지를 <b>Safari</b>로 접속 (Chrome/Firefox iOS 안 됨)</li>
+      <li>하단 공유 버튼(⬆️) → "홈 화면에 추가"</li>
+      <li>홈 화면 아이콘 탭 → 다시 진입 (반드시 standalone)</li>
+      <li>위 1번 권한 요청 → 2번 토큰 발급 → 3번 메시지 수신 확인</li>
+    </ol>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+    // ⚠️ Firebase Console > 프로젝트 설정 > 일반 > 내 앱(웹) 의 SDK 설정 값으로 교체
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      projectId:         "YOUR_PROJECT",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+    // ⚠️ Firebase Console > 프로젝트 설정 > Cloud Messaging > Web push certificates 에서 Generate key pair 후 공개키 붙여넣기
+    const VAPID_PUBLIC_KEY = "YOUR_VAPID_PUBLIC_KEY";
+
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+
+    // 0) 환경 체크
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+
+    const envEl = document.getElementById('env-status');
+    envEl.innerHTML = `
+      <div class="log">${isStandalone ? '<span class="ok">✓ standalone 모드</span>' : '<span class="err">✗ 브라우저 탭 — 푸시 동작 안 함</span>'}</div>
+      <div class="log">${isIOS ? '✓ iOS 기기' : '· 비 iOS 기기 (데스크탑/안드로이드 — iOS 검증 아님)'}</div>
+      <div class="log">${isSafari ? '✓ Safari' : (isIOS ? '<span class="err">✗ Safari 아님 — iOS는 Safari만 푸시 지원</span>' : '· 비 Safari 브라우저')}</div>
+    `;
+
+    // 1) 권한 요청
+    document.getElementById('btn-request').onclick = async () => {
+      const el = document.getElementById('permission-status');
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          el.innerHTML = '<span class="ok">✓ granted</span>';
+          document.getElementById('btn-token').disabled = false;
+        } else {
+          el.innerHTML = `<span class="err">✗ ${perm}</span>`;
+        }
+      } catch (e) {
+        el.innerHTML = `<span class="err">에러: ${e.message}</span>`;
+      }
+    };
+
+    // 2) 토큰 발급
+    let cachedToken = null;
+    document.getElementById('btn-token').onclick = async () => {
+      const tEl = document.getElementById('token-display');
+      try {
+        const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+        cachedToken = await getToken(messaging, {
+          vapidKey: VAPID_PUBLIC_KEY,
+          serviceWorkerRegistration: reg
+        });
+        if (cachedToken) {
+          tEl.textContent = cachedToken;
+          document.getElementById('btn-copy').disabled = false;
+        } else {
+          tEl.textContent = '(빈 토큰 — 권한·VAPID 키 확인)';
+        }
+      } catch (e) {
+        tEl.textContent = `에러: ${e.message}`;
+      }
+    };
+
+    document.getElementById('btn-copy').onclick = async () => {
+      if (cachedToken) {
+        try {
+          await navigator.clipboard.writeText(cachedToken);
+          alert('복사됨');
+        } catch (e) {
+          alert('복사 실패: ' + e.message);
+        }
+      }
+    };
+
+    // 3) 포그라운드 수신
+    onMessage(messaging, (payload) => {
+      const m = document.getElementById('message-display');
+      m.innerHTML = `<span class="ok">✓ 포그라운드 수신</span><pre>${JSON.stringify(payload, null, 2)}</pre>`;
+    });
+  </script>
+</body>
+</html>
