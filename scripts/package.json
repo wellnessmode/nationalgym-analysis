@@ -1,0 +1,13 @@
+{
+  "name": "nationalgym-tasks-scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate": "node migrate.mjs",
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}
