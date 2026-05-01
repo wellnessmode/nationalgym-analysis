@@ -98,23 +98,64 @@ const checks = [
 ];
 
 let pass = 0, fail = 0;
+const lines = [];
 for (const c of checks) {
   try {
     const r = await client.query(c.sql);
     if (c.expect(r)) {
       console.log(`  ✓ ${c.name}`);
+      lines.push(`✓ ${c.name}`);
       pass++;
     } else {
+      const actual = JSON.stringify(r.rows);
       console.log(`  ✗ ${c.name}`);
       console.log(`    실제:`, r.rows);
+      lines.push(`✗ ${c.name}\n    실제: ${actual}`);
       fail++;
     }
   } catch (e) {
     console.log(`  ✗ ${c.name} — 쿼리 에러: ${e.message}`);
+    lines.push(`✗ ${c.name} — 쿼리 에러: ${e.message}`);
     fail++;
   }
 }
 
+// 추가 진단: users + auth.users 현재 상태 덤프
+let dump = '';
+try {
+  const u = await client.query(`SELECT email, name, role, auth_user_id IS NOT NULL AS linked FROM users ORDER BY role, email`);
+  dump += '\n\n## public.users 현재 상태\n' + JSON.stringify(u.rows, null, 2);
+  const a = await client.query(`SELECT email, id FROM auth.users ORDER BY email`);
+  dump += '\n\n## auth.users 현재 상태\n' + JSON.stringify(a.rows.map(r => ({ email: r.email, id: r.id.slice(0, 8) + '...' })), null, 2);
+} catch (e) {
+  dump += '\n\n## dump 실패: ' + e.message;
+}
+
 await client.end();
 console.log(`\n결과: ${pass} pass, ${fail} fail`);
+
+// commit comment 발행 (실패 시)
+if (fail > 0) {
+  const ghToken = process.env.GH_TOKEN_FOR_COMMENTS || process.env.GITHUB_TOKEN;
+  const ghRepo = process.env.GITHUB_REPOSITORY;
+  const ghSha = process.env.GITHUB_SHA;
+  if (ghToken && ghRepo && ghSha) {
+    try {
+      const body = '## Verify failed\n\n' + lines.join('\n') + dump;
+      await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body }),
+      });
+      console.log('(verify result posted as commit comment)');
+    } catch (e) {
+      console.log('(failed to post: ' + e.message + ')');
+    }
+  }
+}
+
 process.exit(fail > 0 ? 1 : 0);
