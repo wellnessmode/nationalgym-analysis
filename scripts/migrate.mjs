@@ -5,13 +5,14 @@
 //
 // 사용법:
 //   1) .env 에 SUPABASE_DB_URL 채움
-//      위치: Supabase Dashboard > Project Settings > Database > Connection string > URI (transaction)
+//      위치: Supabase Dashboard > Project Settings > Database > Connection string > URI
 //   2) cd scripts && npm install
 //   3) node migrate.mjs
 //
-// 기능:
-//   - supabase/migrations/ 안의 .sql 파일을 사전순으로 실행
-//   - 각 파일은 자체 BEGIN/COMMIT 트랜잭션 (실패 시 그 파일만 롤백)
+// 동작:
+//   - public._migrations 테이블로 적용 이력 트래킹
+//   - 첫 실행에서 'branches' 테이블 존재하면 0001-0004 백필 (기존 적용분 인정)
+//   - 미적용 파일만 실행, 성공 시 _migrations에 기록
 //   - all-in-one.sql 은 무시 (개별 파일들과 중복)
 // =====================================================
 
@@ -23,7 +24,7 @@ import pg from 'pg';
 const here = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = resolve(here, '..', 'supabase', 'migrations');
 
-// .env 로드 (간이 파서. dotenv 안 깔아도 동작)
+// .env 로드 (간이 파서)
 async function loadEnv() {
   try {
     const envPath = resolve(here, '..', '.env');
@@ -40,13 +41,10 @@ await loadEnv();
 
 const url = process.env.SUPABASE_DB_URL;
 if (!url || url.includes('YOUR_')) {
-  console.error('✗ SUPABASE_DB_URL 미설정 (.env 파일 확인)');
-  console.error('  Supabase Dashboard > Project Settings > Database');
-  console.error('  > Connection string > URI (transaction) 값 복사해서 채울 것');
+  console.error('✗ SUPABASE_DB_URL 미설정');
   process.exit(1);
 }
 
-// localhost 는 SSL 안 씀, Supabase 등 원격은 SSL (자가서명 허용)
 const isLocal = /(localhost|127\.0\.0\.1|\/var\/run\/postgresql)/.test(url);
 const client = new pg.Client({
   connectionString: url,
@@ -57,21 +55,66 @@ console.log('▶ Supabase DB 연결 중...');
 await client.connect();
 console.log('  ✓ 연결됨');
 
+// 1) 트래킹 테이블 보장
+await client.query(`
+  CREATE TABLE IF NOT EXISTS public._migrations (
+    filename text PRIMARY KEY,
+    applied_at timestamptz NOT NULL DEFAULT NOW()
+  );
+`);
+
+// 2) 백필: 첫 실행 + 'branches' 존재하면 0001-0004 적용된 것으로 기록
+const trackedRes = await client.query('SELECT filename FROM public._migrations');
+const tracked = new Set(trackedRes.rows.map(r => r.filename));
+
+if (tracked.size === 0) {
+  const exists = await client.query(
+    `SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='branches'`
+  );
+  if (exists.rows.length > 0) {
+    const knownApplied = [
+      '0001_schema.sql',
+      '0002_helpers_and_auth.sql',
+      '0003_rls.sql',
+      '0004_seed.sql',
+    ];
+    for (const f of knownApplied) {
+      await client.query(
+        `INSERT INTO public._migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING`,
+        [f]
+      );
+      tracked.add(f);
+    }
+    console.log(`  ✓ 백필: 기존 적용분 ${knownApplied.length}개 인정`);
+  }
+}
+
+// 3) 파일 목록 (사전순)
 const files = (await readdir(migrationsDir))
   .filter(f => f.endsWith('.sql') && f !== 'all-in-one.sql')
   .sort();
 
-console.log(`▶ 마이그레이션 ${files.length}개 발견:`);
-for (const f of files) console.log(`  - ${f}`);
+console.log(`▶ 발견된 마이그레이션 ${files.length}개`);
 console.log('');
 
+let appliedCount = 0;
 let failed = false;
+
 for (const f of files) {
+  if (tracked.has(f)) {
+    console.log(`▶ ${f} (이미 적용됨, 스킵)`);
+    continue;
+  }
   process.stdout.write(`▶ ${f} 실행 중...`);
   const sql = await readFile(join(migrationsDir, f), 'utf8');
   try {
     await client.query(sql);
+    await client.query(
+      `INSERT INTO public._migrations (filename) VALUES ($1)`,
+      [f]
+    );
     console.log(' ✓');
+    appliedCount++;
   } catch (e) {
     console.log(' ✗');
     console.error(`  에러: ${e.message}`);
@@ -87,8 +130,4 @@ if (failed) {
   process.exit(1);
 }
 
-console.log('\n✓ 모든 마이그레이션 적용 완료');
-console.log('  다음: Supabase Dashboard > Authentication > Users 에서 3개 계정 수동 추가');
-console.log('    - admin@nationalgym.local');
-console.log('    - manager.jung@nationalgym.local');
-console.log('    - manager.kim@nationalgym.local');
+console.log(`\n✓ 완료. 새로 적용: ${appliedCount}개 / 전체: ${files.length}개`);

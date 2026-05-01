@@ -80,15 +80,20 @@ const checks = [
     name: '정인재 → 용산+서초 매핑',
     sql: `SELECT COUNT(*)::int AS n FROM user_branches ub
           JOIN users u ON u.id=ub.user_id
-          WHERE u.email='manager.jung@nationalgym.local'`,
+          WHERE u.name='정인재'`,
     expect: r => r.rows[0].n === 2,
   },
   {
     name: '김근희 → 스튜디오 매핑',
     sql: `SELECT COUNT(*)::int AS n FROM user_branches ub
           JOIN users u ON u.id=ub.user_id
-          WHERE u.email='manager.kim@nationalgym.local'`,
+          WHERE u.name='김근희'`,
     expect: r => r.rows[0].n === 1,
+  },
+  {
+    name: '3명 모두 auth.users 와 링크됨 (auth_user_id NOT NULL)',
+    sql: `SELECT COUNT(*)::int AS n FROM users WHERE auth_user_id IS NOT NULL`,
+    expect: r => r.rows[0].n === 3,
   },
 ];
 
