@@ -51,8 +51,42 @@ const client = new pg.Client({
   ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
+async function reportFatal(stage, e) {
+  const report = `Migration FATAL at ${stage}
+Code: ${e.code || 'N/A'}
+Message: ${e.message}
+Detail: ${e.detail || 'N/A'}
+Where: ${e.where || 'N/A'}
+Errno: ${e.errno || 'N/A'}
+Stack snippet: ${(e.stack || '').split('\n').slice(0, 4).join(' | ')}
+DB host: ${(url.match(/@([^/:]+)/) || [])[1] || 'N/A'}
+DB user: ${(url.match(/\/\/([^:]+):/) || [])[1] || 'N/A'}`;
+  console.error(report);
+  const ghToken = process.env.GITHUB_TOKEN;
+  const ghRepo = process.env.GITHUB_REPOSITORY;
+  const ghSha = process.env.GITHUB_SHA;
+  if (ghToken && ghRepo && ghSha) {
+    try {
+      await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: '## Migration error\n\n```\n' + report + '\n```' }),
+      });
+    } catch {}
+  }
+  process.exit(1);
+}
+
 console.log('▶ Supabase DB 연결 중...');
-await client.connect();
+try {
+  await client.connect();
+} catch (e) {
+  await reportFatal('client.connect()', e);
+}
 console.log('  ✓ 연결됨');
 
 // 1) 트래킹 테이블 보장
