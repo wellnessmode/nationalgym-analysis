@@ -40,8 +40,8 @@ await client.connect();
 
 const checks = [
   {
-    name: '테이블 8개',
-    sql: `SELECT COUNT(*)::int AS n FROM pg_tables WHERE schemaname='public'`,
+    name: '도메인 테이블 8개 (_migrations 제외)',
+    sql: `SELECT COUNT(*)::int AS n FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '\\_%'`,
     expect: r => r.rows[0].n === 8,
   },
   {
