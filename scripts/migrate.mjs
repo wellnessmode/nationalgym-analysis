@@ -117,7 +117,38 @@ for (const f of files) {
     appliedCount++;
   } catch (e) {
     console.log(' ✗');
-    console.error(`  에러: ${e.message}`);
+    const errorReport = `Migration failed: ${f}
+Code: ${e.code || 'N/A'}
+Message: ${e.message}
+Detail: ${e.detail || 'N/A'}
+Where: ${e.where || 'N/A'}
+DB host: ${(url.match(/@([^/:]+)/) || [])[1] || 'N/A'}
+DB user: ${(url.match(/\/\/([^:]+):/) || [])[1] || 'N/A'}`;
+    console.error(errorReport);
+
+    // Push error as commit comment so it's visible via GitHub API
+    const ghToken = process.env.GITHUB_TOKEN;
+    const ghRepo = process.env.GITHUB_REPOSITORY;
+    const ghSha = process.env.GITHUB_SHA;
+    if (ghToken && ghRepo && ghSha) {
+      try {
+        await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${ghToken}`,
+            Accept: 'application/vnd.github+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            body: '## Migration error\n\n```\n' + errorReport + '\n```',
+          }),
+        });
+        console.error('  (pushed error as commit comment)');
+      } catch (postErr) {
+        console.error('  (failed to post comment: ' + postErr.message + ')');
+      }
+    }
+
     failed = true;
     break;
   }
