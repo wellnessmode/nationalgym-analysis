@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   # ================================================================
-  # 1) Supabase 마이그레이션 (DB 스키마 변경 있을 때만)
+  # 1) Supabase 마이그레이션 (항상 실행, _migrations 트래킹으로 idempotent)
   # ================================================================
   migrate:
     name: Apply Supabase migrations
@@ -19,35 +19,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect migration changes
-        id: changes
-        run: |
-          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q '^supabase/migrations/'; then
-            echo "run=true" >> $GITHUB_OUTPUT
-          else
-            echo "run=false" >> $GITHUB_OUTPUT
-            echo "No migration changes — skipping"
-          fi
-
       - uses: actions/setup-node@v4
-        if: steps.changes.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         with:
           node-version: '22'
 
       - name: Install scripts dependencies
-        if: steps.changes.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         working-directory: scripts
         run: npm ci || npm install
 
       - name: Apply migrations
-        if: steps.changes.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         working-directory: scripts
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: node migrate.mjs
 
       - name: Verify
-        if: steps.changes.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         working-directory: scripts
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
