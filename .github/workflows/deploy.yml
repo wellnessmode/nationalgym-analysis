@@ -16,6 +16,8 @@ jobs:
   migrate:
     name: Apply Supabase migrations
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # for posting commit comments
     steps:
       - uses: actions/checkout@v4
 

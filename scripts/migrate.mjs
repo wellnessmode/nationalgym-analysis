@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-// =====================================================
-// scripts/migrate.mjs
-// Supabase DB에 마이그레이션 자동 적용
-//
-// 사용법:
-//   1) .env 에 SUPABASE_DB_URL 채움
-//      위치: Supabase Dashboard > Project Settings > Database > Connection string > URI
-//   2) cd scripts && npm install
-//   3) node migrate.mjs
-//
-// 동작:
-//   - public._migrations 테이블로 적용 이력 트래킹
-//   - 첫 실행에서 'branches' 테이블 존재하면 0001-0004 백필 (기존 적용분 인정)
-//   - 미적용 파일만 실행, 성공 시 _migrations에 기록
-//   - all-in-one.sql 은 무시 (개별 파일들과 중복)
-// =====================================================
-
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -24,7 +7,6 @@ import pg from 'pg';
 const here = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = resolve(here, '..', 'supabase', 'migrations');
 
-// .env 로드 (간이 파서)
 async function loadEnv() {
   try {
     const envPath = resolve(here, '..', '.env');
@@ -46,28 +28,30 @@ if (!url || url.includes('YOUR_')) {
 }
 
 const isLocal = /(localhost|127\.0\.0\.1|\/var\/run\/postgresql)/.test(url);
-const client = new pg.Client({
-  connectionString: url,
-  ssl: isLocal ? false : { rejectUnauthorized: false },
-});
 
 async function reportFatal(stage, e) {
+  const dbHost = (url.match(/@([^/:]+)/) || [])[1] || 'N/A';
+  const dbUser = (url.match(/\/\/([^:]+):/) || [])[1] || 'N/A';
+  const dbPort = (url.match(/:(\d+)\//) || [])[1] || 'N/A';
+  const passLen = ((url.match(/:[^@]*@/) || [])[0] || '').length - 2;
   const report = `Migration FATAL at ${stage}
-Code: ${e.code || 'N/A'}
-Message: ${e.message}
-Detail: ${e.detail || 'N/A'}
-Where: ${e.where || 'N/A'}
-Errno: ${e.errno || 'N/A'}
-Stack snippet: ${(e.stack || '').split('\n').slice(0, 4).join(' | ')}
-DB host: ${(url.match(/@([^/:]+)/) || [])[1] || 'N/A'}
-DB user: ${(url.match(/\/\/([^:]+):/) || [])[1] || 'N/A'}`;
+Code: ${e?.code || 'N/A'}
+Message: ${e?.message || String(e)}
+Detail: ${e?.detail || 'N/A'}
+Where: ${e?.where || 'N/A'}
+Errno: ${e?.errno || 'N/A'}
+Stack snippet: ${(e?.stack || '').split('\n').slice(0, 4).join(' | ')}
+DB host: ${dbHost}
+DB user: ${dbUser}
+DB port: ${dbPort}
+Password length (encoded): ${passLen}`;
   console.error(report);
-  const ghToken = process.env.GITHUB_TOKEN;
+  const ghToken = process.env.GH_TOKEN_FOR_COMMENTS || process.env.GITHUB_TOKEN;
   const ghRepo = process.env.GITHUB_REPOSITORY;
   const ghSha = process.env.GITHUB_SHA;
   if (ghToken && ghRepo && ghSha) {
     try {
-      await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
+      const res = await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${ghToken}`,
@@ -76,123 +60,92 @@ DB user: ${(url.match(/\/\/([^:]+):/) || [])[1] || 'N/A'}`;
         },
         body: JSON.stringify({ body: '## Migration error\n\n```\n' + report + '\n```' }),
       });
-    } catch {}
+      console.error(`(commit comment POST: ${res.status})`);
+      if (!res.ok) console.error(await res.text());
+    } catch (postErr) {
+      console.error('(commit comment failed: ' + postErr.message + ')');
+    }
+  } else {
+    console.error(`(no comment posted: token=${!!ghToken} repo=${ghRepo} sha=${ghSha})`);
   }
-  process.exit(1);
 }
 
-console.log('▶ Supabase DB 연결 중...');
-try {
+async function main() {
+  const client = new pg.Client({
+    connectionString: url,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+  });
+
+  console.log('▶ Supabase DB 연결 중...');
   await client.connect();
-} catch (e) {
-  await reportFatal('client.connect()', e);
-}
-console.log('  ✓ 연결됨');
+  console.log('  ✓ 연결됨');
 
-// 1) 트래킹 테이블 보장
-await client.query(`
-  CREATE TABLE IF NOT EXISTS public._migrations (
-    filename text PRIMARY KEY,
-    applied_at timestamptz NOT NULL DEFAULT NOW()
-  );
-`);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS public._migrations (
+      filename text PRIMARY KEY,
+      applied_at timestamptz NOT NULL DEFAULT NOW()
+    );
+  `);
 
-// 2) 백필: 첫 실행 + 'branches' 존재하면 0001-0004 적용된 것으로 기록
-const trackedRes = await client.query('SELECT filename FROM public._migrations');
-const tracked = new Set(trackedRes.rows.map(r => r.filename));
+  const trackedRes = await client.query('SELECT filename FROM public._migrations');
+  const tracked = new Set(trackedRes.rows.map(r => r.filename));
 
-if (tracked.size === 0) {
-  const exists = await client.query(
-    `SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='branches'`
-  );
-  if (exists.rows.length > 0) {
-    const knownApplied = [
-      '0001_schema.sql',
-      '0002_helpers_and_auth.sql',
-      '0003_rls.sql',
-      '0004_seed.sql',
-    ];
-    for (const f of knownApplied) {
+  if (tracked.size === 0) {
+    const exists = await client.query(
+      `SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='branches'`
+    );
+    if (exists.rows.length > 0) {
+      const knownApplied = [
+        '0001_schema.sql',
+        '0002_helpers_and_auth.sql',
+        '0003_rls.sql',
+        '0004_seed.sql',
+      ];
+      for (const f of knownApplied) {
+        await client.query(
+          `INSERT INTO public._migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING`,
+          [f]
+        );
+        tracked.add(f);
+      }
+      console.log(`  ✓ 백필: 기존 적용분 ${knownApplied.length}개 인정`);
+    }
+  }
+
+  const files = (await readdir(migrationsDir))
+    .filter(f => f.endsWith('.sql') && f !== 'all-in-one.sql')
+    .sort();
+
+  console.log(`▶ 발견된 마이그레이션 ${files.length}개\n`);
+
+  let appliedCount = 0;
+  for (const f of files) {
+    if (tracked.has(f)) {
+      console.log(`▶ ${f} (이미 적용됨, 스킵)`);
+      continue;
+    }
+    process.stdout.write(`▶ ${f} 실행 중...`);
+    const sql = await readFile(join(migrationsDir, f), 'utf8');
+    try {
+      await client.query(sql);
       await client.query(
-        `INSERT INTO public._migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING`,
+        `INSERT INTO public._migrations (filename) VALUES ($1)`,
         [f]
       );
-      tracked.add(f);
+      console.log(' ✓');
+      appliedCount++;
+    } catch (e) {
+      console.log(' ✗');
+      e.message = `[file: ${f}] ` + e.message;
+      throw e;
     }
-    console.log(`  ✓ 백필: 기존 적용분 ${knownApplied.length}개 인정`);
   }
+
+  await client.end();
+  console.log(`\n✓ 완료. 새로 적용: ${appliedCount}개 / 전체: ${files.length}개`);
 }
 
-// 3) 파일 목록 (사전순)
-const files = (await readdir(migrationsDir))
-  .filter(f => f.endsWith('.sql') && f !== 'all-in-one.sql')
-  .sort();
-
-console.log(`▶ 발견된 마이그레이션 ${files.length}개`);
-console.log('');
-
-let appliedCount = 0;
-let failed = false;
-
-for (const f of files) {
-  if (tracked.has(f)) {
-    console.log(`▶ ${f} (이미 적용됨, 스킵)`);
-    continue;
-  }
-  process.stdout.write(`▶ ${f} 실행 중...`);
-  const sql = await readFile(join(migrationsDir, f), 'utf8');
-  try {
-    await client.query(sql);
-    await client.query(
-      `INSERT INTO public._migrations (filename) VALUES ($1)`,
-      [f]
-    );
-    console.log(' ✓');
-    appliedCount++;
-  } catch (e) {
-    console.log(' ✗');
-    const errorReport = `Migration failed: ${f}
-Code: ${e.code || 'N/A'}
-Message: ${e.message}
-Detail: ${e.detail || 'N/A'}
-Where: ${e.where || 'N/A'}
-DB host: ${(url.match(/@([^/:]+)/) || [])[1] || 'N/A'}
-DB user: ${(url.match(/\/\/([^:]+):/) || [])[1] || 'N/A'}`;
-    console.error(errorReport);
-
-    // Push error as commit comment so it's visible via GitHub API
-    const ghToken = process.env.GITHUB_TOKEN;
-    const ghRepo = process.env.GITHUB_REPOSITORY;
-    const ghSha = process.env.GITHUB_SHA;
-    if (ghToken && ghRepo && ghSha) {
-      try {
-        await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${ghToken}`,
-            Accept: 'application/vnd.github+json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            body: '## Migration error\n\n```\n' + errorReport + '\n```',
-          }),
-        });
-        console.error('  (pushed error as commit comment)');
-      } catch (postErr) {
-        console.error('  (failed to post comment: ' + postErr.message + ')');
-      }
-    }
-
-    failed = true;
-    break;
-  }
-}
-
-await client.end();
-
-if (failed) {
-  console.error('\n✗ 마이그레이션 실패');
+main().catch(async (e) => {
+  await reportFatal('main', e);
   process.exit(1);
-}
-
-console.log(`\n✓ 완료. 새로 적용: ${appliedCount}개 / 전체: ${files.length}개`);
+});
