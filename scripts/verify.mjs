@@ -120,13 +120,34 @@ for (const c of checks) {
   }
 }
 
-// 추가 진단: users + auth.users 현재 상태 덤프
+// 추가 진단: users JOIN auth.users 로 실제 매칭 검증
 let dump = '';
+let linkOk = true;
 try {
-  const u = await client.query(`SELECT email, name, role, auth_user_id IS NOT NULL AS linked FROM users ORDER BY role, email`);
-  dump += '\n\n## public.users 현재 상태\n' + JSON.stringify(u.rows, null, 2);
-  const a = await client.query(`SELECT email, id FROM auth.users ORDER BY email`);
-  dump += '\n\n## auth.users 현재 상태\n' + JSON.stringify(a.rows.map(r => ({ email: r.email, id: r.id.slice(0, 8) + '...' })), null, 2);
+  const j = await client.query(`
+    SELECT u.email AS public_email, u.name, u.role,
+           u.auth_user_id,
+           au.email AS auth_email,
+           (u.email = au.email) AS email_match
+    FROM users u
+    LEFT JOIN auth.users au ON au.id = u.auth_user_id
+    ORDER BY u.role, u.name
+  `);
+  dump += '\n\n## 사용자 ↔ Auth 링크 검증\n' + JSON.stringify(
+    j.rows.map(r => ({
+      public_email: r.public_email,
+      name: r.name,
+      role: r.role,
+      auth_email: r.auth_email,
+      email_match: r.email_match,
+      auth_user_id: r.auth_user_id ? r.auth_user_id.slice(0, 8) + '...' : null,
+    })),
+    null, 2,
+  );
+  linkOk = j.rows.every(r => r.email_match === true);
+  if (!linkOk) {
+    dump += '\n\n⚠ EMAIL MISMATCH 감지! 일부 public.users가 잘못된 auth.users에 링크됨.';
+  }
 } catch (e) {
   dump += '\n\n## dump 실패: ' + e.message;
 }
@@ -134,14 +155,15 @@ try {
 await client.end();
 console.log(`\n결과: ${pass} pass, ${fail} fail`);
 
-// commit comment 발행 (실패 시)
-if (fail > 0) {
+// commit comment 발행 (항상 dump 게시 — 진단 목적)
+{
   const ghToken = process.env.GH_TOKEN_FOR_COMMENTS || process.env.GITHUB_TOKEN;
   const ghRepo = process.env.GITHUB_REPOSITORY;
   const ghSha = process.env.GITHUB_SHA;
-  if (ghToken && ghRepo && ghSha) {
+  if (ghToken && ghRepo && ghSha && (fail > 0 || !linkOk)) {
     try {
-      const body = '## Verify failed\n\n' + lines.join('\n') + dump;
+      const header = fail > 0 ? '## Verify failed' : '## Verify summary';
+      const body = `${header}\n\n` + lines.join('\n') + dump;
       await fetch(`https://api.github.com/repos/${ghRepo}/commits/${ghSha}/comments`, {
         method: 'POST',
         headers: {
