@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../services/supabase_client.dart';
+import '../../meeting_notes/screens/meeting_note_list_screen.dart';
 import '../../tasks/screens/task_list_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
@@ -19,7 +20,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final me = ref.watch(currentUserProvider).valueOrNull;
     const pages = [
       TaskListScreen(),
-      _Placeholder(title: '회의록', icon: Icons.note_alt),
+      MeetingNoteListScreen(),
       _SettingsPage(),
     ];
     const titles = ['업무', '회의록', '설정'];
@@ -45,26 +46,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           NavigationDestination(icon: Icon(Icons.task_alt_outlined), selectedIcon: Icon(Icons.task_alt), label: '업무'),
           NavigationDestination(icon: Icon(Icons.note_alt_outlined), selectedIcon: Icon(Icons.note_alt), label: '회의록'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '설정'),
-        ],
-      ),
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  const _Placeholder({required this.title, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text('$title 화면 — 다음 단계에서 구현', style: const TextStyle(fontSize: 16, color: Colors.grey)),
         ],
       ),
     );
