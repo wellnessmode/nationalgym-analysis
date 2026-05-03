@@ -17,6 +17,12 @@ class TaskListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(filteredTasksProvider);
     final me = ref.watch(currentUserProvider).valueOrNull;
+    final isAdmin = me?.isAdmin == true;
+    final addLabel = isAdmin ? '지시 작성' : '업무 추가';
+
+    void openForm() => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const TaskFormScreen(),
+        ));
 
     return Scaffold(
       body: Column(children: [
@@ -28,9 +34,14 @@ class TaskListScreen extends ConsumerWidget {
                 return EmptyState(
                   icon: Icons.inbox_outlined,
                   title: '표시할 업무가 없습니다',
-                  subtitle: me?.isAdmin == true
-                      ? '우하단 버튼을 눌러 매니저에게 지시를 발행하세요'
-                      : '우하단 버튼을 눌러 새 업무를 추가하세요',
+                  subtitle: isAdmin
+                      ? '아래 버튼으로 매니저에게 지시를 발행하세요'
+                      : '아래 버튼으로 새 업무를 추가하세요',
+                  action: FilledButton.icon(
+                    onPressed: me == null ? null : openForm,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(addLabel),
+                  ),
                 );
               }
               return RefreshIndicator(
@@ -70,15 +81,11 @@ class TaskListScreen extends ConsumerWidget {
           ),
         ),
       ]),
-      floatingActionButton: me == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const TaskFormScreen(),
-              )),
-              icon: const Icon(Icons.add, size: 20),
-              label: Text(me.isAdmin ? '지시 작성' : '업무 추가'),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: me == null ? null : openForm,
+        icon: const Icon(Icons.add, size: 20),
+        label: Text(addLabel),
+      ),
     );
   }
 }

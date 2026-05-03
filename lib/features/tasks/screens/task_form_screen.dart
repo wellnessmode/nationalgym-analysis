@@ -139,12 +139,34 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
         if (isAdmin) ...[
           _Label('담당자'),
-          DropdownButtonFormField<AppUser>(
-            value: _assignee,
-            items: managers.map((u) => DropdownMenuItem(value: u, child: Text(u.name, style: Tokens.ts14))).toList(),
-            onChanged: (v) => setState(() => _assignee = v),
-            decoration: const InputDecoration(hintText: '매니저 선택'),
-          ),
+          Builder(builder: (_) {
+            final userBranches = ref.watch(allUserBranchesProvider).valueOrNull ?? {};
+            return DropdownButtonFormField<AppUser>(
+              value: _assignee,
+              items: managers.map((u) {
+                final myBs = userBranches[u.id] ?? [];
+                final branchLabel = myBs.map((b) {
+                  final parts = b.name.split(' ');
+                  return parts.last;
+                }).join(' · ');
+                return DropdownMenuItem(
+                  value: u,
+                  child: Row(children: [
+                    Text(u.name, style: Tokens.ts14.copyWith(fontWeight: FontWeight.w600)),
+                    if (branchLabel.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        branchLabel,
+                        style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+                      ),
+                    ],
+                  ]),
+                );
+              }).toList(),
+              onChanged: (v) => setState(() => _assignee = v),
+              decoration: const InputDecoration(hintText: '매니저 선택'),
+            );
+          }),
           const SizedBox(height: Tokens.s16),
         ],
 

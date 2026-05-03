@@ -38,6 +38,26 @@ class FilterBar extends ConsumerWidget {
             ],
           ),
         ),
+        // '내 업무' 선택 시 본인확인용 안내문구
+        if (selected == TaskFilter.mine)
+          Container(
+            margin: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s4, Tokens.s16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: Tokens.s10, vertical: Tokens.s6),
+            decoration: BoxDecoration(
+              color: Tokens.info.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(Tokens.r8),
+            ),
+            child: Row(children: [
+              const Icon(Icons.info_outline, size: 12, color: Tokens.info),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '본인확인용 — 본인이 담당자이거나 요청자인 업무만 표시',
+                  style: Tokens.ts11.copyWith(color: Tokens.info, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ]),
+          ),
         if (me?.isAdmin == true && branches.isNotEmpty)
           SizedBox(
             height: 40,

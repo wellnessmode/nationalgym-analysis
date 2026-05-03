@@ -38,3 +38,18 @@ final allUsersProvider = FutureProvider<List<AppUser>>((ref) async {
 final allBranchesProvider = FutureProvider<List<Branch>>((ref) async {
   return ref.read(userRepositoryProvider).listBranches();
 });
+
+/// 사용자 ID → 담당 지점 목록 맵 (admin이 매니저별 담당 지점 표시용)
+final allUserBranchesProvider = FutureProvider<Map<String, List<Branch>>>((ref) async {
+  final res = await supabase.from('user_branches').select('user_id, branches(*)');
+  final map = <String, List<Branch>>{};
+  for (final row in res as List) {
+    final r = row as Map<String, dynamic>;
+    final uid = r['user_id'] as String;
+    final b = r['branches'] as Map<String, dynamic>?;
+    if (b != null) {
+      map.putIfAbsent(uid, () => []).add(Branch.fromJson(b));
+    }
+  }
+  return map;
+});
