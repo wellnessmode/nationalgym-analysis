@@ -10,6 +10,8 @@ class MeetingNote {
   final String topic;
   final String? content;
   final String? actionItems;
+  final String? recordingUrl;
+  final String transcriptionStatus; // none / pending / completed / failed
   final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -24,10 +26,14 @@ class MeetingNote {
     required this.topic,
     required this.content,
     required this.actionItems,
+    required this.recordingUrl,
+    required this.transcriptionStatus,
     required this.completedAt,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  bool get hasRecording => recordingUrl != null && recordingUrl!.isNotEmpty;
 
   factory MeetingNote.fromJson(Map<String, dynamic> j) => MeetingNote(
         id: j['id'] as String,
@@ -39,6 +45,8 @@ class MeetingNote {
         topic: j['topic'] as String,
         content: j['content'] as String?,
         actionItems: j['action_items'] as String?,
+        recordingUrl: j['recording_url'] as String?,
+        transcriptionStatus: (j['transcription_status'] as String?) ?? 'none',
         completedAt: j['completed_at'] == null ? null : DateTime.parse(j['completed_at'] as String),
         createdAt: DateTime.parse(j['created_at'] as String),
         updatedAt: DateTime.parse(j['updated_at'] as String),

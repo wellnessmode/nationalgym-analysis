@@ -30,6 +30,11 @@ dependencies:
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
 
+  # 회의록 음성 녹음 (Web: MediaRecorder, iOS/Android: native)
+  record: ^5.1.2
+  audioplayers: ^6.1.0
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

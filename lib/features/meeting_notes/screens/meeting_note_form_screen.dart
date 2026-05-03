@@ -1,11 +1,14 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/tokens.dart';
 import '../../../shared/models/branch.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/meeting_note.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../providers/meeting_note_providers.dart';
+import '../widgets/audio_recorder_panel.dart';
 
 class MeetingNoteFormScreen extends ConsumerStatefulWidget {
   /// null: 신규 작성. 값 있음: 편집.
@@ -109,6 +112,75 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
+  /// 녹음 완료 콜백 — 회의록을 어젠다(draft) 상태로 먼저 저장하고,
+  /// 음성 업로드 + 전사 트리거. 사용자는 녹음 결과가 본문에 자동 채워질 때까지 대기.
+  Future<void> _handleRecorded(List<int> bytes, String mimeType) async {
+    final me = ref.read(currentUserProvider).valueOrNull;
+    if (me == null) return;
+    if (_topicCtrl.text.trim().isEmpty) {
+      _snack('주제를 먼저 입력해주세요');
+      return;
+    }
+    setState(() => _saving = true);
+    final repo = ref.read(meetingNoteRepositoryProvider);
+    try {
+      String meetingId;
+      if (widget.existing != null) {
+        meetingId = widget.existing!.id;
+        await repo.update(
+          meetingId,
+          topic: _topicCtrl.text.trim(),
+          attendees: _attendeesCtrl.text.trim(),
+          content: _contentCtrl.text.trim(),
+          actionItems: _actionsCtrl.text.trim(),
+          meetingDate: _date,
+        );
+      } else {
+        // 신규: draft로 우선 저장
+        final branches = ref.read(myBranchesProvider).valueOrNull ?? [];
+        final selectedBranch = _branch ?? (branches.isNotEmpty ? branches.first : null);
+        if (selectedBranch == null) throw Exception('지점이 없습니다');
+        final created = await repo.create(
+          branchId: selectedBranch.id,
+          authorId: me.id,
+          status: MeetingStatus.draft,
+          meetingDate: _date,
+          topic: _topicCtrl.text.trim(),
+          attendees: _attendeesCtrl.text.trim().isEmpty ? null : _attendeesCtrl.text.trim(),
+          content: _contentCtrl.text.trim().isEmpty ? null : _contentCtrl.text.trim(),
+          actionItems: _actionsCtrl.text.trim().isEmpty ? null : _actionsCtrl.text.trim(),
+        );
+        meetingId = created.id;
+      }
+
+      // Storage 업로드
+      final path = await repo.uploadRecording(
+        meetingNoteId: meetingId,
+        bytes: Uint8List.fromList(bytes),
+        mimeType: mimeType,
+      );
+      await repo.attachRecording(meetingId, path);
+
+      // 전사 트리거 (백그라운드 — 비동기)
+      // ignore: unawaited_futures
+      repo.requestTranscription(meetingId).catchError((_) {});
+
+      if (!mounted) return;
+      ref.invalidate(meetingNotesListProvider);
+      ref.invalidate(meetingNoteByIdProvider(meetingId));
+      Navigator.of(context).pop();
+      _snack('녹음 업로드 완료. AI가 회의록을 정리 중입니다 (1~2분 후 새로고침)');
+    } catch (e) {
+      _snack('업로드 실패: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _snack(String s) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final me = ref.watch(currentUserProvider).valueOrNull;
@@ -147,7 +219,15 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
             hintText: '예: 정인재, 김근희, 트레이너 3명',
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Tokens.s16),
+
+        // AI 회의록 — 녹음 + 전사 패널
+        AudioRecorderPanel(
+          onRecorded: _handleRecorded,
+          disabled: _saving,
+        ),
+        const SizedBox(height: Tokens.s16),
+
         TextField(
           controller: _contentCtrl,
           maxLines: 6,

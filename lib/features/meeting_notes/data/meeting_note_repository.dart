@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../../services/supabase_client.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/meeting_note.dart';
@@ -72,6 +74,63 @@ class MeetingNoteRepository {
 
   Future<void> delete(String id) async {
     await supabase.from('meeting_notes').delete().eq('id', id);
+  }
+
+  // ── Audio recording ──────────────────────────────────────────────
+
+  /// Storage 'meeting-audio' 버킷에 음성 업로드.
+  /// 경로: {meeting_note_id}/{timestamp}.{ext}
+  /// 반환: storage path (DB recording_url에 저장).
+  Future<String> uploadRecording({
+    required String meetingNoteId,
+    required Uint8List bytes,
+    required String mimeType,
+  }) async {
+    final ext = switch (mimeType) {
+      'audio/webm' => 'webm',
+      'audio/mp4' => 'm4a',
+      'audio/mpeg' => 'mp3',
+      'audio/wav' => 'wav',
+      'audio/ogg' => 'ogg',
+      _ => 'bin',
+    };
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final path = '$meetingNoteId/$ts.$ext';
+    await supabase.storage.from('meeting-audio').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType, upsert: true),
+        );
+    return path;
+  }
+
+  /// recording_url + transcription_status='pending' 으로 업데이트
+  Future<MeetingNote> attachRecording(String id, String recordingPath) async {
+    final res = await supabase.from('meeting_notes').update({
+      'recording_url': recordingPath,
+      'transcription_status': 'pending',
+    }).eq('id', id).select().single();
+    return MeetingNote.fromJson(res);
+  }
+
+  /// Edge Function 'transcribe-meeting' 호출 → AI 전사 시작
+  Future<void> requestTranscription(String meetingNoteId) async {
+    await supabase.functions.invoke(
+      'transcribe-meeting',
+      body: {'meeting_note_id': meetingNoteId},
+    );
+  }
+
+  /// 음성 파일 시그니처드 URL (재생용)
+  Future<String?> getRecordingSignedUrl(String path) async {
+    try {
+      final res = await supabase.storage
+          .from('meeting-audio')
+          .createSignedUrl(path, 60 * 60); // 1시간
+      return res;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ── Comments ─────────────────────────────────────────────────

@@ -152,6 +152,46 @@ class _BodyState extends ConsumerState<_Body> {
           _MetaRow(icon: Icons.groups_outlined, label: '참석자', value: n.attendees!),
       ]),
 
+      // 녹음/AI 정리 상태
+      if (n.hasRecording || n.transcriptionStatus != 'none') ...[
+        const SizedBox(height: Tokens.s12),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: Tokens.s16),
+          padding: const EdgeInsets.all(Tokens.s14),
+          decoration: BoxDecoration(
+            color: Tokens.gold500.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(Tokens.r12),
+            border: Border.all(color: Tokens.gold500.withOpacity(0.25)),
+          ),
+          child: Row(children: [
+            Icon(
+              n.transcriptionStatus == 'pending' ? Icons.hourglass_empty
+                : n.transcriptionStatus == 'completed' ? Icons.auto_awesome
+                : n.transcriptionStatus == 'failed' ? Icons.error_outline
+                : Icons.mic,
+              color: Tokens.gold600,
+              size: 18,
+            ),
+            const SizedBox(width: Tokens.s10),
+            Expanded(
+              child: Text(
+                n.transcriptionStatus == 'pending' ? 'AI가 회의 녹음을 정리 중입니다 (1~2분)'
+                  : n.transcriptionStatus == 'completed' ? 'AI가 정리한 내용이 본문에 반영됨'
+                  : n.transcriptionStatus == 'failed' ? '전사 실패 — 직접 입력해주세요'
+                  : '녹음 파일 첨부됨',
+                style: Tokens.ts13.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (n.transcriptionStatus == 'pending')
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 18),
+                tooltip: '새로고침',
+                onPressed: () => ref.invalidate(meetingNoteByIdProvider(n.id)),
+              ),
+          ]),
+        ),
+      ],
+
       // Content
       if (n.content != null && n.content!.isNotEmpty) ...[
         Padding(

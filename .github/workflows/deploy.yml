@@ -76,7 +76,7 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy Edge Functions (notify + due-reminder)
+      - name: Deploy Edge Functions (notify + due-reminder + transcribe-meeting)
         if: steps.gate.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -84,6 +84,7 @@ jobs:
           PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -E 's|https?://([^.]+)\..*|\1|')
           supabase functions deploy notify --project-ref "$PROJECT_REF"
           supabase functions deploy due-reminder --project-ref "$PROJECT_REF"
+          supabase functions deploy transcribe-meeting --project-ref "$PROJECT_REF"
 
       - name: Set Edge Function secrets
         if: steps.gate.outputs.configured == 'true'
@@ -91,9 +92,15 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -E 's|https?://([^.]+)\..*|\1|')
+          # Firebase 관련은 항상 설정
           supabase secrets set --project-ref "$PROJECT_REF" \
             FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
             FIREBASE_SERVICE_ACCOUNT='${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          # OPENAI_API_KEY가 secret 등록되어 있으면 설정 (Whisper + GPT 전사용)
+          if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
+            supabase secrets set --project-ref "$PROJECT_REF" \
+              OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          fi
 
   # ================================================================
   # 2) Flutter Web 빌드 + Firebase Hosting 배포
