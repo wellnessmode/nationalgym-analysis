@@ -170,34 +170,21 @@ class _LogoLockup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(Tokens.r16),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
-        ),
-        child: const Center(
-          child: Text(
-            'NG',
-            style: TextStyle(
-              color: Tokens.gold500,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
+      // 누끼 처리된 NATIONAL GYM 엠블럼 (투명 배경)
+      Image.asset(
+        'assets/brand_logo_transparent.png',
+        width: 120,
+        height: 120,
+        fit: BoxFit.contain,
       ),
-      const SizedBox(height: Tokens.s16),
+      const SizedBox(height: Tokens.s12),
       const Text(
         '내셔널짐 업무',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.3,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
         ),
       ),
     ]);
