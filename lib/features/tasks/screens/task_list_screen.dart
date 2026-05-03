@@ -81,11 +81,14 @@ class TaskListScreen extends ConsumerWidget {
           ),
         ),
       ]),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: me == null ? null : openForm,
-        icon: const Icon(Icons.add, size: 20),
-        label: Text(addLabel),
-      ),
+      // 리스트가 있을 때만 FAB. 빈 상태일 땐 EmptyState 안의 가운데 버튼만 보임 (중복 방지).
+      floatingActionButton: tasksAsync.value?.isNotEmpty == true && me != null
+          ? FloatingActionButton.extended(
+              onPressed: openForm,
+              icon: const Icon(Icons.add, size: 20),
+              label: Text(addLabel),
+            )
+          : null,
     );
   }
 }

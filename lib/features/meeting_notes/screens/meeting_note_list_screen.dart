@@ -32,6 +32,15 @@ class MeetingNoteListScreen extends ConsumerWidget {
               subtitle: me?.isManager == true
                   ? '회의 전 어젠다, 회의 후 결과를 정리해 공유하세요'
                   : '매니저가 회의록을 작성하면 여기 표시됩니다',
+              action: me?.isManager == true
+                  ? FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const MeetingNoteFormScreen(),
+                      )),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('회의록 작성'),
+                    )
+                  : null,
             );
           }
           return RefreshIndicator(
@@ -140,7 +149,8 @@ class MeetingNoteListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: me?.isManager == true
+      // 리스트가 있고 매니저일 때만 FAB. 빈 상태에선 EmptyState 안의 가운데 버튼.
+      floatingActionButton: me?.isManager == true && notesAsync.value?.isNotEmpty == true
           ? FloatingActionButton.extended(
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const MeetingNoteFormScreen(),

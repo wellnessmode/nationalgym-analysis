@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show SignOutScope;
 import '../../../core/tokens.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/supabase_client.dart';
@@ -190,50 +190,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('로그아웃', style: TextStyle(color: Tokens.danger, fontWeight: FontWeight.w600)),
             onTap: _logout,
           ),
-        ]),
-
-        // 디버그 — 실제 세션의 사용자 정보. 두 줄이 일치해야 정상.
-        Section(title: '디버그', children: [
-          Builder(builder: (_) {
-            final authUser = supabase.auth.currentUser;
-            final mismatch = me != null && authUser != null && authUser.email != me.email;
-            return Column(children: [
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.fingerprint, size: 18),
-                title: const Text('Auth 세션', style: TextStyle(fontSize: 13)),
-                subtitle: Text(
-                  authUser?.email ?? '(none)',
-                  style: Tokens.ts12.copyWith(color: Tokens.textMuted),
-                ),
-              ),
-              const Divider(height: 1, indent: Tokens.s16, endIndent: Tokens.s16),
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.person_outline, size: 18),
-                title: const Text('App 사용자', style: TextStyle(fontSize: 13)),
-                subtitle: Text(
-                  '${me?.email ?? '(loading)'} · ${me?.name ?? '?'} · ${me?.role.name ?? ''}',
-                  style: Tokens.ts12.copyWith(color: Tokens.textMuted),
-                ),
-              ),
-              if (mismatch)
-                Container(
-                  padding: const EdgeInsets.all(Tokens.s12),
-                  color: Tokens.danger.withOpacity(0.06),
-                  child: Row(children: const [
-                    Icon(Icons.warning_amber_rounded, size: 14, color: Tokens.danger),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Auth와 App 사용자가 다릅니다. 로그아웃 후 재로그인 필요',
-                        style: TextStyle(fontSize: 11, color: Tokens.danger, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ]),
-                ),
-            ]);
-          }),
         ]),
 
         Padding(

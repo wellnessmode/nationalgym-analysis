@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/data/user_repository.dart';
 import '../../services/supabase_client.dart';
 import '../models/app_user.dart';
@@ -8,18 +7,20 @@ import '../models/branch.dart';
 final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepository());
 
 /// 현재 로그인 사용자 (public.users row).
-/// 로그인/로그아웃 이벤트에만 재조회 (token refresh는 무시).
+/// auth user.id가 변경된 시점에만 재조회 (token refresh는 무시).
 final currentUserProvider = FutureProvider<AppUser?>((ref) async {
+  String? lastUserId = supabase.auth.currentUser?.id;
+
   final sub = supabase.auth.onAuthStateChange.listen((data) {
-    // signedIn / signedOut / userUpdated 만 처리.
-    // tokenRefreshed (10분마다 발생) 은 무시 — 안 그러면 UI가 자꾸 깜빡임.
-    if (data.event == AuthChangeEvent.signedIn ||
-        data.event == AuthChangeEvent.signedOut ||
-        data.event == AuthChangeEvent.userUpdated) {
+    final currentId = data.session?.user.id;
+    // user.id가 바뀐 경우 (로그인/로그아웃/사용자 전환). token refresh 시엔 동일.
+    if (currentId != lastUserId) {
+      lastUserId = currentId;
       ref.invalidateSelf();
     }
   });
   ref.onDispose(sub.cancel);
+
   return ref.read(userRepositoryProvider).getCurrent();
 });
 
