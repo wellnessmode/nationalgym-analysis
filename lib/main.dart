@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/env.dart';
+import 'core/firebase_options.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
 import 'services/supabase_client.dart';
@@ -11,6 +13,7 @@ Future<void> main() async {
   Env.assertConfigured();
   await initializeDateFormatting('ko_KR', null);
   await initSupabase();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.current);
   runApp(const ProviderScope(child: NgApp()));
 }
 
