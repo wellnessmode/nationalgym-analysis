@@ -149,12 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ]),
                   ),
-                  const SizedBox(height: Tokens.s24),
-                  Text(
-                    '문의는 대표에게',
-                    textAlign: TextAlign.center,
-                    style: Tokens.ts12.copyWith(color: Colors.white.withOpacity(0.5)),
-                  ),
                 ],
               ),
             ),
