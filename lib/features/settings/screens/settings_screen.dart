@@ -49,62 +49,92 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final me = ref.watch(currentUserProvider).valueOrNull;
+    final meAsync = ref.watch(currentUserProvider);
+    final me = meAsync.valueOrNull;
     final hasToken = me?.fcmToken != null && me!.fcmToken!.isNotEmpty;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: Tokens.s32),
       children: [
-        // Profile hero
-        if (me != null)
-          Container(
-            margin: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, 0),
-            padding: const EdgeInsets.all(Tokens.s20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(Tokens.r20),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: [Tokens.navy900, Tokens.navy700],
-              ),
+        // Profile hero (또는 로딩 스켈레톤)
+        Container(
+          margin: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, 0),
+          padding: const EdgeInsets.all(Tokens.s20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Tokens.r20),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: [Tokens.navy900, Tokens.navy700],
             ),
-            child: Row(children: [
-              Container(
-                width: 56, height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.20)),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  me.name.isNotEmpty ? me.name.characters.first : '?',
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(width: Tokens.s16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text(me.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                    const SizedBox(width: Tokens.s8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: me.isAdmin ? Tokens.gold500 : Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(Tokens.r4),
-                      ),
-                      child: Text(
-                        me.isAdmin ? '대표' : '매니저',
-                        style: TextStyle(color: me.isAdmin ? Tokens.navy900 : Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+          ),
+          child: me == null
+              ? Row(children: [
+                  Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: Tokens.s16),
+                  const Expanded(
+                    child: SizedBox(
+                      height: 18,
+                      child: LinearProgressIndicator(
+                        backgroundColor: Colors.white24,
+                        valueColor: AlwaysStoppedAnimation(Colors.white54),
                       ),
                     ),
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(me.email, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                  ),
+                ])
+              : Row(children: [
+                  Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.20)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      me.name.isNotEmpty ? me.name.characters.first : '?',
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(width: Tokens.s16),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Flexible(
+                          child: Text(
+                            me.name,
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: Tokens.s8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: me.isAdmin ? Tokens.gold500 : Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(Tokens.r4),
+                          ),
+                          child: Text(
+                            me.isAdmin ? '대표' : '매니저',
+                            style: TextStyle(color: me.isAdmin ? Tokens.navy900 : Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: 4),
+                      Text(
+                        me.email,
+                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ]),
+                  ),
                 ]),
-              ),
-            ]),
-          ),
+        ),
 
         Section(title: '알림', children: [
           ListTile(
@@ -114,8 +144,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             title: const Text('푸시 알림', style: TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text(
-              hasToken ? '활성화됨 (이 기기로 알림 수신 중)' : 'iOS는 홈 화면 추가 후 활성화 가능',
+              hasToken ? '활성화됨' : 'iOS는 홈 화면 추가 후 활성화',
               style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             trailing: hasToken
                 ? Container(
@@ -123,11 +155,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     decoration: BoxDecoration(color: Tokens.success.withOpacity(0.10), borderRadius: BorderRadius.circular(Tokens.r999)),
                     child: const Text('ON', style: TextStyle(color: Tokens.success, fontSize: 11, fontWeight: FontWeight.w800)),
                   )
-                : OutlinedButton(
-                    onPressed: _enabling ? null : _enableNotifications,
-                    child: _enabling
-                        ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('활성화'),
+                : SizedBox(
+                    height: 32,
+                    child: OutlinedButton(
+                      onPressed: _enabling ? null : _enableNotifications,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(72, 32),
+                        padding: const EdgeInsets.symmetric(horizontal: Tokens.s12),
+                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      child: _enabling
+                          ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('활성화'),
+                    ),
                   ),
           ),
         ]),

@@ -6,7 +6,9 @@ import 'core/env.dart';
 import 'core/firebase_options.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
+import 'core/tokens.dart';
 import 'services/supabase_client.dart';
+import 'shared/widgets/mobile_container.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +30,13 @@ class NgApp extends ConsumerWidget {
       theme: AppTheme.light(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      // PC/태블릿 와이드 뷰포트에서 모바일 폭으로 강제
+      builder: (context, child) {
+        return Container(
+          color: Tokens.navy900,
+          child: MobileContainer(child: child ?? const SizedBox.shrink()),
+        );
+      },
     );
   }
 }
