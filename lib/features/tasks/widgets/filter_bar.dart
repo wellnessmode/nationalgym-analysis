@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/tokens.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/utils/branch_label.dart';
 import '../providers/task_providers.dart';
 
 class FilterBar extends ConsumerWidget {
@@ -74,7 +75,7 @@ class FilterBar extends ConsumerWidget {
                 const SizedBox(width: Tokens.s6),
                 for (final b in branches) ...[
                   _FilterChipSm(
-                    label: _shortBranchName(b.name),
+                    label: shortBranchLabel(b.name),
                     selected: selectedBranch == b.id,
                     onTap: () => ref.read(taskBranchFilterProvider.notifier).state = b.id,
                     small: true,
@@ -88,10 +89,6 @@ class FilterBar extends ConsumerWidget {
     );
   }
 
-  String _shortBranchName(String full) {
-    final parts = full.split(' ');
-    return parts.last;
-  }
 }
 
 class _FilterChipSm extends StatelessWidget {

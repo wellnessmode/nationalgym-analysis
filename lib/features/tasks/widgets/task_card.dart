@@ -4,6 +4,7 @@ import '../../../core/tokens.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/task.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/utils/branch_label.dart';
 import '../../../shared/widgets/pill.dart';
 import 'dday_badge.dart';
 import 'priority_chip.dart';
@@ -52,7 +53,7 @@ class TaskCard extends ConsumerWidget {
                 if (branch != null)
                   Flexible(
                     child: Text(
-                      _shortBranch(branch.name),
+                      shortBranchLabel(branch.name),
                       style: Tokens.ts12.copyWith(color: Tokens.textMuted),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -98,11 +99,6 @@ class TaskCard extends ConsumerWidget {
     );
   }
 
-  String _shortBranch(String full) {
-    // "내셔널짐 PT 용산점" → "용산점"
-    final parts = full.split(' ');
-    return parts.last;
-  }
 }
 
 class _Avatar extends StatelessWidget {

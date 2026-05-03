@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/tokens.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/utils/branch_label.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/pill.dart';
 import '../../../shared/widgets/skeleton.dart';
@@ -74,7 +75,7 @@ class MeetingNoteListScreen extends ConsumerWidget {
                             if (branch != null)
                               Flexible(
                                 child: Text(
-                                  _shortBranch(branch.name),
+                                  shortBranchLabel(branch.name),
                                   style: Tokens.ts12.copyWith(color: Tokens.textMuted),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -151,8 +152,4 @@ class MeetingNoteListScreen extends ConsumerWidget {
     );
   }
 
-  String _shortBranch(String full) {
-    final parts = full.split(' ');
-    return parts.last;
-  }
 }

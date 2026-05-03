@@ -6,6 +6,7 @@ import '../../../shared/models/branch.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/utils/branch_label.dart';
 import '../providers/task_providers.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -145,10 +146,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               value: _assignee,
               items: managers.map((u) {
                 final myBs = userBranches[u.id] ?? [];
-                final branchLabel = myBs.map((b) {
-                  final parts = b.name.split(' ');
-                  return parts.last;
-                }).join(' · ');
+                final branchLabel = myBs.map((b) => shortBranchLabel(b.name)).join(' · ');
                 return DropdownMenuItem(
                   value: u,
                   child: Row(children: [
