@@ -76,13 +76,14 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy Edge Function notify
+      - name: Deploy Edge Functions (notify + due-reminder)
         if: steps.gate.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -E 's|https?://([^.]+)\..*|\1|')
           supabase functions deploy notify --project-ref "$PROJECT_REF"
+          supabase functions deploy due-reminder --project-ref "$PROJECT_REF"
 
       - name: Set Edge Function secrets
         if: steps.gate.outputs.configured == 'true'

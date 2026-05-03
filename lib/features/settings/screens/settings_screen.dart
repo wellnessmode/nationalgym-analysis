@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/tokens.dart';
+import '../../../services/fcm_service.dart';
+import '../../../services/supabase_client.dart';
+import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/widgets/section.dart';
+import 'password_change_screen.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _enabling = false;
+
+  Future<void> _enableNotifications() async {
+    final me = ref.read(currentUserProvider).valueOrNull;
+    if (me == null) return;
+    setState(() => _enabling = true);
+    try {
+      final token = await FcmService.requestPermissionAndGetToken();
+      if (token == null) throw Exception('알림 권한이 거부되었습니다');
+      await ref.read(userRepositoryProvider).updateFcmToken(me.id, token);
+      ref.invalidate(currentUserProvider);
+      _snack('알림 활성화 완료');
+    } catch (e) {
+      _snack('실패: $e');
+    } finally {
+      if (mounted) setState(() => _enabling = false);
+    }
+  }
+
+  Future<void> _logout() async {
+    final me = ref.read(currentUserProvider).valueOrNull;
+    if (me != null && me.fcmToken != null && me.fcmToken!.isNotEmpty) {
+      try {
+        await ref.read(userRepositoryProvider).updateFcmToken(me.id, null);
+      } catch (_) {}
+    }
+    await supabase.auth.signOut();
+  }
+
+  void _snack(String s) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final me = ref.watch(currentUserProvider).valueOrNull;
+    final hasToken = me?.fcmToken != null && me!.fcmToken!.isNotEmpty;
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: Tokens.s32),
+      children: [
+        // Profile hero
+        if (me != null)
+          Container(
+            margin: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, 0),
+            padding: const EdgeInsets.all(Tokens.s20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(Tokens.r20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: [Tokens.navy900, Tokens.navy700],
+              ),
+            ),
+            child: Row(children: [
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.20)),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  me.name.isNotEmpty ? me.name.characters.first : '?',
+                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: Tokens.s16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Text(me.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: Tokens.s8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: me.isAdmin ? Tokens.gold500 : Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(Tokens.r4),
+                      ),
+                      child: Text(
+                        me.isAdmin ? '대표' : '매니저',
+                        style: TextStyle(color: me.isAdmin ? Tokens.navy900 : Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  Text(me.email, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                ]),
+              ),
+            ]),
+          ),
+
+        Section(title: '알림', children: [
+          ListTile(
+            leading: Icon(
+              hasToken ? Icons.notifications_active : Icons.notifications_off_outlined,
+              color: hasToken ? Tokens.success : Tokens.textMuted,
+            ),
+            title: const Text('푸시 알림', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(
+              hasToken ? '활성화됨 (이 기기로 알림 수신 중)' : 'iOS는 홈 화면 추가 후 활성화 가능',
+              style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+            ),
+            trailing: hasToken
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Tokens.success.withOpacity(0.10), borderRadius: BorderRadius.circular(Tokens.r999)),
+                    child: const Text('ON', style: TextStyle(color: Tokens.success, fontSize: 11, fontWeight: FontWeight.w800)),
+                  )
+                : OutlinedButton(
+                    onPressed: _enabling ? null : _enableNotifications,
+                    child: _enabling
+                        ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('활성화'),
+                  ),
+          ),
+        ]),
+
+        Section(title: '계정', children: [
+          ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('비밀번호 변경', style: TextStyle(fontWeight: FontWeight.w600)),
+            trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const PasswordChangeScreen(),
+            )),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Tokens.danger),
+            title: const Text('로그아웃', style: TextStyle(color: Tokens.danger, fontWeight: FontWeight.w600)),
+            onTap: _logout,
+          ),
+        ]),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s32, Tokens.s16, 0),
+          child: Center(
+            child: Text(
+              'NG · v0.1.0',
+              style: Tokens.ts11.copyWith(color: Tokens.textFaint),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

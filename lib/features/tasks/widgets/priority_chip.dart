@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/tokens.dart';
 import '../../../shared/models/enums.dart';
 
 class PriorityChip extends StatelessWidget {
@@ -7,16 +8,23 @@ class PriorityChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = switch (priority) {
-      TaskPriority.urgent => (Colors.red.shade700, Icons.warning_rounded),
-      TaskPriority.high => (Colors.orange.shade700, Icons.priority_high),
-      TaskPriority.normal => (Colors.blueGrey.shade400, Icons.fiber_manual_record),
-      TaskPriority.low => (Colors.grey.shade500, Icons.low_priority),
+    final color = switch (priority) {
+      TaskPriority.urgent => Tokens.danger,
+      TaskPriority.high => Tokens.warning,
+      TaskPriority.normal => Tokens.info,
+      TaskPriority.low => Tokens.textFaint,
+    };
+    final dot = switch (priority) {
+      TaskPriority.urgent || TaskPriority.high => Icons.flag_rounded,
+      _ => Icons.fiber_manual_record,
     };
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 14, color: color),
-      const SizedBox(width: 2),
-      Text(priority.label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+      Icon(dot, size: 12, color: color),
+      const SizedBox(width: 3),
+      Text(
+        priority.label,
+        style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+      ),
     ]);
   }
 }

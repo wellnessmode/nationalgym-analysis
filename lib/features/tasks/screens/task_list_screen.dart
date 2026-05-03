@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/tokens.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/skeleton.dart';
 import '../providers/task_providers.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/task_card.dart';
@@ -22,8 +25,12 @@ class TaskListScreen extends ConsumerWidget {
           child: tasksAsync.when(
             data: (tasks) {
               if (tasks.isEmpty) {
-                return const Center(
-                  child: Text('표시할 업무가 없습니다', style: TextStyle(color: Colors.grey)),
+                return EmptyState(
+                  icon: Icons.inbox_outlined,
+                  title: '표시할 업무가 없습니다',
+                  subtitle: me?.isAdmin == true
+                      ? '우하단 버튼을 눌러 매니저에게 지시를 발행하세요'
+                      : '우하단 버튼을 눌러 새 업무를 추가하세요',
                 );
               }
               return RefreshIndicator(
@@ -32,7 +39,7 @@ class TaskListScreen extends ConsumerWidget {
                   await ref.read(filteredTasksProvider.future);
                 },
                 child: ListView.builder(
-                  padding: const EdgeInsets.only(top: 4, bottom: 80),
+                  padding: const EdgeInsets.only(top: Tokens.s8, bottom: 100),
                   itemCount: tasks.length,
                   itemBuilder: (_, i) => TaskCard(
                     task: tasks[i],
@@ -43,8 +50,23 @@ class TaskListScreen extends ConsumerWidget {
                 ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('에러: $e')),
+            loading: () => ListView(
+              padding: const EdgeInsets.only(top: Tokens.s8),
+              children: const [
+                TaskCardSkeleton(),
+                TaskCardSkeleton(),
+                TaskCardSkeleton(),
+              ],
+            ),
+            error: (e, _) => EmptyState(
+              icon: Icons.error_outline,
+              title: '불러오기 실패',
+              subtitle: '$e',
+              action: TextButton(
+                onPressed: () => ref.invalidate(filteredTasksProvider),
+                child: const Text('다시 시도'),
+              ),
+            ),
           ),
         ),
       ]),
@@ -54,7 +76,7 @@ class TaskListScreen extends ConsumerWidget {
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const TaskFormScreen(),
               )),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, size: 20),
               label: Text(me.isAdmin ? '지시 작성' : '업무 추가'),
             ),
     );
