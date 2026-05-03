@@ -160,7 +160,7 @@ console.log(`\n결과: ${pass} pass, ${fail} fail`);
   const ghToken = process.env.GH_TOKEN_FOR_COMMENTS || process.env.GITHUB_TOKEN;
   const ghRepo = process.env.GITHUB_REPOSITORY;
   const ghSha = process.env.GITHUB_SHA;
-  if (ghToken && ghRepo && ghSha && (fail > 0 || !linkOk)) {
+  if (ghToken && ghRepo && ghSha) {
     try {
       const header = fail > 0 ? '## Verify failed' : '## Verify summary';
       const body = `${header}\n\n` + lines.join('\n') + dump;
