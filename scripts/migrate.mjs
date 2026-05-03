@@ -141,6 +141,28 @@ async function main() {
     }
   }
 
+  // _app_settings 갱신 (트리거가 Edge Function URL 호출용)
+  // 0006이 적용된 후에만 시도; 테이블 존재 시.
+  const settingsExist = await client.query(
+    `SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='_app_settings'`
+  );
+  if (settingsExist.rows.length > 0) {
+    const sbUrl = process.env.SUPABASE_URL;
+    const sbAnon = process.env.SUPABASE_ANON_KEY;
+    if (sbUrl && sbAnon) {
+      await client.query(
+        `INSERT INTO public._app_settings (key, value, updated_at) VALUES
+           ('supabase_url', $1, NOW()),
+           ('supabase_anon_key', $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [sbUrl, sbAnon]
+      );
+      console.log('  ✓ _app_settings 갱신 (URL + anon_key)');
+    } else {
+      console.warn('  ⚠ SUPABASE_URL / SUPABASE_ANON_KEY 환경변수 없음 — _app_settings 미갱신');
+    }
+  }
+
   await client.end();
   console.log(`\n✓ 완료. 새로 적용: ${appliedCount}개 / 전체: ${files.length}개`);
 }

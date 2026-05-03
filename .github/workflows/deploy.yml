@@ -33,6 +33,8 @@ jobs:
         working-directory: scripts
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
@@ -46,6 +48,51 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
         run: node verify.mjs
+
+  # ================================================================
+  # 1.5) Edge Function 'notify' 배포 (선택적 — SUPABASE_ACCESS_TOKEN 필요)
+  # ================================================================
+  deploy-functions:
+    name: Deploy Supabase Edge Functions
+    runs-on: ubuntu-latest
+    needs: migrate
+    # SUPABASE_ACCESS_TOKEN secret 있을 때만 실행
+    if: ${{ needs.migrate.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if Supabase token configured
+        id: gate
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "SUPABASE_ACCESS_TOKEN secret 미설정 — skip"
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.gate.outputs.configured == 'true'
+        with:
+          version: latest
+
+      - name: Deploy Edge Function notify
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -E 's|https?://([^.]+)\..*|\1|')
+          supabase functions deploy notify --project-ref "$PROJECT_REF"
+
+      - name: Set Edge Function secrets
+        if: steps.gate.outputs.configured == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -E 's|https?://([^.]+)\..*|\1|')
+          supabase secrets set --project-ref "$PROJECT_REF" \
+            FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+            FIREBASE_SERVICE_ACCOUNT='${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
 
   # ================================================================
   # 2) Flutter Web 빌드 + Firebase Hosting 배포
