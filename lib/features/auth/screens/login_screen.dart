@@ -164,21 +164,31 @@ class _LogoLockup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      // 누끼 처리된 NATIONAL GYM 엠블럼 (투명 배경)
+      // 원본 NATIONAL GYM 엠블럼 (이미 dark bg, 로그인 navy 화면과 자연 블렌드)
       Image.asset(
-        'assets/brand_logo_transparent.png',
-        width: 120,
-        height: 120,
+        'assets/brand_logo.png',
+        width: 140,
+        height: 140,
         fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
       ),
-      const SizedBox(height: Tokens.s12),
+      const SizedBox(height: Tokens.s8),
       const Text(
-        '내셔널짐 업무',
+        'OPERATIONS',
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
+          color: Tokens.gold500,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 4,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        '운영 시스템',
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.6),
+          fontSize: 12,
+          letterSpacing: 0.5,
         ),
       ),
     ]);

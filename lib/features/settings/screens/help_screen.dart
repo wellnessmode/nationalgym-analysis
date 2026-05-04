@@ -122,7 +122,7 @@ class _Intro extends StatelessWidget {
           const Icon(Icons.menu_book, color: Tokens.gold500, size: 22),
           const SizedBox(width: Tokens.s8),
           const Text(
-            '내셔널짐 업무 사용법',
+            'NATIONAL GYM Operations 사용법',
             style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
           ),
         ]),

@@ -1,14 +1,14 @@
 {
-  "name": "내셔널짐 업무",
-  "short_name": "NG업무",
-  "description": "내셔널짐 PT 지점 업무·회의록 공유",
+  "name": "NATIONAL GYM Operations",
+  "short_name": "NG Operations",
+  "description": "내셔널짐 PT 지점 운영 시스템 — 업무·회의록·알림",
   "lang": "ko",
   "dir": "ltr",
   "start_url": ".",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#0a1628",
   "theme_color": "#0a1628",
   "prefer_related_applications": false,
   "icons": [
