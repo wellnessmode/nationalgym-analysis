@@ -5,18 +5,23 @@ import '../data/note_repository.dart';
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) => NoteRepository());
 
-/// 내가 작성한 메모 (없으면 null)
-final myNoteProvider = FutureProvider<Note?>((ref) async {
+/// 내가 작성한 메모 목록 (최신 순)
+final myNotesProvider = FutureProvider<List<Note>>((ref) async {
   final me = ref.watch(currentUserProvider).valueOrNull;
-  if (me == null) return null;
-  return ref.read(noteRepositoryProvider).getMine(me.id);
+  if (me == null) return [];
+  return ref.read(noteRepositoryProvider).listMine(me.id);
 });
 
-/// 나에게 공유된 메모 목록 (남이 작성하고 나에게 공유한 것)
+/// 나에게 공유된 메모 목록 (남이 작성 → 나에게 공유)
 final sharedToMeProvider = FutureProvider<List<Note>>((ref) async {
   final me = ref.watch(currentUserProvider).valueOrNull;
   if (me == null) return [];
-  final all = await ref.read(noteRepositoryProvider).listSharedToMe();
-  // 본인 메모는 제외
-  return all.where((n) => n.ownerId != me.id).toList();
+  return ref.read(noteRepositoryProvider).listSharedToMe(me.id);
+});
+
+/// 대표 전용: 모든 메모 (매니저 인사평가 열람용)
+final allNotesAdminProvider = FutureProvider<List<Note>>((ref) async {
+  final me = ref.watch(currentUserProvider).valueOrNull;
+  if (me == null || !me.isAdmin) return [];
+  return ref.read(noteRepositoryProvider).listAllForAdmin();
 });

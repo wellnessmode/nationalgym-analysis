@@ -106,4 +106,8 @@ class TaskRepository {
     }).select().single();
     return TaskComment.fromJson(res);
   }
+
+  Future<void> delete(String id) async {
+    await supabase.from('tasks').delete().eq('id', id);
+  }
 }

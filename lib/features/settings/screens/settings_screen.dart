@@ -7,6 +7,7 @@ import '../../../services/supabase_client.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/section.dart';
 import 'help_screen.dart';
+import 'manager_notes_audit_screen.dart';
 import 'password_change_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -182,7 +183,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             leading: const Icon(Icons.menu_book_outlined),
             title: const Text('사용법', style: TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text(
-              '업무·회의록·알림 기본 사용 안내',
+              '업무·회의록·메모장·알림 기본 사용 안내',
               style: Tokens.ts12.copyWith(color: Tokens.textMuted),
             ),
             trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
@@ -191,6 +192,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             )),
           ),
         ]),
+
+        if (me?.isAdmin == true)
+          Section(title: '대표 전용', children: [
+            ListTile(
+              leading: const Icon(Icons.fact_check_outlined, color: Tokens.gold600),
+              title: const Text('매니저 기록 열람', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(
+                '매니저들의 메모를 모아보기 (인사평가용)',
+                style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ManagerNotesAuditScreen(),
+              )),
+            ),
+          ]),
 
         Section(title: '계정', children: [
           ListTile(

@@ -33,6 +33,11 @@ dependencies:
   # 회의록 음성 인식 (Web Speech API, 무료, 가입 불필요)
   speech_to_text: ^7.0.0
 
+  # 파일 첨부 (사진·동영상·PDF·엑셀·워드 등)
+  file_picker: ^8.1.4
+  mime: ^2.0.0
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

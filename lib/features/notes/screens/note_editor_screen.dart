@@ -9,53 +9,61 @@ import '../../../shared/models/note.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../providers/note_providers.dart';
 
-/// 노트 에디터 — 자동 저장 (입력 멈춘 후 1.2초). 작성자 본인만 공유 대상 변경 가능.
+/// 메모 에디터 — iOS Notes 스타일 (제목 + 본문 분리). 자동 저장 1.2초.
+/// noteId == null 이면 첫 입력 시 createEmpty 후 그 ID 사용.
 class NoteEditorScreen extends ConsumerStatefulWidget {
-  final String ownerId;
-  final String? ownerName; // null = 내 메모
+  final String? noteId; // null = 신규 (첫 저장 시 생성)
+  final String? ownerName; // 공유 받은 메모일 때 작성자 이름
 
-  const NoteEditorScreen({
-    super.key,
-    required this.ownerId,
-    this.ownerName,
-  });
+  const NoteEditorScreen({super.key, this.noteId, this.ownerName});
 
   @override
   ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
-  final TextEditingController _ctrl = TextEditingController();
+  final TextEditingController _titleCtrl = TextEditingController();
+  final TextEditingController _bodyCtrl = TextEditingController();
+  final FocusNode _bodyFocus = FocusNode();
   Timer? _debounce;
   bool _saving = false;
   bool _dirty = false;
   bool _loaded = false;
   Note? _note;
-  String _initial = '';
+  String _initialTitle = '';
+  String _initialBody = '';
 
   @override
   void initState() {
     super.initState();
-    _ctrl.addListener(_onChange);
+    _titleCtrl.addListener(_onChange);
+    _bodyCtrl.addListener(_onChange);
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _ctrl.removeListener(_onChange);
-    _ctrl.dispose();
+    _titleCtrl.dispose();
+    _bodyCtrl.dispose();
+    _bodyFocus.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
+    if (widget.noteId == null) {
+      setState(() => _loaded = true);
+      return;
+    }
     try {
-      final note = await ref.read(noteRepositoryProvider).getMine(widget.ownerId);
+      final n = await ref.read(noteRepositoryProvider).getById(widget.noteId!);
       if (!mounted) return;
       setState(() {
-        _note = note;
-        _initial = note?.content ?? '';
-        _ctrl.text = _initial;
+        _note = n;
+        _initialTitle = n?.title ?? '';
+        _initialBody = n?.content ?? '';
+        _titleCtrl.text = _initialTitle;
+        _bodyCtrl.text = _initialBody;
         _loaded = true;
       });
     } catch (e) {
@@ -68,7 +76,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   void _onChange() {
     if (!_loaded) return;
-    if (_ctrl.text == _initial) return;
+    if (_titleCtrl.text == _initialTitle && _bodyCtrl.text == _initialBody) return;
     if (!_dirty) setState(() => _dirty = true);
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 1200), _save);
@@ -78,13 +86,23 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     if (_saving || !_dirty) return;
     setState(() => _saving = true);
     try {
-      final saved = await ref.read(noteRepositoryProvider).saveContent(
-            ownerId: widget.ownerId,
-            content: _ctrl.text,
+      final me = ref.read(currentUserProvider).valueOrNull;
+      if (me == null) throw Exception('not signed in');
+
+      // 신규: 첫 입력 시 createEmpty
+      if (_note == null) {
+        _note = await ref.read(noteRepositoryProvider).createEmpty(ownerId: me.id);
+      }
+
+      final saved = await ref.read(noteRepositoryProvider).save(
+            id: _note!.id,
+            title: _titleCtrl.text,
+            content: _bodyCtrl.text,
           );
-      _initial = saved.content;
+      _initialTitle = saved.title;
+      _initialBody = saved.content;
       _note = saved;
-      ref.invalidate(myNoteProvider);
+      ref.invalidate(myNotesProvider);
       ref.invalidate(sharedToMeProvider);
       if (mounted) setState(() => _dirty = false);
     } catch (e) {
@@ -103,10 +121,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   Future<void> _openSharePicker() async {
     final me = ref.read(currentUserProvider).valueOrNull;
     final users = ref.read(allUsersProvider).valueOrNull ?? [];
-    if (me == null) return;
+    if (me == null || _note == null) return;
 
-    // 작성자만 공유 변경 가능
-    if (widget.ownerId != me.id) {
+    if (_note!.ownerId != me.id) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('공유 설정은 작성자만 변경할 수 있어요')),
       );
@@ -114,7 +131,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     }
 
     final candidates = users.where((u) => u.id != me.id).toList();
-    final current = _note?.sharedWithUserId;
+    final current = _note!.sharedWithUserId;
 
     final picked = await showModalBottomSheet<_SharePick>(
       context: context,
@@ -131,10 +148,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
     try {
       final updated = await ref.read(noteRepositoryProvider).updateSharing(
-            ownerId: widget.ownerId,
+            id: _note!.id,
             sharedWithUserId: picked.userId,
           );
-      ref.invalidate(myNoteProvider);
+      ref.invalidate(myNotesProvider);
       ref.invalidate(sharedToMeProvider);
       if (mounted) {
         setState(() => _note = updated);
@@ -149,11 +166,53 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     }
   }
 
+  Future<void> _confirmDelete() async {
+    if (_note == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final me = ref.read(currentUserProvider).valueOrNull;
+    if (me == null || _note!.ownerId != me.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('작성자만 삭제할 수 있어요')),
+      );
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('메모 삭제'),
+        content: const Text('이 메모를 삭제할까요? 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(foregroundColor: Tokens.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      _debounce?.cancel();
+      await ref.read(noteRepositoryProvider).delete(_note!.id);
+      ref.invalidate(myNotesProvider);
+      ref.invalidate(sharedToMeProvider);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('삭제됨')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final me = ref.watch(currentUserProvider).valueOrNull;
     final users = ref.watch(allUsersProvider).valueOrNull ?? [];
-    final isMine = me != null && widget.ownerId == me.id;
+    final isMine = me != null && (_note == null || _note!.ownerId == me.id);
 
     final shareTargetId = _note?.sharedWithUserId;
     final shareTarget = shareTargetId == null
@@ -161,18 +220,18 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         : users.where((u) => u.id == shareTargetId).firstOrNull;
 
     final title = isMine
-        ? '내 메모'
-        : '${widget.ownerName ?? '메모'} (공유 받음)';
+        ? '메모'
+        : '${widget.ownerName ?? '메모'} (공유받음)';
 
     final statusText = !_loaded
-        ? '불러오는 중...'
+        ? '...'
         : _saving
-            ? '저장 중...'
+            ? '저장 중'
             : _dirty
                 ? '입력 중'
                 : (_note?.updatedAt != null
-                    ? '저장됨 · ${DateFormat('MM-dd HH:mm').format(_note!.updatedAt.toLocal())}'
-                    : '비어있음');
+                    ? DateFormat('MM-dd HH:mm').format(_note!.updatedAt.toLocal())
+                    : '');
 
     return PopScope(
       canPop: !_dirty && !_saving,
@@ -183,7 +242,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         appBar: AppBar(
           title: Text(title),
           actions: [
-            if (isMine)
+            if (isMine && _note != null)
               IconButton(
                 tooltip: '공유 설정',
                 icon: Icon(
@@ -192,19 +251,26 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 ),
                 onPressed: _loaded ? _openSharePicker : null,
               ),
-            Padding(
-              padding: const EdgeInsets.only(right: Tokens.s12),
-              child: Center(
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+            if (isMine && _note != null)
+              IconButton(
+                tooltip: '삭제',
+                icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                onPressed: _loaded ? _confirmDelete : null,
+              ),
+            if (statusText.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: Tokens.s12),
+                child: Center(
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
         body: Column(
@@ -214,23 +280,39 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               shareTargetName: shareTarget?.name,
               ownerName: widget.ownerName,
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s12, Tokens.s16, 0),
+              child: TextField(
+                controller: _titleCtrl,
+                style: Tokens.ts18.copyWith(fontWeight: FontWeight.w800),
+                decoration: const InputDecoration(
+                  hintText: '제목',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => _bodyFocus.requestFocus(),
+              ),
+            ),
+            const Divider(height: 1, indent: Tokens.s16, endIndent: Tokens.s16),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(Tokens.s16),
                 child: TextField(
-                  controller: _ctrl,
+                  controller: _bodyCtrl,
+                  focusNode: _bodyFocus,
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
                   style: Tokens.ts14.copyWith(height: 1.6),
                   decoration: const InputDecoration(
-                    hintText: '아무거나 메모하세요. 자동 저장됩니다.',
+                    hintText: '메모를 입력하세요. 자동 저장됩니다.',
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
-                    fillColor: Tokens.surface,
-                    filled: true,
-                    contentPadding: EdgeInsets.all(Tokens.s16),
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
@@ -265,7 +347,7 @@ class _StatusBanner extends StatelessWidget {
     } else if (shareTargetName == null) {
       icon = Icons.lock_outline;
       color = Tokens.textMuted;
-      text = '본인만 볼 수 있는 메모입니다 — 우측 상단 자물쇠로 공유';
+      text = '본인만 볼 수 있는 메모 (대표는 인사평가 목적으로 열람 가능)';
     } else {
       icon = Icons.group;
       color = Tokens.gold600;
@@ -274,15 +356,15 @@ class _StatusBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: Tokens.s16, vertical: Tokens.s10),
+      padding: const EdgeInsets.symmetric(horizontal: Tokens.s16, vertical: Tokens.s8),
       color: color == Tokens.textMuted ? Tokens.surfaceAlt : color.withOpacity(0.08),
       child: Row(children: [
-        Icon(icon, size: 14, color: color),
+        Icon(icon, size: 13, color: color),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
-            style: Tokens.ts12.copyWith(color: color, fontWeight: FontWeight.w600),
+            style: Tokens.ts11.copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ),
       ]),

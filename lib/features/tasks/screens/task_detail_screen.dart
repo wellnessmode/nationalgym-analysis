@@ -7,6 +7,7 @@ import '../../../shared/models/task.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/pill.dart';
 import '../../../shared/widgets/section.dart';
+import '../../attachments/widgets/attachment_section.dart';
 import '../providers/task_providers.dart';
 import '../widgets/dday_badge.dart';
 import '../widgets/priority_chip.dart';
@@ -15,12 +16,69 @@ class TaskDetailScreen extends ConsumerWidget {
   final String taskId;
   const TaskDetailScreen({super.key, required this.taskId});
 
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, Task t) async {
+    final me = ref.read(currentUserProvider).valueOrNull;
+    if (me == null) return;
+    final canDelete = me.isAdmin || t.requesterId == me.id;
+    if (!canDelete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('업무를 만든 사람만 삭제할 수 있어요')),
+      );
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('업무 삭제'),
+        content: Text('"${t.title}" 업무를 삭제할까요? 댓글·첨부파일도 함께 삭제됩니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(foregroundColor: Tokens.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(taskRepositoryProvider).delete(t.id);
+      ref.invalidate(filteredTasksProvider);
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('삭제됨')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final taskAsync = ref.watch(taskByIdProvider(taskId));
+    final me = ref.watch(currentUserProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('업무 상세')),
+      appBar: AppBar(
+        title: const Text('업무 상세'),
+        actions: [
+          taskAsync.maybeWhen(
+            data: (t) {
+              final canDelete = me != null && (me.isAdmin || t.requesterId == me.id);
+              if (!canDelete) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: '삭제',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _confirmDelete(context, ref, t),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
+      ),
       body: taskAsync.when(
         data: (task) => _Body(task: task),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -215,6 +273,12 @@ class _BodyState extends ConsumerState<_Body> {
           style: Tokens.ts14,
           decoration: const InputDecoration(hintText: '메모 입력...'),
         ),
+      ),
+
+      // Attachments
+      Padding(
+        padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, 0),
+        child: AttachmentSection(taskId: t.id),
       ),
 
       // Comments

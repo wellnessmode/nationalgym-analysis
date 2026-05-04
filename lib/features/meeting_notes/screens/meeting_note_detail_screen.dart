@@ -7,6 +7,7 @@ import '../../../shared/models/meeting_note.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/pill.dart';
 import '../../../shared/widgets/section.dart';
+import '../../attachments/widgets/attachment_section.dart';
 import '../providers/meeting_note_providers.dart';
 import 'meeting_note_form_screen.dart';
 
@@ -25,16 +26,59 @@ class MeetingNoteDetailScreen extends ConsumerWidget {
         actions: [
           noteAsync.maybeWhen(
             data: (n) {
-              if (me != null && (me.isAdmin || me.id == n.authorId)) {
-                return IconButton(
+              if (me == null || (!me.isAdmin && me.id != n.authorId)) {
+                return const SizedBox.shrink();
+              }
+              return Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   tooltip: '편집',
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => MeetingNoteFormScreen(existing: n),
                   )),
-                );
-              }
-              return const SizedBox.shrink();
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  tooltip: '삭제',
+                  onPressed: () async {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('회의록 삭제'),
+                        content: Text('"${n.topic}" 회의록을 삭제할까요? 댓글·첨부파일도 함께 삭제됩니다.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('취소'),
+                          ),
+                          FilledButton.tonal(
+                            style: FilledButton.styleFrom(foregroundColor: Tokens.danger),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('삭제'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true) return;
+                    try {
+                      await ref.read(meetingNoteRepositoryProvider).delete(n.id);
+                      ref.invalidate(meetingNotesListProvider);
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('삭제됨')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('삭제 실패: $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ]);
             },
             orElse: () => const SizedBox.shrink(),
           ),
@@ -237,6 +281,12 @@ class _BodyState extends ConsumerState<_Body> {
           ]),
         ),
       ],
+
+      // Attachments
+      Padding(
+        padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, 0),
+        child: AttachmentSection(meetingNoteId: n.id),
+      ),
 
       // Comments
       Padding(
