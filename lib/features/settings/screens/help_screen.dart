@@ -64,6 +64,24 @@ class HelpScreen extends StatelessWidget {
             ),
           ]),
 
+          Section(title: '메모', children: [
+            _Item(
+              icon: Icons.lock_outline,
+              title: '개인 메모',
+              body: '본인만 볼 수 있는 메모. 떠오르는 생각·할 일·아이디어를 자유롭게 기록. 자동 저장.',
+            ),
+            _Item(
+              icon: Icons.group_outlined,
+              title: '공유 메모',
+              body: '매니저↔대표 1:1 공유 메모. 매니저가 작성하면 대표만 볼 수 있고, 대표가 답글처럼 같이 편집 가능. 다른 매니저에게는 안 보임.',
+            ),
+            _Item(
+              icon: Icons.save_outlined,
+              title: '자동 저장',
+              body: '입력 멈춘 후 약 1초 후 자동 저장. 화면 나가도 안전하게 보존됩니다.',
+            ),
+          ]),
+
           Section(title: '알림', children: [
             _Item(
               icon: Icons.notifications_active,

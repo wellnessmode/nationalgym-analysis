@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/tokens.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../meeting_notes/screens/meeting_note_list_screen.dart';
+import '../../notes/screens/notes_screen.dart';
 import '../../notifications/providers/notification_providers.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -23,9 +24,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     const pages = [
       TaskListScreen(),
       MeetingNoteListScreen(),
+      NotesScreen(),
       SettingsScreen(),
     ];
-    const titles = ['업무', '회의록', '설정'];
+    const titles = ['업무', '회의록', '메모', '설정'];
     final unread = ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0;
 
     return Scaffold(
@@ -75,7 +77,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: const [
             NavigationDestination(icon: Icon(Icons.task_alt_outlined), selectedIcon: Icon(Icons.task_alt), label: '업무'),
-            NavigationDestination(icon: Icon(Icons.note_alt_outlined), selectedIcon: Icon(Icons.note_alt), label: '회의록'),
+            NavigationDestination(icon: Icon(Icons.event_note_outlined), selectedIcon: Icon(Icons.event_note), label: '회의록'),
+            NavigationDestination(icon: Icon(Icons.sticky_note_2_outlined), selectedIcon: Icon(Icons.sticky_note_2), label: '메모'),
             NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '설정'),
           ],
         ),

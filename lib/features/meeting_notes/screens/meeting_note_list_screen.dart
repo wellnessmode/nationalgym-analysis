@@ -29,10 +29,8 @@ class MeetingNoteListScreen extends ConsumerWidget {
             return EmptyState(
               icon: Icons.event_note_outlined,
               title: '회의록이 없습니다',
-              subtitle: me?.isManager == true
-                  ? '회의 전 어젠다, 회의 후 결과를 정리해 공유하세요'
-                  : '매니저가 회의록을 작성하면 여기 표시됩니다',
-              action: me?.isManager == true
+              subtitle: '회의 전 어젠다, 회의 후 결과를 정리해 공유하세요',
+              action: me != null
                   ? FilledButton.icon(
                       onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => const MeetingNoteFormScreen(),
@@ -149,8 +147,8 @@ class MeetingNoteListScreen extends ConsumerWidget {
           ),
         ),
       ),
-      // 리스트가 있고 매니저일 때만 FAB. 빈 상태에선 EmptyState 안의 가운데 버튼.
-      floatingActionButton: me?.isManager == true && notesAsync.value?.isNotEmpty == true
+      // 리스트가 있을 때 FAB (admin·manager 모두 작성 가능). 빈 상태에선 EmptyState 안의 버튼만.
+      floatingActionButton: me != null && notesAsync.value?.isNotEmpty == true
           ? FloatingActionButton.extended(
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => const MeetingNoteFormScreen(),

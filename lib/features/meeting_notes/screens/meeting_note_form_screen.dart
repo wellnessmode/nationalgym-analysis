@@ -63,8 +63,10 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     final repo = ref.read(meetingNoteRepositoryProvider);
     try {
       if (widget.existing == null) {
-        // 신규
-        final branches = ref.read(myBranchesProvider).valueOrNull ?? [];
+        // 신규: admin은 allBranches, manager는 myBranches
+        final branches = me.isAdmin
+            ? (ref.read(allBranchesProvider).valueOrNull ?? [])
+            : (ref.read(myBranchesProvider).valueOrNull ?? []);
         final selectedBranch = _branch ?? (branches.isNotEmpty ? branches.first : null);
         if (selectedBranch == null) throw Exception('지점이 없습니다');
         await repo.create(
@@ -159,7 +161,10 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
   Widget build(BuildContext context) {
     final me = ref.watch(currentUserProvider).valueOrNull;
     if (me == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    final branches = ref.watch(myBranchesProvider).valueOrNull ?? [];
+    // admin이면 모든 지점, manager면 본인 담당 지점
+    final branches = me.isAdmin
+        ? (ref.watch(allBranchesProvider).valueOrNull ?? [])
+        : (ref.watch(myBranchesProvider).valueOrNull ?? []);
     final isEditing = widget.existing != null;
 
     return Scaffold(

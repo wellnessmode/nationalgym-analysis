@@ -40,14 +40,14 @@ await client.connect();
 
 const checks = [
   {
-    name: '도메인 테이블 8개 (_migrations 제외)',
+    name: '도메인 테이블 9개 (_migrations 제외, notes 포함)',
     sql: `SELECT COUNT(*)::int AS n FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '\\_%'`,
-    expect: r => r.rows[0].n === 8,
+    expect: r => r.rows[0].n === 9,
   },
   {
-    name: 'RLS 8개 테이블 모두 활성',
+    name: 'RLS 9개 테이블 모두 활성',
     sql: `SELECT COUNT(*)::int AS n FROM pg_tables WHERE schemaname='public' AND rowsecurity=true`,
-    expect: r => r.rows[0].n === 8,
+    expect: r => r.rows[0].n === 9,
   },
   {
     name: '정책 20개 이상',
