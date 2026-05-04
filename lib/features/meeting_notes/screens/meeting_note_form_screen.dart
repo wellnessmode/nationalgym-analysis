@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -112,69 +111,13 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  /// 녹음 완료 콜백 — 회의록을 어젠다(draft) 상태로 먼저 저장하고,
-  /// 음성 업로드 + 전사 트리거. 사용자는 녹음 결과가 본문에 자동 채워질 때까지 대기.
-  Future<void> _handleRecorded(List<int> bytes, String mimeType) async {
-    final me = ref.read(currentUserProvider).valueOrNull;
-    if (me == null) return;
-    if (_topicCtrl.text.trim().isEmpty) {
-      _snack('주제를 먼저 입력해주세요');
-      return;
-    }
-    setState(() => _saving = true);
-    final repo = ref.read(meetingNoteRepositoryProvider);
-    try {
-      String meetingId;
-      if (widget.existing != null) {
-        meetingId = widget.existing!.id;
-        await repo.update(
-          meetingId,
-          topic: _topicCtrl.text.trim(),
-          attendees: _attendeesCtrl.text.trim(),
-          content: _contentCtrl.text.trim(),
-          actionItems: _actionsCtrl.text.trim(),
-          meetingDate: _date,
-        );
-      } else {
-        // 신규: draft로 우선 저장
-        final branches = ref.read(myBranchesProvider).valueOrNull ?? [];
-        final selectedBranch = _branch ?? (branches.isNotEmpty ? branches.first : null);
-        if (selectedBranch == null) throw Exception('지점이 없습니다');
-        final created = await repo.create(
-          branchId: selectedBranch.id,
-          authorId: me.id,
-          status: MeetingStatus.draft,
-          meetingDate: _date,
-          topic: _topicCtrl.text.trim(),
-          attendees: _attendeesCtrl.text.trim().isEmpty ? null : _attendeesCtrl.text.trim(),
-          content: _contentCtrl.text.trim().isEmpty ? null : _contentCtrl.text.trim(),
-          actionItems: _actionsCtrl.text.trim().isEmpty ? null : _actionsCtrl.text.trim(),
-        );
-        meetingId = created.id;
-      }
-
-      // Storage 업로드
-      final path = await repo.uploadRecording(
-        meetingNoteId: meetingId,
-        bytes: Uint8List.fromList(bytes),
-        mimeType: mimeType,
-      );
-      await repo.attachRecording(meetingId, path);
-
-      // 전사 트리거 (백그라운드 — 비동기)
-      // ignore: unawaited_futures
-      repo.requestTranscription(meetingId).catchError((_) {});
-
-      if (!mounted) return;
-      ref.invalidate(meetingNotesListProvider);
-      ref.invalidate(meetingNoteByIdProvider(meetingId));
-      Navigator.of(context).pop();
-      _snack('녹음 업로드 완료. AI가 회의록을 정리 중입니다 (1~2분 후 새로고침)');
-    } catch (e) {
-      _snack('업로드 실패: $e');
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  /// 음성 인식 결과를 본문 컨트롤러에 반영. interim 포함이라 전체 교체.
+  void _handleTranscript(String text) {
+    _contentCtrl.text = text;
+    // 커서를 끝으로
+    _contentCtrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: _contentCtrl.text.length),
+    );
   }
 
   void _snack(String s) {
@@ -221,9 +164,9 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         ),
         const SizedBox(height: Tokens.s16),
 
-        // AI 회의록 — 녹음 + 전사 패널
+        // 회의 음성 → 본문 자동 입력 (Web Speech API, 무료)
         AudioRecorderPanel(
-          onRecorded: _handleRecorded,
+          onTranscriptChunk: _handleTranscript,
           disabled: _saving,
         ),
         const SizedBox(height: Tokens.s16),
