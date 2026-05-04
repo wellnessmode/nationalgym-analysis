@@ -174,7 +174,7 @@ class _LogoLockup extends StatelessWidget {
       ),
       const SizedBox(height: Tokens.s8),
       const Text(
-        'OPERATIONS',
+        'WORKSPACE',
         style: TextStyle(
           color: Tokens.gold500,
           fontSize: 13,
@@ -184,7 +184,7 @@ class _LogoLockup extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        '운영 시스템',
+        'National Gym',
         style: TextStyle(
           color: Colors.white.withOpacity(0.6),
           fontSize: 12,

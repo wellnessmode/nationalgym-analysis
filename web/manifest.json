@@ -1,7 +1,7 @@
 {
-  "name": "NATIONAL GYM Operations",
-  "short_name": "NG Operations",
-  "description": "내셔널짐 PT 지점 운영 시스템 — 업무·회의록·알림",
+  "name": "National Gym Workspace",
+  "short_name": "NG Workspace",
+  "description": "내셔널짐 PT 지점 워크스페이스 — 업무·회의록·알림",
   "lang": "ko",
   "dir": "ltr",
   "start_url": ".",
