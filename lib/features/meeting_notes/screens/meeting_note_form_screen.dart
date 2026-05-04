@@ -114,10 +114,41 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
   /// 음성 인식 결과를 본문 컨트롤러에 반영. interim 포함이라 전체 교체.
   void _handleTranscript(String text) {
     _contentCtrl.text = text;
-    // 커서를 끝으로
     _contentCtrl.selection = TextSelection.fromPosition(
       TextPosition(offset: _contentCtrl.text.length),
     );
+  }
+
+  bool _aiCleaning = false;
+
+  /// 본문 raw transcript → Gemini 로 정리 → content + action_items 자동 채움.
+  Future<void> _aiCleanup() async {
+    final raw = _contentCtrl.text.trim();
+    if (raw.length < 10) {
+      _snack('정리할 내용이 너무 짧습니다 (10자 이상 필요)');
+      return;
+    }
+    setState(() => _aiCleaning = true);
+    try {
+      final res = await ref.read(meetingNoteRepositoryProvider).aiCleanup(raw);
+      if (res == null) {
+        _snack('AI 정리 실패. GEMINI_API_KEY가 설정되었는지 확인하세요');
+        return;
+      }
+      _contentCtrl.text = res.content;
+      // 후속조치는 기존 내용에 prepend
+      final existingActions = _actionsCtrl.text.trim();
+      if (res.actionItems.isNotEmpty) {
+        _actionsCtrl.text = existingActions.isEmpty
+            ? res.actionItems
+            : '${res.actionItems}\n\n${existingActions}';
+      }
+      _snack('AI 정리 완료');
+    } catch (e) {
+      _snack('AI 정리 오류: $e');
+    } finally {
+      if (mounted) setState(() => _aiCleaning = false);
+    }
   }
 
   void _snack(String s) {
@@ -167,7 +198,27 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         // 회의 음성 → 본문 자동 입력 (Web Speech API, 무료)
         AudioRecorderPanel(
           onTranscriptChunk: _handleTranscript,
-          disabled: _saving,
+          disabled: _saving || _aiCleaning,
+        ),
+        const SizedBox(height: Tokens.s8),
+
+        // AI 정리 (Gemini, 무료 티어)
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: OutlinedButton.icon(
+            onPressed: (_saving || _aiCleaning) ? null : _aiCleanup,
+            icon: _aiCleaning
+                ? const SizedBox(
+                    width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.auto_awesome, size: 16, color: Tokens.gold600),
+            label: Text(_aiCleaning ? 'AI 정리 중...' : 'AI로 회의록 정리'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Tokens.gold600,
+              side: const BorderSide(color: Tokens.gold500),
+            ),
+          ),
         ),
         const SizedBox(height: Tokens.s16),
 

@@ -76,7 +76,7 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy Edge Functions (notify + due-reminder + transcribe-meeting)
+      - name: Deploy Edge Functions
         if: steps.gate.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -85,6 +85,7 @@ jobs:
           supabase functions deploy notify --project-ref "$PROJECT_REF"
           supabase functions deploy due-reminder --project-ref "$PROJECT_REF"
           supabase functions deploy transcribe-meeting --project-ref "$PROJECT_REF"
+          supabase functions deploy cleanup-meeting --project-ref "$PROJECT_REF"
 
       - name: Set Edge Function secrets
         if: steps.gate.outputs.configured == 'true'
@@ -96,10 +97,15 @@ jobs:
           supabase secrets set --project-ref "$PROJECT_REF" \
             FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
             FIREBASE_SERVICE_ACCOUNT='${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          # OPENAI_API_KEY가 secret 등록되어 있으면 설정 (Whisper + GPT 전사용)
+          # OPENAI_API_KEY (선택, 옛 Whisper 경로용)
           if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then
             supabase secrets set --project-ref "$PROJECT_REF" \
               OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          fi
+          # GEMINI_API_KEY (회의록 AI 정리용, 무료 권장)
+          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
+            supabase secrets set --project-ref "$PROJECT_REF" \
+              GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
           fi
 
   # ================================================================

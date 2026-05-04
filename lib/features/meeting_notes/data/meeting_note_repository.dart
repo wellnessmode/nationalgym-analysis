@@ -133,6 +133,28 @@ class MeetingNoteRepository {
     }
   }
 
+  /// Gemini Edge Function 호출 — 음성 인식 결과를 회의록 형식으로 정리.
+  /// 무료 (Gemini 1.5 Flash 무료 티어).
+  /// 반환: { content: String, action_items: String }
+  Future<({String content, String actionItems})?> aiCleanup(String transcript) async {
+    try {
+      final res = await supabase.functions.invoke(
+        'cleanup-meeting',
+        body: {'transcript': transcript},
+      );
+      final data = res.data;
+      if (data is Map && data['ok'] == true) {
+        return (
+          content: (data['content'] as String?) ?? '',
+          actionItems: (data['action_items'] as String?) ?? '',
+        );
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Comments ─────────────────────────────────────────────────
 
   Future<List<MeetingComment>> listComments(String meetingNoteId) async {
