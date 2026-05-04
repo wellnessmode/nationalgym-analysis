@@ -12,7 +12,7 @@ enum TaskFilter { all, directives, mine, done }
 extension TaskFilterX on TaskFilter {
   String get label => switch (this) {
         TaskFilter.all => '전체',
-        TaskFilter.directives => '대표 지시',
+        TaskFilter.directives => '대표 전달',
         TaskFilter.mine => '내 업무',
         TaskFilter.done => '완료함',
       };

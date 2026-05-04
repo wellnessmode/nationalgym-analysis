@@ -46,7 +46,7 @@ class TaskCard extends ConsumerWidget {
               // Top row: type badge + branch + D-day
               Row(children: [
                 Pill(
-                  label: isDirective ? '대표 지시' : '자체 업무',
+                  label: isDirective ? '대표 전달' : '자체 업무',
                   color: isDirective ? Tokens.navy900 : Tokens.gold600,
                 ),
                 const SizedBox(width: Tokens.s8),

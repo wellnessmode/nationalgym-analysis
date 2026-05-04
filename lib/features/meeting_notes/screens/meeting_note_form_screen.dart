@@ -18,11 +18,15 @@ class MeetingNoteFormScreen extends ConsumerStatefulWidget {
   ConsumerState<MeetingNoteFormScreen> createState() => _MeetingNoteFormScreenState();
 }
 
+/// 참석자 기본 후보 (체크박스). 그 외는 _otherAttendeesCtrl 자유 입력.
+const _kAttendeePresets = ['최현승', '김근희', '정인재'];
+
 class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
   final _topicCtrl = TextEditingController();
-  final _attendeesCtrl = TextEditingController();
+  final _otherAttendeesCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
   final _actionsCtrl = TextEditingController();
+  final Set<String> _selectedAttendees = {};
   Branch? _branch;
   late DateTime _date;
   bool _saving = false;
@@ -33,7 +37,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     final e = widget.existing;
     if (e != null) {
       _topicCtrl.text = e.topic;
-      _attendeesCtrl.text = e.attendees ?? '';
+      _seedAttendees(e.attendees ?? '');
       _contentCtrl.text = e.content ?? '';
       _actionsCtrl.text = e.actionItems ?? '';
       _date = e.meetingDate;
@@ -42,10 +46,33 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     }
   }
 
+  void _seedAttendees(String raw) {
+    if (raw.trim().isEmpty) return;
+    final parts = raw.split(RegExp(r'[,、]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final others = <String>[];
+    for (final p in parts) {
+      if (_kAttendeePresets.contains(p)) {
+        _selectedAttendees.add(p);
+      } else {
+        others.add(p);
+      }
+    }
+    _otherAttendeesCtrl.text = others.join(', ');
+  }
+
+  String _composedAttendees() {
+    final names = <String>[
+      ..._kAttendeePresets.where(_selectedAttendees.contains),
+    ];
+    final other = _otherAttendeesCtrl.text.trim();
+    if (other.isNotEmpty) names.add(other);
+    return names.join(', ');
+  }
+
   @override
   void dispose() {
     _topicCtrl.dispose();
-    _attendeesCtrl.dispose();
+    _otherAttendeesCtrl.dispose();
     _contentCtrl.dispose();
     _actionsCtrl.dispose();
     super.dispose();
@@ -61,6 +88,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
 
     setState(() => _saving = true);
     final repo = ref.read(meetingNoteRepositoryProvider);
+    final attendeesStr = _composedAttendees();
     try {
       if (widget.existing == null) {
         // 신규: admin은 allBranches, manager는 myBranches
@@ -75,7 +103,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           status: status,
           meetingDate: _date,
           topic: _topicCtrl.text.trim(),
-          attendees: _attendeesCtrl.text.trim().isEmpty ? null : _attendeesCtrl.text.trim(),
+          attendees: attendeesStr.isEmpty ? null : attendeesStr,
           content: _contentCtrl.text.trim().isEmpty ? null : _contentCtrl.text.trim(),
           actionItems: _actionsCtrl.text.trim().isEmpty ? null : _actionsCtrl.text.trim(),
         );
@@ -84,7 +112,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         await repo.update(
           widget.existing!.id,
           topic: _topicCtrl.text.trim(),
-          attendees: _attendeesCtrl.text.trim(),
+          attendees: attendeesStr,
           content: _contentCtrl.text.trim(),
           actionItems: _actionsCtrl.text.trim(),
           status: status,
@@ -190,12 +218,35 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           decoration: const InputDecoration(labelText: '주제', border: OutlineInputBorder()),
         ),
         const SizedBox(height: 12),
+        _SectionLabel('참석자'),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            for (final name in _kAttendeePresets)
+              FilterChip(
+                label: Text(name),
+                selected: _selectedAttendees.contains(name),
+                onSelected: (sel) => setState(() {
+                  sel ? _selectedAttendees.add(name) : _selectedAttendees.remove(name);
+                }),
+                selectedColor: Tokens.gold500.withOpacity(0.18),
+                checkmarkColor: Tokens.gold600,
+                shape: StadiumBorder(side: BorderSide(
+                  color: _selectedAttendees.contains(name) ? Tokens.gold500 : Tokens.border,
+                )),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
         TextField(
-          controller: _attendeesCtrl,
+          controller: _otherAttendeesCtrl,
           decoration: const InputDecoration(
-            labelText: '참석자 (자유 입력)',
+            labelText: '기타 (자유 입력)',
             border: OutlineInputBorder(),
-            hintText: '예: 정인재, 김근희, 트레이너 3명',
+            hintText: '예: 트레이너 3명, 외부 컨설턴트',
+            isDense: true,
           ),
         ),
         const SizedBox(height: Tokens.s16),
@@ -227,24 +278,53 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         ),
         const SizedBox(height: Tokens.s16),
 
+        _SectionLabel('회의 내용'),
+        const _Hint('위 음성 인식 결과나 AI 정리가 자동으로 들어갑니다. 직접 작성·수정도 가능.'),
+        const SizedBox(height: 6),
         TextField(
           controller: _contentCtrl,
           maxLines: 6,
           decoration: const InputDecoration(
-            labelText: '회의 내용 (어젠다 단계에선 비워도 OK)',
             border: OutlineInputBorder(),
+            hintText: '회의에서 논의된 주요 안건·결정 사항…',
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Tokens.s16),
+
+        _SectionLabel('후속 조치'),
+        const _Hint('회의 후 누가·언제까지·뭘 할지. AI 정리 시 체크리스트가 자동 채워집니다.'),
+        const SizedBox(height: 6),
         TextField(
           controller: _actionsCtrl,
           maxLines: 3,
           decoration: const InputDecoration(
-            labelText: '후속 조치 (선택)',
             border: OutlineInputBorder(),
+            hintText: '예) 정인재: 신규 회원 안내문 수정 (D+3)',
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: Tokens.s24),
+
+        Container(
+          padding: const EdgeInsets.all(Tokens.s12),
+          decoration: BoxDecoration(
+            color: Tokens.surfaceAlt,
+            borderRadius: BorderRadius.circular(Tokens.r8),
+            border: Border.all(color: Tokens.border),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.info_outline, size: 14, color: Tokens.textMuted),
+              const SizedBox(width: 6),
+              Text('저장 방식', style: Tokens.ts12.copyWith(fontWeight: FontWeight.w700, color: Tokens.textMuted)),
+            ]),
+            const SizedBox(height: 6),
+            Text(
+              '• 어젠다: 회의 전 미리 주제·참석자만 적어둘 때 (= 진행 예정)\n• 완료: 회의가 끝나고 내용 정리까지 완성됐을 때',
+              style: Tokens.ts12.copyWith(color: Tokens.textMuted, height: 1.5),
+            ),
+          ]),
+        ),
+        const SizedBox(height: Tokens.s12),
         Row(children: [
           Expanded(
             child: OutlinedButton(
@@ -266,3 +346,34 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     );
   }
 }
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2),
+      child: Text(
+        text,
+        style: Tokens.ts13.copyWith(fontWeight: FontWeight.w700, color: Tokens.text),
+      ),
+    );
+  }
+}
+
+class _Hint extends StatelessWidget {
+  final String text;
+  const _Hint(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, top: 2),
+      child: Text(
+        text,
+        style: Tokens.ts11.copyWith(color: Tokens.textMuted),
+      ),
+    );
+  }
+}
+

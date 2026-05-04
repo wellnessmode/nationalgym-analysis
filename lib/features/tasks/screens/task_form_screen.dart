@@ -102,13 +102,21 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final branches = isAdmin
         ? (ref.watch(allBranchesProvider).valueOrNull ?? [])
         : (ref.watch(myBranchesProvider).valueOrNull ?? []);
-    final managers = (ref.watch(allUsersProvider).valueOrNull ?? [])
+    final allManagers = (ref.watch(allUsersProvider).valueOrNull ?? [])
         .where((u) => u.isManager)
         .toList();
+    final userBranches = ref.watch(allUserBranchesProvider).valueOrNull ?? {};
+    // 선택된 지점에 배정된 매니저만 노출 (대표가 업무 전달할 때)
+    final managers = isAdmin && _branch != null
+        ? allManagers.where((u) {
+            final bs = userBranches[u.id] ?? [];
+            return bs.any((b) => b.id == _branch!.id);
+          }).toList()
+        : allManagers;
     final showBranch = isAdmin || branches.length > 1;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isAdmin ? '지시 작성' : '업무 추가')),
+      appBar: AppBar(title: Text(isAdmin ? '업무 전달' : '업무 추가')),
       body: ListView(padding: const EdgeInsets.all(Tokens.s16), children: [
         _Label('제목'),
         TextField(
@@ -132,7 +140,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           DropdownButtonFormField<Branch>(
             value: _branch,
             items: branches.map((b) => DropdownMenuItem(value: b, child: Text(b.name, style: Tokens.ts14))).toList(),
-            onChanged: (v) => setState(() => _branch = v),
+            onChanged: (v) => setState(() {
+              _branch = v;
+              // 새 지점에서 자격 없는 담당자는 초기화
+              if (isAdmin && _assignee != null) {
+                final bs = userBranches[_assignee!.id] ?? [];
+                final stillEligible = v == null || bs.any((b) => b.id == v.id);
+                if (!stillEligible) _assignee = null;
+              }
+            }),
             decoration: const InputDecoration(),
           ),
           const SizedBox(height: Tokens.s16),
@@ -140,31 +156,38 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
         if (isAdmin) ...[
           _Label('담당자'),
-          Builder(builder: (_) {
-            final userBranches = ref.watch(allUserBranchesProvider).valueOrNull ?? {};
-            return DropdownButtonFormField<AppUser>(
-              value: _assignee,
-              items: managers.map((u) {
-                final myBs = userBranches[u.id] ?? [];
-                final branchLabel = myBs.map((b) => shortBranchLabel(b.name)).join(' · ');
-                return DropdownMenuItem(
-                  value: u,
-                  child: Row(children: [
-                    Text(u.name, style: Tokens.ts14.copyWith(fontWeight: FontWeight.w600)),
-                    if (branchLabel.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        branchLabel,
-                        style: Tokens.ts12.copyWith(color: Tokens.textMuted),
-                      ),
-                    ],
-                  ]),
-                );
-              }).toList(),
-              onChanged: (v) => setState(() => _assignee = v),
-              decoration: const InputDecoration(hintText: '매니저 선택'),
-            );
-          }),
+          DropdownButtonFormField<AppUser>(
+            value: _assignee,
+            items: managers.map((u) {
+              final myBs = userBranches[u.id] ?? [];
+              final branchLabel = myBs.map((b) => shortBranchLabel(b.name)).join(' · ');
+              return DropdownMenuItem(
+                value: u,
+                child: Row(children: [
+                  Text(u.name, style: Tokens.ts14.copyWith(fontWeight: FontWeight.w600)),
+                  if (branchLabel.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      branchLabel,
+                      style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+                    ),
+                  ],
+                ]),
+              );
+            }).toList(),
+            onChanged: (v) => setState(() => _assignee = v),
+            decoration: InputDecoration(
+              hintText: _branch == null ? '지점을 먼저 선택하세요' : '매니저 선택',
+            ),
+          ),
+          if (_branch != null && managers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Tokens.s6, left: Tokens.s4),
+              child: Text(
+                '이 지점을 담당하는 매니저가 없습니다',
+                style: Tokens.ts11.copyWith(color: Tokens.textMuted),
+              ),
+            ),
           const SizedBox(height: Tokens.s16),
         ],
 
@@ -239,7 +262,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(isAdmin ? '지시 발행하기' : '업무 추가하기'),
+              : Text(isAdmin ? '업무 전달하기' : '업무 추가하기'),
         ),
       ]),
     );

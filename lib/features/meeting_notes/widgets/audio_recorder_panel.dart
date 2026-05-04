@@ -183,24 +183,10 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
           const SizedBox(width: Tokens.s12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text(
-                  _listening ? '음성 인식 중' : '회의 음성 인식',
-                  style: Tokens.ts14.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: Tokens.success.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(Tokens.r999),
-                  ),
-                  child: const Text(
-                    '무료',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Tokens.success),
-                  ),
-                ),
-              ]),
+              Text(
+                _listening ? '음성 인식 중' : '회의 음성 인식',
+                style: Tokens.ts14.copyWith(fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 2),
               Text(
                 _listening

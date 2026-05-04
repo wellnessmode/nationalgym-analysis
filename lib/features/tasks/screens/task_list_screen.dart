@@ -18,7 +18,7 @@ class TaskListScreen extends ConsumerWidget {
     final tasksAsync = ref.watch(filteredTasksProvider);
     final me = ref.watch(currentUserProvider).valueOrNull;
     final isAdmin = me?.isAdmin == true;
-    final addLabel = isAdmin ? '지시 작성' : '업무 추가';
+    final addLabel = isAdmin ? '업무 전달' : '업무 추가';
 
     void openForm() => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => const TaskFormScreen(),
@@ -35,7 +35,7 @@ class TaskListScreen extends ConsumerWidget {
                   icon: Icons.inbox_outlined,
                   title: '표시할 업무가 없습니다',
                   subtitle: isAdmin
-                      ? '아래 버튼으로 매니저에게 지시를 발행하세요'
+                      ? '아래 버튼으로 매니저에게 업무를 전달하세요'
                       : '아래 버튼으로 새 업무를 추가하세요',
                   action: FilledButton.icon(
                     onPressed: me == null ? null : openForm,

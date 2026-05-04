@@ -16,18 +16,18 @@ class HelpScreen extends StatelessWidget {
           Section(title: '업무', children: [
             _Item(
               icon: Icons.task_alt,
-              title: '대표가 매니저에게 지시 발행',
-              body: '업무 탭 우하단 + 버튼 또는 빈 상태의 가운데 버튼 → 지점·담당자 선택 → 제목·기한·우선순위 → 발행. 담당 매니저에게 즉시 푸시 알림.',
+              title: '대표가 매니저에게 업무 전달',
+              body: '업무 탭 우하단 + 버튼 또는 빈 상태의 가운데 버튼 → 지점 선택 → 그 지점 담당 매니저 자동 표시 → 제목·기한·우선순위 → 전달. 담당 매니저에게 즉시 푸시 알림.',
             ),
             _Item(
               icon: Icons.assignment_ind,
               title: '매니저 본인 업무 추가',
-              body: '매니저는 지시받지 않은 본인 업무를 자체적으로 추가 가능. 본인 지점에 자동 배정.',
+              body: '매니저는 전달받지 않은 본인 업무를 자체적으로 추가 가능. 본인 지점에 자동 배정.',
             ),
             _Item(
               icon: Icons.filter_list,
               title: '필터',
-              body: '전체 / 대표 지시 / 내 업무 (본인이 담당자 또는 요청자) / 완료함. 대표는 추가로 1·2·3호점 별 필터.',
+              body: '전체 / 대표 전달 / 내 업무 (본인이 담당자 또는 요청자) / 완료함. 대표는 추가로 1·2·3호점 별 필터.',
             ),
             _Item(
               icon: Icons.flag_circle,
@@ -67,13 +67,13 @@ class HelpScreen extends StatelessWidget {
           Section(title: '메모', children: [
             _Item(
               icon: Icons.lock_outline,
-              title: '개인 메모',
-              body: '본인만 볼 수 있는 메모. 떠오르는 생각·할 일·아이디어를 자유롭게 기록. 자동 저장.',
+              title: '내 메모 (기본은 본인만)',
+              body: '사용자당 메모 1개. 기본적으로 본인만 볼 수 있는 비공개 메모입니다. 떠오르는 생각·할 일·아이디어 자유롭게 기록.',
             ),
             _Item(
               icon: Icons.group_outlined,
-              title: '공유 메모',
-              body: '매니저↔대표 1:1 공유 메모. 매니저가 작성하면 대표만 볼 수 있고, 대표가 답글처럼 같이 편집 가능. 다른 매니저에게는 안 보임.',
+              title: '필요할 때만 공유',
+              body: '메모 화면에서 우측 상단 자물쇠 아이콘 → 공유 대상 1명 선택 (드롭다운). 선택한 사람만 같이 보고 편집 가능. 공유 해제도 같은 곳에서.',
             ),
             _Item(
               icon: Icons.save_outlined,
@@ -91,7 +91,7 @@ class HelpScreen extends StatelessWidget {
             _Item(
               icon: Icons.alarm,
               title: '자동 알림 종류',
-              body: '대표 지시 발행, 댓글 추가, 업무 완료, 회의록 어젠다/완료. 매일 오전 9시 마감 임박(D-1·당일)·경과 업무 자동 알림.',
+              body: '대표 업무 전달, 댓글 추가, 업무 완료, 회의록 어젠다/완료. 매일 오전 9시 마감 임박(D-1·당일)·경과 업무 자동 알림.',
             ),
             _Item(
               icon: Icons.inbox,
@@ -146,7 +146,7 @@ class _Intro extends StatelessWidget {
         ]),
         const SizedBox(height: Tokens.s8),
         Text(
-          '업무 지시·진행 관리, 회의록 음성 자동 정리, 푸시 알림이 기본 기능입니다. 아래 항목별 안내 참고.',
+          '업무 전달·진행 관리, 회의록 음성 자동 정리, 푸시 알림이 기본 기능입니다. 아래 항목별 안내 참고.',
           style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, height: 1.5),
         ),
       ]),

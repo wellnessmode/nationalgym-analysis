@@ -176,7 +176,7 @@ async function handle(payload: NotifyPayload) {
       const branchName = await getBranchName(record.branch_id as string);
       await notifyUsers(
         [record.assignee_id as string],
-        '새 지시',
+        '새 업무 전달',
         `[${branchName}] ${record.title}`,
         'task',
         record.id as string,

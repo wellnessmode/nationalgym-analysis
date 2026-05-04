@@ -34,7 +34,7 @@ extension TaskTypeX on TaskType {
         _ => throw ArgumentError('unknown task_type: $s'),
       };
   String get label => switch (this) {
-        TaskType.directive => '지시',
+        TaskType.directive => '전달',
         TaskType.managerTask => '자체',
       };
 }
