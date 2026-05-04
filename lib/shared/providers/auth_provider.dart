@@ -3,6 +3,7 @@ import '../../features/auth/data/user_repository.dart';
 import '../../services/supabase_client.dart';
 import '../models/app_user.dart';
 import '../models/branch.dart';
+import '../utils/branch_label.dart';
 
 final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepository());
 
@@ -24,10 +25,12 @@ final currentUserProvider = FutureProvider<AppUser?>((ref) async {
   return ref.read(userRepositoryProvider).getCurrent();
 });
 
-/// 본인이 접근 가능한 지점 목록
+/// 본인이 접근 가능한 지점 목록 (1·2·3호점 순)
 final myBranchesProvider = FutureProvider<List<Branch>>((ref) async {
   ref.watch(currentUserProvider);
-  return ref.read(userRepositoryProvider).listMyBranches();
+  final list = await ref.read(userRepositoryProvider).listMyBranches();
+  list.sort((a, b) => branchOrder(a.name).compareTo(branchOrder(b.name)));
+  return list;
 });
 
 /// 모든 사용자
@@ -35,9 +38,11 @@ final allUsersProvider = FutureProvider<List<AppUser>>((ref) async {
   return ref.read(userRepositoryProvider).listAll();
 });
 
-/// 모든 지점
+/// 모든 지점 (1·2·3호점 순)
 final allBranchesProvider = FutureProvider<List<Branch>>((ref) async {
-  return ref.read(userRepositoryProvider).listBranches();
+  final list = await ref.read(userRepositoryProvider).listBranches();
+  list.sort((a, b) => branchOrder(a.name).compareTo(branchOrder(b.name)));
+  return list;
 });
 
 /// 사용자 ID → 담당 지점 목록 맵 (admin이 매니저별 담당 지점 표시용)

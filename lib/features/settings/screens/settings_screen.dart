@@ -6,6 +6,7 @@ import '../../../services/fcm_service.dart';
 import '../../../services/supabase_client.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/section.dart';
+import 'help_screen.dart';
 import 'password_change_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -173,6 +174,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           : const Text('활성화'),
                     ),
                   ),
+          ),
+        ]),
+
+        Section(title: '도움말', children: [
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('사용법', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(
+              '업무·회의록·알림 기본 사용 안내',
+              style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const HelpScreen(),
+            )),
           ),
         ]),
 

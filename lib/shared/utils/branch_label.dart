@@ -11,3 +11,12 @@ String shortBranchLabel(String fullName) {
   final parts = n.split(' ');
   return parts.isEmpty ? n : parts.last;
 }
+
+/// 지점 정렬용 순번. 작은 값이 먼저.
+int branchOrder(String fullName) {
+  final n = fullName;
+  if (n.contains('용산')) return 1;
+  if (n.contains('서초')) return 2;
+  if (n.contains('피티앤골프') || n.contains('스튜디오')) return 3;
+  return 99;
+}
