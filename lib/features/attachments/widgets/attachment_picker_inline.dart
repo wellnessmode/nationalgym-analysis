@@ -55,6 +55,34 @@ String _sizeLabel(int b) {
   return '${(b / 1024 / 1024 / 1024).toStringAsFixed(1)}GB';
 }
 
+/// 폼 저장 직후 호출 — 모은 파일들을 실제 attachments 테이블에 업로드.
+/// 정확히 [taskId] 또는 [meetingNoteId] 중 하나만 지정.
+Future<int> uploadPendingAttachments({
+  required WidgetRef ref,
+  required String uploaderId,
+  required List<PendingAttachment> pending,
+  String? taskId,
+  String? meetingNoteId,
+}) async {
+  if (pending.isEmpty) return 0;
+  final repo = ref.read(attachmentRepositoryProvider);
+  int ok = 0;
+  for (final p in pending) {
+    try {
+      await repo.upload(
+        uploaderId: uploaderId,
+        taskId: taskId,
+        meetingNoteId: meetingNoteId,
+        fileName: p.fileName,
+        mimeType: p.mimeType,
+        bytes: p.bytes,
+      );
+      ok++;
+    } catch (_) {}
+  }
+  return ok;
+}
+
 class AttachmentPickerInline extends ConsumerStatefulWidget {
   final List<PendingAttachment> pending;
   final ValueChanged<List<PendingAttachment>> onChanged;
@@ -67,34 +95,6 @@ class AttachmentPickerInline extends ConsumerStatefulWidget {
   @override
   ConsumerState<AttachmentPickerInline> createState() =>
       _AttachmentPickerInlineState();
-
-  /// 폼 저장 직후 호출 — 모은 파일들을 실제 attachments 테이블에 업로드.
-  /// 정확히 [taskId] 또는 [meetingNoteId] 중 하나만 지정.
-  static Future<int> uploadAll({
-    required WidgetRef ref,
-    required String uploaderId,
-    required List<PendingAttachment> pending,
-    String? taskId,
-    String? meetingNoteId,
-  }) async {
-    if (pending.isEmpty) return 0;
-    final repo = ref.read(attachmentRepositoryProvider);
-    int ok = 0;
-    for (final p in pending) {
-      try {
-        await repo.upload(
-          uploaderId: uploaderId,
-          taskId: taskId,
-          meetingNoteId: meetingNoteId,
-          fileName: p.fileName,
-          mimeType: p.mimeType,
-          bytes: p.bytes,
-        );
-        ok++;
-      } catch (_) {}
-    }
-    return ok;
-  }
 }
 
 class _AttachmentPickerInlineState

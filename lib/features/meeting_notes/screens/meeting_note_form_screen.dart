@@ -111,7 +111,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         );
         // 첨부파일 일괄 업로드
         if (_pendingAttachments.isNotEmpty) {
-          await AttachmentPickerInline.uploadAll(
+          await uploadPendingAttachments(
             ref: ref,
             uploaderId: me.id,
             pending: _pendingAttachments,
@@ -130,7 +130,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           meetingDate: _date,
         );
         if (_pendingAttachments.isNotEmpty) {
-          await AttachmentPickerInline.uploadAll(
+          await uploadPendingAttachments(
             ref: ref,
             uploaderId: me.id,
             pending: _pendingAttachments,

@@ -78,7 +78,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       // 첨부파일 일괄 업로드
       int uploaded = 0;
       if (_pendingAttachments.isNotEmpty) {
-        uploaded = await AttachmentPickerInline.uploadAll(
+        uploaded = await uploadPendingAttachments(
           ref: ref,
           uploaderId: me.id,
           pending: _pendingAttachments,
