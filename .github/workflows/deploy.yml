@@ -188,50 +188,12 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           ls -la /tmp/build-logs/ 2>&1 || true
-          # Pick the largest log (most recent error)
           LOG=""
           if [ -f /tmp/build-logs/build.log ] && [ -s /tmp/build-logs/build.log ]; then LOG=/tmp/build-logs/build.log; fi
           if [ -z "$LOG" ] && [ -f /tmp/build-logs/analyze.log ]; then LOG=/tmp/build-logs/analyze.log; fi
           if [ -z "$LOG" ]; then echo "no log file"; exit 0; fi
-
-          # Encode log as base64 for safe GitHub contents API upload
-          B64=$(base64 -w0 "$LOG")
-          PATH_IN_REPO="ci-logs/${RUN_ID}.log"
-          python3 - <<PYEOF
-          import json, os, urllib.request
-          repo = os.environ['GITHUB_REPOSITORY']
-          path = '$PATH_IN_REPO'
-          payload = json.dumps({
-              'message': f'ci: log for run {os.environ[\"RUN_ID\"]}',
-              'content': '$B64',
-              'branch': 'ci-logs',
-          }).encode('utf-8')
-          # Try to create branch first
-          try:
-            ref_req = urllib.request.Request(
-              f'https://api.github.com/repos/{repo}/git/refs',
-              headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-              data=json.dumps({'ref':'refs/heads/ci-logs','sha':os.environ['GITHUB_SHA']}).encode(),
-              method='POST')
-            urllib.request.urlopen(ref_req)
-            print('ci-logs branch created')
-          except Exception as e:
-            print('branch maybe exists:', e)
-          req = urllib.request.Request(
-            f'https://api.github.com/repos/{repo}/contents/{path}',
-            data=payload,
-            headers={
-              'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
-              'Accept':'application/vnd.github+json',
-              'Content-Type':'application/json',
-            },
-            method='PUT')
-          try:
-            resp = urllib.request.urlopen(req)
-            print('log committed:', resp.status, '→', path)
-          except Exception as e:
-            print('log commit failed:', e)
-          PYEOF
+          export LOG_FILE="$LOG"
+          python3 ${{ github.workspace }}/scripts/commit-log-to-branch.py
 
       - name: Copy firebase-messaging-sw.js to build output
         run: cp web/firebase-messaging-sw.js build/web/firebase-messaging-sw.js
