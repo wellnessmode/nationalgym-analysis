@@ -1,7 +1,11 @@
 import 'dart:typed_data';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../../services/supabase_client.dart';
 import '../../../shared/models/attachment.dart';
+
+final attachmentRepositoryProvider =
+    Provider<AttachmentRepository>((ref) => AttachmentRepository());
 
 class AttachmentRepository {
   static const _bucket = 'attachments';

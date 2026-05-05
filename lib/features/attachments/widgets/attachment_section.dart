@@ -8,9 +8,6 @@ import '../../../shared/models/attachment.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../data/attachment_repository.dart';
 
-final attachmentRepositoryProvider =
-    Provider<AttachmentRepository>((ref) => AttachmentRepository());
-
 /// task_id 또는 meeting_note_id 중 하나에 묶인 첨부파일 목록 + 추가/삭제 UI.
 class AttachmentSection extends ConsumerStatefulWidget {
   final String? taskId;
