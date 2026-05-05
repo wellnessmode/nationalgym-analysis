@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/auth_constants.dart';
 import '../../../core/tokens.dart';
+import '../../../services/auth_storage.dart';
+import '../../../services/biometric_service.dart';
 import '../../../services/supabase_client.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,45 +15,145 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailCtrl = TextEditingController();
+  final _idCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _passwordFocus = FocusNode();
+
   bool _loading = false;
   bool _passwordVisible = false;
+  bool _rememberId = false;
+  bool _autoLogin = false;
+  bool _biometricAvailable = false;
+  String _biometricLabel = '생체인식';
+  bool _bootstrapping = true; // 첫 진입 시 자동 로그인 시도 중
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  /// 저장된 ID/비번/체크 상태 로드 + 조건 충족 시 자동 로그인 시도
+  Future<void> _bootstrap() async {
+    final savedId = await AuthStorage.getUsername();
+    final remember = await AuthStorage.getRememberId();
+    final auto = await AuthStorage.getAutoLogin();
+    final bioOk = await BiometricService.isAvailable();
+    final bioLabel = await BiometricService.describe();
+
+    if (!mounted) return;
+    setState(() {
+      if (savedId != null) _idCtrl.text = savedId;
+      _rememberId = remember;
+      _autoLogin = auto;
+      _biometricAvailable = bioOk;
+      _biometricLabel = bioLabel;
+    });
+
+    // 자동 로그인 시도: autoLogin + 저장된 password 둘 다 있을 때만.
+    // 생체인식이 가능하면 사용자에게 한 번 묻고, 안 되거나 거부하면 그냥 비밀번호 fill.
+    if (auto && (savedId?.isNotEmpty ?? false)) {
+      final savedPw = await AuthStorage.getPassword();
+      if (savedPw != null && savedPw.isNotEmpty && mounted) {
+        _passwordCtrl.text = savedPw;
+        bool proceed = true;
+        if (bioOk) {
+          proceed = await BiometricService.authenticate(
+            reason: '$bioLabel(으)로 로그인',
+          );
+        }
+        if (proceed && mounted) {
+          await _signIn(savedAlreadyVerified: true);
+          if (mounted) setState(() => _bootstrapping = false);
+          return;
+        }
+      }
+    }
+    if (mounted) setState(() => _bootstrapping = false);
+  }
+
+  @override
   void dispose() {
-    _emailCtrl.dispose();
+    _idCtrl.dispose();
     _passwordCtrl.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signIn({bool savedAlreadyVerified = false}) async {
     if (_loading) return;
+    final id = _idCtrl.text.trim();
+    final pw = _passwordCtrl.text;
+    if (id.isEmpty || pw.isEmpty) {
+      setState(() => _error = '아이디와 비밀번호를 입력해주세요');
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      await supabase.auth.signInWithPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      );
+      final email = AuthConstants.resolveEmail(id);
+      await supabase.auth.signInWithPassword(email: email, password: pw);
+
+      // 성공 → 체크 상태에 따라 저장
+      if (_rememberId) {
+        await AuthStorage.setUsername(AuthConstants.localPart(email));
+      } else {
+        await AuthStorage.setUsername(null);
+      }
+      await AuthStorage.setRememberId(_rememberId);
+      await AuthStorage.setAutoLogin(_autoLogin);
+      if (_autoLogin) {
+        await AuthStorage.setPassword(pw);
+      } else {
+        await AuthStorage.setPassword(null);
+      }
     } on AuthException catch (e) {
-      setState(() => _error = _humanize(e.message));
+      // 자동 로그인 실패 → 저장된 비밀번호가 만료/변경됨. 정리.
+      if (savedAlreadyVerified) {
+        await AuthStorage.setPassword(null);
+        await AuthStorage.setAutoLogin(false);
+      }
+      if (mounted) setState(() => _error = _humanize(e.message));
     } catch (e) {
-      setState(() => _error = '로그인 실패: $e');
+      if (mounted) setState(() => _error = '로그인 실패: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  /// 저장된 비밀번호가 있으면 생체인식 후 로그인 — 수동 트리거 버튼용
+  Future<void> _biometricLogin() async {
+    final savedPw = await AuthStorage.getPassword();
+    if (savedPw == null || savedPw.isEmpty) {
+      _error = '저장된 비밀번호가 없습니다. 한 번 직접 로그인해주세요';
+      setState(() {});
+      return;
+    }
+    final ok = await BiometricService.authenticate(
+      reason: '$_biometricLabel(으)로 로그인',
+    );
+    if (!ok) return;
+    _passwordCtrl.text = savedPw;
+    await _signIn(savedAlreadyVerified: true);
+  }
+
   String _humanize(String s) {
-    if (s.toLowerCase().contains('invalid login')) return '이메일 또는 비밀번호가 올바르지 않습니다';
-    if (s.toLowerCase().contains('email not confirmed')) return '이메일 인증이 필요합니다';
+    final l = s.toLowerCase();
+    if (l.contains('invalid login') || l.contains('invalid_credentials')) {
+      return '아이디 또는 비밀번호가 올바르지 않습니다';
+    }
+    if (l.contains('email not confirmed')) return '이메일 인증이 필요합니다';
+    if (l.contains('too many')) return '잠시 후 다시 시도해주세요 (요청 과다)';
     return s;
+  }
+
+  void _openForgot() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ForgotPasswordScreen(initialUsername: _idCtrl.text.trim()),
+    ));
   }
 
   @override
@@ -59,101 +163,207 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: Tokens.s24, vertical: Tokens.s32),
+            padding: const EdgeInsets.symmetric(
+                horizontal: Tokens.s24, vertical: Tokens.s32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo lockup
-                  const _LogoLockup(),
-                  const SizedBox(height: Tokens.s48),
-
-                  // Card
-                  Container(
-                    padding: const EdgeInsets.all(Tokens.s24),
-                    decoration: BoxDecoration(
-                      color: Tokens.surface,
-                      borderRadius: BorderRadius.circular(Tokens.r20),
-                      boxShadow: Tokens.shadowLg,
-                    ),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      Text('로그인', style: Tokens.ts22.copyWith(color: Tokens.text)),
-                      const SizedBox(height: Tokens.s4),
-                      Text(
-                        '내셔널짐 PT 매니저 전용',
-                        style: Tokens.ts13.copyWith(color: Tokens.textMuted),
-                      ),
-                      const SizedBox(height: Tokens.s24),
-
-                      TextField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        onSubmitted: (_) => _passwordFocus.requestFocus(),
-                        decoration: const InputDecoration(
-                          labelText: '이메일',
-                          prefixIcon: Icon(Icons.alternate_email, size: 18),
-                        ),
-                      ),
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _LogoLockup(),
+                    const SizedBox(height: Tokens.s32),
+                    _buildCard(),
+                    if (_bootstrapping) ...[
                       const SizedBox(height: Tokens.s12),
-                      TextField(
-                        controller: _passwordCtrl,
-                        focusNode: _passwordFocus,
-                        obscureText: !_passwordVisible,
-                        autofillHints: const [AutofillHints.password],
-                        onSubmitted: (_) => _signIn(),
-                        decoration: InputDecoration(
-                          labelText: '비밀번호',
-                          prefixIcon: const Icon(Icons.lock_outline, size: 18),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _passwordVisible ? Icons.visibility_off : Icons.visibility,
-                              size: 18,
-                            ),
-                            onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-                          ),
+                      Text(
+                        '자동 로그인 시도 중...',
+                        textAlign: TextAlign.center,
+                        style: Tokens.ts11.copyWith(
+                          color: Colors.white.withOpacity(0.55),
                         ),
                       ),
-                      if (_error != null) ...[
-                        const SizedBox(height: Tokens.s12),
-                        Container(
-                          padding: const EdgeInsets.all(Tokens.s12),
-                          decoration: BoxDecoration(
-                            color: Tokens.danger.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(Tokens.r8),
-                            border: Border.all(color: Tokens.danger.withOpacity(0.25)),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.error_outline, color: Tokens.danger, size: 16),
-                            const SizedBox(width: Tokens.s8),
-                            Expanded(
-                              child: Text(_error!, style: Tokens.ts13.copyWith(color: Tokens.danger)),
-                            ),
-                          ]),
-                        ),
-                      ],
-                      const SizedBox(height: Tokens.s20),
-                      FilledButton(
-                        onPressed: _loading ? null : _signIn,
-                        child: _loading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('로그인'),
-                      ),
-                    ]),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCard() {
+    return Container(
+      padding: const EdgeInsets.all(Tokens.s24),
+      decoration: BoxDecoration(
+        color: Tokens.surface,
+        borderRadius: BorderRadius.circular(Tokens.r20),
+        boxShadow: Tokens.shadowLg,
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('로그인', style: Tokens.ts22.copyWith(color: Tokens.text)),
+        const SizedBox(height: Tokens.s4),
+        Text(
+          '내셔널짐 직원 전용',
+          style: Tokens.ts13.copyWith(color: Tokens.textMuted),
+        ),
+        const SizedBox(height: Tokens.s24),
+
+        // ID 입력 (도메인 자동)
+        TextField(
+          controller: _idCtrl,
+          keyboardType: TextInputType.text,
+          autocorrect: false,
+          enableSuggestions: false,
+          autofillHints: const [AutofillHints.username],
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _passwordFocus.requestFocus(),
+          decoration: InputDecoration(
+            labelText: '아이디',
+            hintText: '예: ceo, manager.kim',
+            prefixIcon: const Icon(Icons.person_outline, size: 18),
+            suffixText: AuthConstants.emailDomain,
+            suffixStyle: Tokens.ts13.copyWith(color: Tokens.textMuted),
+          ),
+        ),
+        const SizedBox(height: Tokens.s12),
+
+        // Password
+        TextField(
+          controller: _passwordCtrl,
+          focusNode: _passwordFocus,
+          obscureText: !_passwordVisible,
+          autofillHints: const [AutofillHints.password],
+          onSubmitted: (_) => _signIn(),
+          decoration: InputDecoration(
+            labelText: '비밀번호',
+            prefixIcon: const Icon(Icons.lock_outline, size: 18),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _passwordVisible ? Icons.visibility_off : Icons.visibility,
+                size: 18,
+              ),
+              onPressed: () =>
+                  setState(() => _passwordVisible = !_passwordVisible),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: Tokens.s8),
+
+        // ── 옵션: 아이디 기억 / 자동 로그인 ──
+        _CheckRow(
+          label: '아이디 기억하기',
+          value: _rememberId,
+          onChanged: (v) => setState(() {
+            _rememberId = v;
+            if (!v) _autoLogin = false; // 자동 로그인은 기억 옵션의 상위
+          }),
+        ),
+        _CheckRow(
+          label: '자동 로그인 (기기에 비밀번호 저장)',
+          value: _autoLogin,
+          onChanged: (v) => setState(() {
+            _autoLogin = v;
+            if (v) _rememberId = true;
+          }),
+        ),
+
+        if (_error != null) ...[
+          const SizedBox(height: Tokens.s8),
+          Container(
+            padding: const EdgeInsets.all(Tokens.s12),
+            decoration: BoxDecoration(
+              color: Tokens.danger.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(Tokens.r8),
+              border: Border.all(color: Tokens.danger.withOpacity(0.25)),
+            ),
+            child: Row(children: [
+              const Icon(Icons.error_outline, color: Tokens.danger, size: 16),
+              const SizedBox(width: Tokens.s8),
+              Expanded(
+                child: Text(_error!,
+                    style: Tokens.ts13.copyWith(color: Tokens.danger)),
+              ),
+            ]),
+          ),
+        ],
+
+        const SizedBox(height: Tokens.s16),
+
+        FilledButton(
+          onPressed: _loading ? null : () => _signIn(),
+          child: _loading
+              ? const SizedBox(
+                  height: 18, width: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Text('로그인'),
+        ),
+
+        // 생체인식 버튼 (네이티브 + 저장된 비번 있을 때 의미)
+        if (_biometricAvailable) ...[
+          const SizedBox(height: Tokens.s10),
+          OutlinedButton.icon(
+            onPressed: _loading ? null : _biometricLogin,
+            icon: const Icon(Icons.fingerprint, size: 18),
+            label: Text('$_biometricLabel(으)로 로그인'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Tokens.gold600,
+              side: const BorderSide(color: Tokens.gold500),
+              minimumSize: const Size.fromHeight(44),
+            ),
+          ),
+        ],
+
+        const SizedBox(height: Tokens.s12),
+        Center(
+          child: TextButton(
+            onPressed: _openForgot,
+            style: TextButton.styleFrom(
+              foregroundColor: Tokens.textMuted,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Tokens.s12, vertical: Tokens.s4),
+            ),
+            child: const Text('비밀번호 찾기'),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _CheckRow extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _CheckRow(
+      {required this.label, required this.value, required this.onChanged});
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(Tokens.r8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(children: [
+          SizedBox(
+            width: 24, height: 24,
+            child: Checkbox(
+              value: value,
+              onChanged: (v) => onChanged(v ?? false),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(width: Tokens.s8),
+          Expanded(
+            child: Text(label, style: Tokens.ts13),
+          ),
+        ]),
       ),
     );
   }
@@ -164,11 +374,9 @@ class _LogoLockup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      // 원본 NATIONAL GYM 엠블럼 (이미 dark bg, 로그인 navy 화면과 자연 블렌드)
       Image.asset(
         'assets/brand_logo.png',
-        width: 140,
-        height: 140,
+        width: 140, height: 140,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),

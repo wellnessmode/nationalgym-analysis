@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show SignOutScope;
 import '../../../core/tokens.dart';
+import '../../../services/auth_storage.dart';
 import '../../../services/fcm_service.dart';
 import '../../../services/supabase_client.dart';
 import '../../../shared/providers/auth_provider.dart';
@@ -43,9 +44,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await ref.read(userRepositoryProvider).updateFcmToken(me.id, null);
       } catch (_) {}
     }
+    // 자동 로그인 해제: 다음 사람이 이 기기로 들어왔을 때 이 사용자 비밀번호로
+    // 자동 진입되지 않도록 password + autoLogin 플래그 제거. 아이디 기억은 유지.
+    await AuthStorage.clearSensitive();
     // global scope: 모든 기기·세션 무효화. 캐시된 세션도 확실히 정리.
     await supabase.auth.signOut(scope: SignOutScope.global);
-    // 로컬 storage·session 모두 클리어 위해 추가로 invalidate
     ref.invalidate(currentUserProvider);
   }
 

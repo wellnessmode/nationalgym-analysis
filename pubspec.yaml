@@ -38,6 +38,11 @@ dependencies:
   mime: ^2.0.0
   url_launcher: ^6.3.1
 
+  # 로그인 편의 (ID 기억 / 자동 로그인 / 생체인식)
+  shared_preferences: ^2.3.3        # username + 체크박스 상태
+  flutter_secure_storage: ^9.2.2    # 암호화 storage (password)
+  local_auth: ^2.3.0                # 지문 / Face ID (네이티브). 웹에선 fallback
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

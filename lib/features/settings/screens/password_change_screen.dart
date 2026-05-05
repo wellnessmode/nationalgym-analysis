@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/tokens.dart';
+import '../../../services/auth_storage.dart';
 import '../../../services/supabase_client.dart';
 
 class PasswordChangeScreen extends StatefulWidget {
@@ -37,6 +38,10 @@ class _PasswordChangeScreenState extends State<PasswordChangeScreen> {
     setState(() => _saving = true);
     try {
       await supabase.auth.updateUser(UserAttributes(password: n));
+      // 자동 로그인이 켜져 있다면 저장된 비밀번호도 새 값으로 갱신
+      if (await AuthStorage.getAutoLogin()) {
+        await AuthStorage.setPassword(n);
+      }
       if (!mounted) return;
       Navigator.of(context).pop();
       _snack('비밀번호가 변경되었습니다');
