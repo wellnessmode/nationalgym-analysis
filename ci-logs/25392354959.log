@@ -1,0 +1,51 @@
+
+Compiling lib/main.dart for the Web...                          
+Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
+lib/features/attachments/widgets/attachment_picker_inline.dart:68:25:
+Error: Undefined name 'attachmentRepositoryProvider'.
+  final repo = ref.read(attachmentRepositoryProvider);
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error: Compilation failed.
+  Command: /opt/hostedtoolcache/flutter/stable-3.24.5-x64/flutter/bin/cache/dart-sdk/bin/dart --disable-dart-dev /opt/hostedtoolcache/flutter/stable-3.24.5-x64/flutter/bin/cache/dart-sdk/bin/snapshots/dart2js.dart.snapshot --platform-binaries=/opt/hostedtoolcache/flutter/stable-3.24.5-x64/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DSUPABASE_URL=https://bcvqcwgwjodofoapynyu.supabase.co -DSUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdnFjd2d3am9kb2ZvYXB5bnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDU0MTksImV4cCI6MjA5Mjg4MTQxOX0.mpYm21Ka-rkqIUyGH8sRr7bggCmB6XvXZnqYbUZUZrQ -DFIREBASE_API_KEY=AIzaSyCVTjh4xvrepUG-VmuMd9yCXd6XdhlfgR0 -DFIREBASE_AUTH_DOMAIN=national-gym-workspace.firebaseapp.com -DFIREBASE_PROJECT_ID=national-gym-workspace -DFIREBASE_STORAGE_BUCKET=national-gym-workspace.firebasestorage.app -DFIREBASE_MESSAGING_SENDER_ID=830010170966 -DFIREBASE_APP_ID=1:830010170966:web:07cece8fa08dd50bcaa5f7 -DFIREBASE_VAPID_PUBLIC_KEY=BBLbNOqALKXvu1iF5PKRYUsLyybZHxiZukJjdbupyKooX3C6Et_vtqbME2lKFITmtGTDqRTk9-uurC3ElKhKxzw -DFLUTTER_WEB_AUTO_DETECT=false -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/a18df97ca57a249df5d8d68cd0820600223ce262/ --native-null-assertions --no-source-maps -o /home/runner/work/nationalgym-analysis/nationalgym-analysis/.dart_tool/flutter_build/def679338dabdd2d6810e6d573cb899b/app.dill --packages=.dart_tool/package_config.json --cfe-only /home/runner/work/nationalgym-analysis/nationalgym-analysis/.dart_tool/flutter_build/def679338dabdd2d6810e6d573cb899b/main.dart
+#0      RunResult.throwException (package:flutter_tools/src/base/process.dart:122:5)
+#1      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:370:19)
+<asynchronous suspension>
+#2      Dart2JSTarget.build (package:flutter_tools/src/build_system/targets/web.dart:203:5)
+<asynchronous suspension>
+#3      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:875:9)
+<asynchronous suspension>
+#4      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+<asynchronous suspension>
+#5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+<asynchronous suspension>
+#6      Future.wait.<anonymous closure> (dart:async/future.dart:534:21)
+<asynchronous suspension>
+#7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:813:32)
+<asynchronous suspension>
+#8      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:635:16)
+<asynchronous suspension>
+#9      WebBuilder.buildWeb (package:flutter_tools/src/web/compile.dart:92:34)
+<asynchronous suspension>
+#10     BuildWebCommand.runCommand (package:flutter_tools/src/commands/build_web.dart:230:5)
+<asynchronous suspension>
+#11     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1408:27)
+<asynchronous suspension>
+#12     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+<asynchronous suspension>
+#13     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+<asynchronous suspension>
+#14     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:420:9)
+<asynchronous suspension>
+#15     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+<asynchronous suspension>
+#16     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:364:5)
+<asynchronous suspension>
+#17     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:130:9)
+<asynchronous suspension>
+#18     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:153:19)
+<asynchronous suspension>
+#19     main (package:flutter_tools/executable.dart:93:3)
+<asynchronous suspension>
+
+Compiling lib/main.dart for the Web...                             15.1s
+Error: Failed to compile application for the Web.
