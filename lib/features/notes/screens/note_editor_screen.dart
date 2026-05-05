@@ -347,7 +347,7 @@ class _StatusBanner extends StatelessWidget {
     } else if (shareTargetName == null) {
       icon = Icons.lock_outline;
       color = Tokens.textMuted;
-      text = '본인만 볼 수 있는 메모 (대표는 인사평가 목적으로 열람 가능)';
+      text = '본인만 볼 수 있는 메모';
     } else {
       icon = Icons.group;
       color = Tokens.gold600;

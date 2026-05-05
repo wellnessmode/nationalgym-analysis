@@ -82,8 +82,8 @@ class HelpScreen extends StatelessWidget {
             ),
             _Item(
               icon: Icons.lock_outline,
-              title: '기본은 본인만 (대표는 열람 가능)',
-              body: '메모는 기본적으로 비공개입니다. 단, 인사평가·업무 관리를 위해 대표는 매니저 메모를 열람할 수 있습니다.',
+              title: '기본은 본인만',
+              body: '메모는 기본적으로 비공개. 본인만 볼 수 있고 자동 저장됩니다.',
             ),
             _Item(
               icon: Icons.group_outlined,
