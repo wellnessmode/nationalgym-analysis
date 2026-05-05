@@ -179,6 +179,23 @@ jobs:
           path: /tmp/build-logs/
           retention-days: 3
 
+      - name: Post error log as commit comment on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          ls /tmp/build-logs/ || true
+          if [ -f /tmp/build-logs/build.log ]; then
+            python3 ${{ github.workspace }}/scripts/post-build-error.py /tmp/build-logs/build.log "Flutter build error"
+          elif [ -f /tmp/build-logs/analyze.log ]; then
+            python3 ${{ github.workspace }}/scripts/post-build-error.py /tmp/build-logs/analyze.log "Flutter analyze error"
+          else
+            echo "no log files found"
+          fi
+
       - name: Copy firebase-messaging-sw.js to build output
         run: cp web/firebase-messaging-sw.js build/web/firebase-messaging-sw.js
 
