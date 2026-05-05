@@ -2,7 +2,9 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'claude/**'   # claude 작업 브랜치도 자동 배포
   workflow_dispatch:
 
 concurrency:
