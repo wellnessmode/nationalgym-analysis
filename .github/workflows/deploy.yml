@@ -151,27 +151,7 @@ jobs:
           flutter analyze 2>&1 | tee /tmp/analyze.log
           rc=${PIPESTATUS[0]}
           if [ $rc -ne 0 ]; then
-            python3 - <<'PYEOF'
-          import json, os, urllib.request
-          log = open('/tmp/analyze.log').read()[-6000:]
-          body = '## Flutter analyze error\n\n```\n' + log + '\n```'
-          payload = json.dumps({'body': body}).encode('utf-8')
-          req = urllib.request.Request(
-            f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/commits/{os.environ['GITHUB_SHA']}/comments",
-            data=payload,
-            headers={
-              'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'],
-              'Accept': 'application/vnd.github+json',
-              'Content-Type': 'application/json',
-            },
-            method='POST',
-          )
-          try:
-            resp = urllib.request.urlopen(req)
-            print('comment posted:', resp.status)
-          except Exception as e:
-            print('comment failed:', e)
-          PYEOF
+            python3 scripts/post-build-error.py /tmp/analyze.log "Flutter analyze error"
             exit $rc
           fi
 
@@ -195,27 +175,7 @@ jobs:
             2>&1 | tee /tmp/build.log
           rc=${PIPESTATUS[0]}
           if [ $rc -ne 0 ]; then
-            python3 - <<'PYEOF'
-          import json, os, urllib.request
-          log = open('/tmp/build.log').read()[-6000:]
-          body = '## Flutter build error\n\n```\n' + log + '\n```'
-          payload = json.dumps({'body': body}).encode('utf-8')
-          req = urllib.request.Request(
-            f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/commits/{os.environ['GITHUB_SHA']}/comments",
-            data=payload,
-            headers={
-              'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN'],
-              'Accept': 'application/vnd.github+json',
-              'Content-Type': 'application/json',
-            },
-            method='POST',
-          )
-          try:
-            resp = urllib.request.urlopen(req)
-            print('comment posted:', resp.status)
-          except Exception as e:
-            print('comment failed:', e)
-          PYEOF
+            python3 scripts/post-build-error.py /tmp/build.log "Flutter build error"
             exit $rc
           fi
 
