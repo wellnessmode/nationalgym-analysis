@@ -7,6 +7,7 @@ import '../../../shared/models/app_user.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/utils/branch_label.dart';
+import '../../attachments/widgets/attachment_picker_inline.dart';
 import '../providers/task_providers.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   AppUser? _assignee;
   DateTime? _dueDate;
   TaskPriority _priority = TaskPriority.normal;
+  List<PendingAttachment> _pendingAttachments = [];
   bool _saving = false;
 
   @override
@@ -46,8 +48,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     setState(() => _saving = true);
     final repo = ref.read(taskRepositoryProvider);
     try {
+      late final String createdId;
       if (me.isAdmin) {
-        await repo.createDirective(
+        final t = await repo.createDirective(
           branchId: _branch!.id,
           assigneeId: _assignee!.id,
           requesterId: me.id,
@@ -56,11 +59,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           dueDate: _dueDate,
           priority: _priority,
         );
+        createdId = t.id;
       } else {
         final branches = ref.read(myBranchesProvider).valueOrNull ?? [];
         final selectedBranch = _branch ?? (branches.isNotEmpty ? branches.first : null);
         if (selectedBranch == null) throw Exception('지점이 없습니다');
-        await repo.createManagerTask(
+        final t = await repo.createManagerTask(
           branchId: selectedBranch.id,
           selfUserId: me.id,
           title: _titleCtrl.text.trim(),
@@ -68,11 +72,27 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           dueDate: _dueDate,
           priority: _priority,
         );
+        createdId = t.id;
       }
+
+      // 첨부파일 일괄 업로드
+      int uploaded = 0;
+      if (_pendingAttachments.isNotEmpty) {
+        uploaded = await AttachmentPickerInline.uploadAll(
+          ref: ref,
+          uploaderId: me.id,
+          pending: _pendingAttachments,
+          taskId: createdId,
+        );
+      }
+
       if (!mounted) return;
       ref.invalidate(filteredTasksProvider);
       Navigator.of(context).pop();
-      _snack('업무가 추가되었습니다');
+      final msg = _pendingAttachments.isEmpty
+          ? '업무가 추가되었습니다'
+          : '업무 추가됨 (첨부 $uploaded/${_pendingAttachments.length})';
+      _snack(msg);
     } catch (e) {
       _snack('에러: $e');
     } finally {
@@ -256,7 +276,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             ]),
           ),
         ),
-        const SizedBox(height: Tokens.s32),
+        const SizedBox(height: Tokens.s24),
+
+        // 첨부파일 (저장 시 일괄 업로드)
+        AttachmentPickerInline(
+          pending: _pendingAttachments,
+          onChanged: (l) => setState(() => _pendingAttachments = l),
+        ),
+        const SizedBox(height: Tokens.s24),
 
         FilledButton(
           onPressed: _saving ? null : _save,

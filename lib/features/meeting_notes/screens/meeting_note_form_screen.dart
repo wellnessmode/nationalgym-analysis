@@ -6,6 +6,7 @@ import '../../../shared/models/branch.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/meeting_note.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../attachments/widgets/attachment_picker_inline.dart';
 import '../providers/meeting_note_providers.dart';
 import '../widgets/audio_recorder_panel.dart';
 
@@ -27,6 +28,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
   final _contentCtrl = TextEditingController();
   final _actionsCtrl = TextEditingController();
   final Set<String> _selectedAttendees = {};
+  List<PendingAttachment> _pendingAttachments = [];
   Branch? _branch;
   late DateTime _date;
   bool _saving = false;
@@ -97,7 +99,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
             : (ref.read(myBranchesProvider).valueOrNull ?? []);
         final selectedBranch = _branch ?? (branches.isNotEmpty ? branches.first : null);
         if (selectedBranch == null) throw Exception('지점이 없습니다');
-        await repo.create(
+        final created = await repo.create(
           branchId: selectedBranch.id,
           authorId: me.id,
           status: status,
@@ -107,6 +109,15 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           content: _contentCtrl.text.trim().isEmpty ? null : _contentCtrl.text.trim(),
           actionItems: _actionsCtrl.text.trim().isEmpty ? null : _actionsCtrl.text.trim(),
         );
+        // 첨부파일 일괄 업로드
+        if (_pendingAttachments.isNotEmpty) {
+          await AttachmentPickerInline.uploadAll(
+            ref: ref,
+            uploaderId: me.id,
+            pending: _pendingAttachments,
+            meetingNoteId: created.id,
+          );
+        }
       } else {
         // 편집
         await repo.update(
@@ -118,12 +129,21 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           status: status,
           meetingDate: _date,
         );
+        if (_pendingAttachments.isNotEmpty) {
+          await AttachmentPickerInline.uploadAll(
+            ref: ref,
+            uploaderId: me.id,
+            pending: _pendingAttachments,
+            meetingNoteId: widget.existing!.id,
+          );
+        }
         ref.invalidate(meetingNoteByIdProvider(widget.existing!.id));
       }
       if (!mounted) return;
       ref.invalidate(meetingNotesListProvider);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('저장됨 (${status.label})')));
+      final extra = _pendingAttachments.isEmpty ? '' : ' · 첨부 ${_pendingAttachments.length}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('저장됨 (${status.label})$extra')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
     } finally {
@@ -302,7 +322,14 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
             hintText: '예) 정인재: 신규 회원 안내문 수정 (D+3)',
           ),
         ),
-        const SizedBox(height: Tokens.s24),
+        const SizedBox(height: Tokens.s20),
+
+        // 첨부파일 (저장 시 일괄 업로드)
+        AttachmentPickerInline(
+          pending: _pendingAttachments,
+          onChanged: (l) => setState(() => _pendingAttachments = l),
+        ),
+        const SizedBox(height: Tokens.s20),
 
         Container(
           padding: const EdgeInsets.all(Tokens.s12),
