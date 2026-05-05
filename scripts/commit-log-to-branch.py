@@ -77,6 +77,8 @@ def main():
     print(f'put contents: {code} ({path_in_repo})')
     if code not in (200, 201):
         print(f'response: {body[:600]}')
+        sys.exit(1)
+    print('SUCCESS')
 
 
 if __name__ == '__main__':
