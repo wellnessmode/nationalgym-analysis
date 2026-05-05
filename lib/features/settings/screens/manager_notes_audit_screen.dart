@@ -69,7 +69,7 @@ class _ManagerNotesAuditScreenState extends ConsumerState<ManagerNotesAuditScree
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '매니저들이 작성한 모든 메모가 표시됩니다. 인사평가·업무 모니터링 목적으로만 사용해주세요. 매니저 화면의 "본인만 볼 수 있는 메모" 안내에도 대표 열람 가능 사실이 명시되어 있습니다.',
+                        '매니저들이 작성한 모든 메모가 표시됩니다.',
                         style: Tokens.ts11.copyWith(color: Tokens.text, height: 1.5),
                       ),
                     ),

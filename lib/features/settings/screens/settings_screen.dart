@@ -9,6 +9,7 @@ import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/section.dart';
 import 'help_screen.dart';
 import 'manager_notes_audit_screen.dart';
+import 'staff_activity_screen.dart';
 import 'password_change_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -202,7 +203,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.fact_check_outlined, color: Tokens.gold600),
               title: const Text('매니저 기록 열람', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text(
-                '매니저들의 메모를 모아보기 (인사평가용)',
+                '매니저들의 메모를 모아보기',
                 style: Tokens.ts12.copyWith(color: Tokens.textMuted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -212,6 +213,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 builder: (_) => const ManagerNotesAuditScreen(),
               )),
             ),
+            // 직원 활동 로그 — ceo@nationalgym.kr 만
+            if (me?.email == 'ceo@nationalgym.kr')
+              ListTile(
+                leading: const Icon(Icons.timeline, color: Tokens.gold600),
+                title: const Text('직원 활동 로그', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  '로그인 / 메모 / 업무 / 회의록 활동 통계',
+                  style: Tokens.ts12.copyWith(color: Tokens.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const StaffActivityScreen(),
+                )),
+              ),
           ]),
 
         Section(title: '계정', children: [
