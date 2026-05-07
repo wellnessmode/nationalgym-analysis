@@ -16,8 +16,8 @@ class HelpScreen extends StatelessWidget {
           Section(title: '업무', children: [
             _Item(
               icon: Icons.inbox_outlined,
-              title: '대표가 전달한 업무 확인',
-              body: '업무 탭에 "대표 전달" 카드로 표시됩니다. 카드를 탭해 상세에서 내용을 확인하고 작업을 시작하세요.',
+              title: '대표가 할당한 업무 확인',
+              body: '업무 탭에 "할당 업무" 카드로 표시됩니다. 카드를 탭해 상세에서 내용을 확인하고 작업을 시작하세요.',
             ),
             _Item(
               icon: Icons.add_task,
@@ -106,7 +106,7 @@ class HelpScreen extends StatelessWidget {
             _Item(
               icon: Icons.alarm,
               title: '받게 되는 알림',
-              body: '대표가 본인에게 업무 전달, 댓글, 업무 완료, 회의록 변경. 매일 오전 9시에 마감 임박(D-1·당일)·경과 업무 자동 알림.',
+              body: '대표가 본인에게 업무 할당, 댓글, 업무 완료, 회의록 변경. 매일 오전 9시에 마감 임박(D-1·당일)·경과 업무 자동 알림.',
             ),
             _Item(
               icon: Icons.inbox,
@@ -162,7 +162,7 @@ class _Intro extends StatelessWidget {
         ]),
         const SizedBox(height: Tokens.s8),
         Text(
-          '대표가 전달한 업무 처리, 회의록 음성 자동 정리, 본인·공유 메모 작성, 푸시 알림. 아래 항목별 안내를 참고하세요.',
+          '대표가 할당한 업무 처리, 회의록 음성 자동 정리, 본인·공유 메모 작성, 푸시 알림. 아래 항목별 안내를 참고하세요.',
           style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13, height: 1.55),
         ),
       ]),

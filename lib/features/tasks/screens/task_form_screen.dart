@@ -126,7 +126,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         .where((u) => u.isManager)
         .toList();
     final userBranches = ref.watch(allUserBranchesProvider).valueOrNull ?? {};
-    // 선택된 지점에 배정된 매니저만 노출 (대표가 업무 전달할 때)
+    // 선택된 지점에 배정된 매니저만 노출 (대표가 업무 할당할 때)
     final managers = isAdmin && _branch != null
         ? allManagers.where((u) {
             final bs = userBranches[u.id] ?? [];
@@ -136,7 +136,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final showBranch = isAdmin || branches.length > 1;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isAdmin ? '업무 전달' : '업무 추가')),
+      appBar: AppBar(title: Text(isAdmin ? '업무 할당' : '업무 추가')),
       body: ListView(padding: const EdgeInsets.all(Tokens.s16), children: [
         _Label('제목'),
         TextField(
@@ -289,7 +289,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(isAdmin ? '업무 전달하기' : '업무 추가하기'),
+              : Text(isAdmin ? '업무 할당하기' : '업무 추가하기'),
         ),
       ]),
     );

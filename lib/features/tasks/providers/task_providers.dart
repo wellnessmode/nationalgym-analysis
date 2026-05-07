@@ -12,8 +12,8 @@ enum TaskFilter { all, directives, mine, done }
 extension TaskFilterX on TaskFilter {
   String get label => switch (this) {
         TaskFilter.all => '전체',
-        TaskFilter.directives => '대표 전달',
-        TaskFilter.mine => '내 업무',
+        TaskFilter.directives => '할당 업무',
+        TaskFilter.mine => '내 작성',
         TaskFilter.done => '완료함',
       };
 }
@@ -40,8 +40,8 @@ final filteredTasksProvider = FutureProvider<List<Task>>((ref) async {
       TaskFilter.directives =>
         t.taskType == TaskType.directive && t.status != TaskStatus.done,
       TaskFilter.mine =>
-        // 본인이 담당자 또는 요청자인 업무만
-        (me != null && (t.assigneeId == me.id || t.requesterId == me.id)) &&
+        // 본인이 작성한(만든) 업무만 — 대표가 할당한 업무는 '할당 업무' 필터로
+        (me != null && t.requesterId == me.id) &&
             t.status != TaskStatus.done,
       TaskFilter.done => t.status == TaskStatus.done,
     };

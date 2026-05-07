@@ -17,8 +17,11 @@ class TaskListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(filteredTasksProvider);
     final me = ref.watch(currentUserProvider).valueOrNull;
+    final filter = ref.watch(taskFilterProvider);
     final isAdmin = me?.isAdmin == true;
-    final addLabel = isAdmin ? '업무 전달' : '업무 추가';
+    final addLabel = isAdmin ? '업무 할당' : '업무 추가';
+    // 매니저는 '할당 업무' 필터에서 새 업무 생성 불가 (할당은 대표만 권한)
+    final canCreate = me != null && !(!isAdmin && filter == TaskFilter.directives);
 
     void openForm() => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => const TaskFormScreen(),
@@ -34,14 +37,18 @@ class TaskListScreen extends ConsumerWidget {
                 return EmptyState(
                   icon: Icons.inbox_outlined,
                   title: '표시할 업무가 없습니다',
-                  subtitle: isAdmin
-                      ? '아래 버튼으로 매니저에게 업무를 전달하세요'
-                      : '아래 버튼으로 새 업무를 추가하세요',
-                  action: FilledButton.icon(
-                    onPressed: me == null ? null : openForm,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(addLabel),
-                  ),
+                  subtitle: !canCreate
+                      ? '대표가 할당하면 여기에 표시됩니다'
+                      : (isAdmin
+                          ? '아래 버튼으로 매니저에게 업무를 할당하세요'
+                          : '아래 버튼으로 새 업무를 추가하세요'),
+                  action: canCreate
+                      ? FilledButton.icon(
+                          onPressed: openForm,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: Text(addLabel),
+                        )
+                      : null,
                 );
               }
               return RefreshIndicator(
@@ -82,7 +89,8 @@ class TaskListScreen extends ConsumerWidget {
         ),
       ]),
       // 리스트가 있을 때만 FAB. 빈 상태일 땐 EmptyState 안의 가운데 버튼만 보임 (중복 방지).
-      floatingActionButton: tasksAsync.value?.isNotEmpty == true && me != null
+      // 매니저가 '할당 업무' 필터에 있으면 FAB 숨김 (할당은 대표 권한).
+      floatingActionButton: tasksAsync.value?.isNotEmpty == true && canCreate
           ? FloatingActionButton.extended(
               onPressed: openForm,
               icon: const Icon(Icons.add, size: 20),

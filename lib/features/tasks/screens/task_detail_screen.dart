@@ -192,7 +192,7 @@ class _BodyState extends ConsumerState<_Body> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Pill(
-              label: isDirective ? '대표 전달' : '자체 업무',
+              label: isDirective ? '할당 업무' : '자체 업무',
               color: isDirective ? Tokens.navy900 : Tokens.gold600,
             ),
             const SizedBox(width: Tokens.s8),
