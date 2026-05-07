@@ -295,14 +295,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (v) _rememberId = true;
               }),
             ),
-            if (isAdmin)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 32),
-                child: Text(
-                  '보안: 대표 계정은 자동 로그인이 비활성화됩니다',
-                  style: Tokens.ts11.copyWith(color: Tokens.gold600, fontWeight: FontWeight.w600),
-                ),
-              ),
           ]);
         }),
 
