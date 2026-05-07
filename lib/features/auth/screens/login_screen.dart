@@ -31,7 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    // 입력에 따라 admin 차단 토글 UI 갱신
+    _idCtrl.addListener(_onIdChange);
     _bootstrap();
+  }
+
+  void _onIdChange() {
+    if (mounted) setState(() {});
   }
 
   /// 저장된 ID/비번/체크 상태 로드 + 조건 충족 시 자동 로그인 시도
@@ -52,8 +58,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // 자동 로그인 시도: autoLogin + 저장된 password 둘 다 있을 때만.
-    // 생체인식이 가능하면 사용자에게 한 번 묻고, 안 되거나 거부하면 그냥 비밀번호 fill.
-    if (auto && (savedId?.isNotEmpty ?? false)) {
+    // 보안: 대표 계정은 자동 로그인 절대 금지 (기기 점유 = 계정 탈취 위험).
+    final isAdminEmail = AuthConstants.resolveEmail(savedId ?? '') ==
+        'ceo@nationalgym.kr';
+    if (auto && !isAdminEmail && (savedId?.isNotEmpty ?? false)) {
       final savedPw = await AuthStorage.getPassword();
       if (savedPw != null && savedPw.isNotEmpty && mounted) {
         _passwordCtrl.text = savedPw;
@@ -75,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _idCtrl.removeListener(_onIdChange);
     _idCtrl.dispose();
     _passwordCtrl.dispose();
     _passwordFocus.dispose();
@@ -97,17 +106,24 @@ class _LoginScreenState extends State<LoginScreen> {
       final email = AuthConstants.resolveEmail(id);
       await supabase.auth.signInWithPassword(email: email, password: pw);
 
-      // 성공 → 체크 상태에 따라 저장
-      if (_rememberId) {
+      // 보안: 대표 계정은 절대로 비번 저장 / 자동 로그인 X
+      // (기기 공유 시 매니저가 자동 진입할 수 없도록 차단)
+      final isAdminEmail = email == 'ceo@nationalgym.kr';
+
+      // 아이디 기억
+      if (_rememberId && !isAdminEmail) {
         await AuthStorage.setUsername(AuthConstants.localPart(email));
       } else {
         await AuthStorage.setUsername(null);
       }
-      await AuthStorage.setRememberId(_rememberId);
-      await AuthStorage.setAutoLogin(_autoLogin);
-      if (_autoLogin) {
+      await AuthStorage.setRememberId(_rememberId && !isAdminEmail);
+
+      // 자동 로그인 — admin 은 무조건 차단
+      await AuthStorage.setAutoLogin(_autoLogin && !isAdminEmail);
+      if (_autoLogin && !isAdminEmail) {
         await AuthStorage.setPassword(pw);
       } else {
+        // admin 이거나 토글 꺼져있으면 저장된 비번 강제 삭제
         await AuthStorage.setPassword(null);
       }
     } on AuthException catch (e) {
@@ -255,22 +271,40 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: Tokens.s8),
 
         // ── 옵션: 아이디 기억 / 자동 로그인 ──
-        _CheckRow(
-          label: '아이디 기억하기',
-          value: _rememberId,
-          onChanged: (v) => setState(() {
-            _rememberId = v;
-            if (!v) _autoLogin = false; // 자동 로그인은 기억 옵션의 상위
-          }),
-        ),
-        _CheckRow(
-          label: '자동 로그인 (기기에 비밀번호 저장)',
-          value: _autoLogin,
-          onChanged: (v) => setState(() {
-            _autoLogin = v;
-            if (v) _rememberId = true;
-          }),
-        ),
+        // 대표 계정은 보안상 자동 로그인 차단 (기기 점유 시 매니저가 진입 가능)
+        Builder(builder: (_) {
+          final typed = _idCtrl.text.trim();
+          final isAdmin =
+              AuthConstants.resolveEmail(typed) == 'ceo@nationalgym.kr';
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _CheckRow(
+              label: '아이디 기억하기',
+              value: _rememberId && !isAdmin,
+              enabled: !isAdmin,
+              onChanged: (v) => setState(() {
+                _rememberId = v;
+                if (!v) _autoLogin = false;
+              }),
+            ),
+            _CheckRow(
+              label: '자동 로그인 (기기에 비밀번호 저장)',
+              value: _autoLogin && !isAdmin,
+              enabled: !isAdmin,
+              onChanged: (v) => setState(() {
+                _autoLogin = v;
+                if (v) _rememberId = true;
+              }),
+            ),
+            if (isAdmin)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, left: 32),
+                child: Text(
+                  '보안: 대표 계정은 자동 로그인이 비활성화됩니다',
+                  style: Tokens.ts11.copyWith(color: Tokens.gold600, fontWeight: FontWeight.w600),
+                ),
+              ),
+          ]);
+        }),
 
         if (_error != null) ...[
           const SizedBox(height: Tokens.s8),
@@ -339,13 +373,18 @@ class _LoginScreenState extends State<LoginScreen> {
 class _CheckRow extends StatelessWidget {
   final String label;
   final bool value;
+  final bool enabled;
   final ValueChanged<bool> onChanged;
-  const _CheckRow(
-      {required this.label, required this.value, required this.onChanged});
+  const _CheckRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.enabled = true,
+  });
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => onChanged(!value),
+      onTap: enabled ? () => onChanged(!value) : null,
       borderRadius: BorderRadius.circular(Tokens.r8),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -354,14 +393,19 @@ class _CheckRow extends StatelessWidget {
             width: 24, height: 24,
             child: Checkbox(
               value: value,
-              onChanged: (v) => onChanged(v ?? false),
+              onChanged: enabled ? (v) => onChanged(v ?? false) : null,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               visualDensity: VisualDensity.compact,
             ),
           ),
           const SizedBox(width: Tokens.s8),
           Expanded(
-            child: Text(label, style: Tokens.ts13),
+            child: Text(
+              label,
+              style: Tokens.ts13.copyWith(
+                color: enabled ? Tokens.text : Tokens.textFaint,
+              ),
+            ),
           ),
         ]),
       ),
