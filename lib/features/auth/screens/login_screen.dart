@@ -58,10 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // 자동 로그인 시도: autoLogin + 저장된 password 둘 다 있을 때만.
-    // 보안: 대표 계정은 자동 로그인 절대 금지 (기기 점유 = 계정 탈취 위험).
-    final isAdminEmail = AuthConstants.resolveEmail(savedId ?? '') ==
-        'ceo@nationalgym.kr';
-    if (auto && !isAdminEmail && (savedId?.isNotEmpty ?? false)) {
+    if (auto && (savedId?.isNotEmpty ?? false)) {
       final savedPw = await AuthStorage.getPassword();
       if (savedPw != null && savedPw.isNotEmpty && mounted) {
         _passwordCtrl.text = savedPw;
@@ -106,24 +103,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final email = AuthConstants.resolveEmail(id);
       await supabase.auth.signInWithPassword(email: email, password: pw);
 
-      // 보안: 대표 계정은 절대로 비번 저장 / 자동 로그인 X
-      // (기기 공유 시 매니저가 자동 진입할 수 없도록 차단)
-      final isAdminEmail = email == 'ceo@nationalgym.kr';
-
-      // 아이디 기억
-      if (_rememberId && !isAdminEmail) {
+      // 성공 → 체크 상태에 따라 저장
+      if (_rememberId) {
         await AuthStorage.setUsername(AuthConstants.localPart(email));
       } else {
         await AuthStorage.setUsername(null);
       }
-      await AuthStorage.setRememberId(_rememberId && !isAdminEmail);
-
-      // 자동 로그인 — admin 은 무조건 차단
-      await AuthStorage.setAutoLogin(_autoLogin && !isAdminEmail);
-      if (_autoLogin && !isAdminEmail) {
+      await AuthStorage.setRememberId(_rememberId);
+      await AuthStorage.setAutoLogin(_autoLogin);
+      if (_autoLogin) {
         await AuthStorage.setPassword(pw);
       } else {
-        // admin 이거나 토글 꺼져있으면 저장된 비번 강제 삭제
         await AuthStorage.setPassword(null);
       }
     } on AuthException catch (e) {
@@ -239,7 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
           onSubmitted: (_) => _passwordFocus.requestFocus(),
           decoration: InputDecoration(
             labelText: '아이디',
-            hintText: '예: ceo, manager.kim',
             prefixIcon: const Icon(Icons.person_outline, size: 18),
             suffixText: AuthConstants.emailDomain,
             suffixStyle: Tokens.ts13.copyWith(color: Tokens.textMuted),
@@ -271,32 +260,22 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: Tokens.s8),
 
         // ── 옵션: 아이디 기억 / 자동 로그인 ──
-        // 대표 계정은 보안상 자동 로그인 차단 (기기 점유 시 매니저가 진입 가능)
-        Builder(builder: (_) {
-          final typed = _idCtrl.text.trim();
-          final isAdmin =
-              AuthConstants.resolveEmail(typed) == 'ceo@nationalgym.kr';
-          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _CheckRow(
-              label: '아이디 기억하기',
-              value: _rememberId && !isAdmin,
-              enabled: !isAdmin,
-              onChanged: (v) => setState(() {
-                _rememberId = v;
-                if (!v) _autoLogin = false;
-              }),
-            ),
-            _CheckRow(
-              label: '자동 로그인 (기기에 비밀번호 저장)',
-              value: _autoLogin && !isAdmin,
-              enabled: !isAdmin,
-              onChanged: (v) => setState(() {
-                _autoLogin = v;
-                if (v) _rememberId = true;
-              }),
-            ),
-          ]);
-        }),
+        _CheckRow(
+          label: '아이디 기억하기',
+          value: _rememberId,
+          onChanged: (v) => setState(() {
+            _rememberId = v;
+            if (!v) _autoLogin = false;
+          }),
+        ),
+        _CheckRow(
+          label: '자동 로그인 (기기에 비밀번호 저장)',
+          value: _autoLogin,
+          onChanged: (v) => setState(() {
+            _autoLogin = v;
+            if (v) _rememberId = true;
+          }),
+        ),
 
         if (_error != null) ...[
           const SizedBox(height: Tokens.s8),
