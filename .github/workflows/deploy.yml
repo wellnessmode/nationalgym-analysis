@@ -88,6 +88,7 @@ jobs:
           supabase functions deploy due-reminder --project-ref "$PROJECT_REF"
           supabase functions deploy transcribe-meeting --project-ref "$PROJECT_REF"
           supabase functions deploy cleanup-meeting --project-ref "$PROJECT_REF"
+          supabase functions deploy cleanup-memo --project-ref "$PROJECT_REF"
 
       - name: Set Edge Function secrets
         if: steps.gate.outputs.configured == 'true'
