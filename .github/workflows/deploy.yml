@@ -155,10 +155,11 @@ jobs:
           exit $rc
         continue-on-error: true
 
-      - name: Build Web
+      - name: Build Web (HTML renderer for Korean system fonts)
         run: |
           set +e
           flutter build web --release \
+            --web-renderer html \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
             --dart-define=FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }} \

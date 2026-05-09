@@ -32,11 +32,20 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: Tokens.bg,
 
-      // Typography
+      // Typography — Pretendard (한국어 우선) + system fallback
       textTheme: base.textTheme.apply(
         bodyColor: Tokens.text,
         displayColor: Tokens.text,
-        fontFamily: '-apple-system',
+        fontFamily: 'Pretendard Variable',
+        fontFamilyFallback: const [
+          'Pretendard',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Apple SD Gothic Neo',
+          'Noto Sans CJK KR',
+          'Malgun Gothic',
+          'sans-serif',
+        ],
       ),
 
       // AppBar — flat, dark navy on top
