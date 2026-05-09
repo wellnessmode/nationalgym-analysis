@@ -38,11 +38,72 @@
   <title>National Gym Workspace</title>
 
   <!-- ===========================================
+       앱 부팅 전 로딩 화면 — Flutter / CanvasKit / 한글 폰트 로드 동안
+       tofu 박스 노출 차단. brand navy + gold 스피너.
+       =========================================== -->
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0A1628; }
+    #ng-boot {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #0A1628 0%, #1a2540 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      transition: opacity 280ms ease, visibility 280ms ease;
+    }
+    #ng-boot.hide { opacity: 0; visibility: hidden; }
+    #ng-boot img {
+      width: 96px; height: 96px;
+      filter: drop-shadow(0 4px 16px rgba(201,163,92,0.18));
+      image-rendering: -webkit-optimize-contrast;
+    }
+    #ng-boot .spinner {
+      margin-top: 32px;
+      width: 28px; height: 28px;
+      border: 2.5px solid rgba(201,163,92,0.18);
+      border-top-color: #C9A35C;
+      border-radius: 50%;
+      animation: ng-spin 0.9s linear infinite;
+    }
+    #ng-boot .label {
+      margin-top: 18px;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      letter-spacing: 2.5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 600;
+    }
+    @keyframes ng-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      #ng-boot .spinner { animation: none; }
+    }
+  </style>
+
+  <!-- ===========================================
        Flutter Web 부트스트랩 (3.22+ 패턴)
-       구버전이면 flutter create 가 다른 코드를 넣음 → 그쪽 따를 것
        =========================================== -->
   <script src="flutter_bootstrap.js" async></script>
 </head>
 <body>
+  <div id="ng-boot" aria-label="loading">
+    <img src="icons/Icon-192.png" alt="" />
+    <div class="spinner" role="progressbar" aria-label="loading"></div>
+    <div class="label">LOADING</div>
+  </div>
+  <script>
+    // Flutter 첫 프레임 직후 페이드아웃. 그 전엔 tofu 노출 차단.
+    function ngHideBoot() {
+      var el = document.getElementById('ng-boot');
+      if (!el) return;
+      el.classList.add('hide');
+      setTimeout(function () { el.parentNode && el.parentNode.removeChild(el); }, 320);
+    }
+    window.addEventListener('flutter-first-frame', ngHideBoot);
+    // 안전망: 7초 안에 first-frame 이 안 떠도 로더는 치움
+    setTimeout(function () {
+      var el = document.getElementById('ng-boot');
+      if (el && !el.classList.contains('hide')) ngHideBoot();
+    }, 7000);
+  </script>
 </body>
 </html>
