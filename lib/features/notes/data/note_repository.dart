@@ -76,6 +76,24 @@ class NoteRepository {
     await supabase.from('notes').delete().eq('id', id);
   }
 
+  /// Gemini Edge Function — 메모 raw 텍스트(음성 인식 결과 포함)를 정돈된 메모로 변환.
+  /// null = 실패.
+  Future<String?> aiCleanup(String text) async {
+    try {
+      final res = await supabase.functions.invoke(
+        'cleanup-memo',
+        body: {'text': text},
+      );
+      final data = res.data;
+      if (data is Map && data['ok'] == true) {
+        return (data['text'] as String?) ?? '';
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 대표 전용: 모든 사용자의 메모 열람 (인사평가 목적)
   Future<List<Note>> listAllForAdmin() async {
     final res = await supabase

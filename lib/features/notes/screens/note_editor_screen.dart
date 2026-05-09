@@ -7,6 +7,7 @@ import '../../../shared/models/app_user.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/note.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../meeting_notes/widgets/audio_recorder_panel.dart';
 import '../providers/note_providers.dart';
 
 /// 메모 에디터 — iOS Notes 스타일 (제목 + 본문 분리). 자동 저장 1.2초.
@@ -29,6 +30,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   bool _saving = false;
   bool _dirty = false;
   bool _loaded = false;
+  bool _showAudio = false;
+  bool _aiCleaning = false;
+  String _voiceBaseline = ''; // 음성 인식 시작 직전 본문 값 (인식 결과를 뒤에 append)
   Note? _note;
   String _initialTitle = '';
   String _initialBody = '';
@@ -116,6 +120,48 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     _debounce?.cancel();
     if (_dirty) await _save();
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// 음성 인식 결과 → baseline 본문 뒤에 추가 (interim 포함이라 전체 교체 패턴)
+  void _handleTranscript(String transcript) {
+    final base = _voiceBaseline.isEmpty
+        ? transcript
+        : '${_voiceBaseline}${_voiceBaseline.endsWith('\n') ? '' : '\n'}$transcript';
+    _bodyCtrl.text = base;
+    _bodyCtrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: _bodyCtrl.text.length),
+    );
+  }
+
+  /// 본문 전체를 Gemini 로 정리하고 결과로 교체 (제목은 그대로 유지)
+  Future<void> _aiCleanupBody() async {
+    final raw = _bodyCtrl.text.trim();
+    if (raw.length < 5) {
+      _snack('정리할 내용이 너무 짧습니다');
+      return;
+    }
+    setState(() => _aiCleaning = true);
+    try {
+      final cleaned = await ref.read(noteRepositoryProvider).aiCleanup(raw);
+      if (cleaned == null || cleaned.isEmpty) {
+        _snack('AI 정리 실패. GEMINI_API_KEY 또는 네트워크 확인');
+        return;
+      }
+      _bodyCtrl.text = cleaned;
+      _bodyCtrl.selection = TextSelection.fromPosition(
+        TextPosition(offset: _bodyCtrl.text.length),
+      );
+      _voiceBaseline = cleaned;
+      _snack('AI 정리 완료');
+    } catch (e) {
+      _snack('AI 정리 오류: $e');
+    } finally {
+      if (mounted) setState(() => _aiCleaning = false);
+    }
+  }
+
+  void _snack(String s) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
   }
 
   Future<void> _openSharePicker() async {
@@ -242,6 +288,23 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         appBar: AppBar(
           title: Text(title),
           actions: [
+            IconButton(
+              tooltip: _showAudio ? '음성 패널 닫기' : '음성으로 입력',
+              icon: Icon(
+                _showAudio ? Icons.mic : Icons.mic_none,
+                color: _showAudio ? Tokens.gold500 : Colors.white70,
+              ),
+              onPressed: _loaded
+                  ? () {
+                      setState(() {
+                        _showAudio = !_showAudio;
+                        if (_showAudio) {
+                          _voiceBaseline = _bodyCtrl.text;
+                        }
+                      });
+                    }
+                  : null,
+            ),
             if (isMine && _note != null)
               IconButton(
                 tooltip: '공유 설정',
@@ -297,6 +360,40 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
               ),
             ),
             const Divider(height: 1, indent: Tokens.s16, endIndent: Tokens.s16),
+
+            // 음성 입력 + AI 정리 (상단 마이크 아이콘 토글)
+            if (_showAudio) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s12, Tokens.s16, 0),
+                child: AudioRecorderPanel(
+                  onTranscriptChunk: _handleTranscript,
+                  disabled: _saving || _aiCleaning,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s8, Tokens.s16, 0),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    onPressed: (_saving || _aiCleaning) ? null : _aiCleanupBody,
+                    icon: _aiCleaning
+                        ? const SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.auto_awesome, size: 16, color: Tokens.gold600),
+                    label: Text(_aiCleaning ? 'AI 정리 중...' : 'AI로 메모 정리'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Tokens.gold600,
+                      side: const BorderSide(color: Tokens.gold500),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Tokens.s8),
+              const Divider(height: 1, indent: Tokens.s16, endIndent: Tokens.s16),
+            ],
+
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(Tokens.s16),
