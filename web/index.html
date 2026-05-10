@@ -97,21 +97,58 @@
     <img src="icons/Icon-192.png" alt="" />
     <div class="spinner" role="progressbar" aria-label="loading"></div>
     <div class="label">LOADING</div>
+    <button id="ng-recover" style="display:none; margin-top:48px; padding:10px 20px;
+      background:transparent; border:1px solid rgba(201,163,92,0.5); color:#C9A35C;
+      border-radius:999px; font-size:12px; letter-spacing:1px; cursor:pointer;
+      font-family:-apple-system, sans-serif;">
+      앱이 응답하지 않을 때 — 캐시 초기화
+    </button>
   </div>
   <script>
     // Flutter 첫 프레임 직후 페이드아웃. 그 전엔 tofu 노출 차단.
+    var ngBooted = false;
     function ngHideBoot() {
+      ngBooted = true;
       var el = document.getElementById('ng-boot');
       if (!el) return;
       el.classList.add('hide');
       setTimeout(function () { el.parentNode && el.parentNode.removeChild(el); }, 320);
     }
     window.addEventListener('flutter-first-frame', ngHideBoot);
-    // 안전망: 7초 안에 first-frame 이 안 떠도 로더는 치움
+
+    // 7초 안에 첫 프레임 안 뜨면 복구 버튼 표시 (PWA 먹통 방지)
     setTimeout(function () {
-      var el = document.getElementById('ng-boot');
-      if (el && !el.classList.contains('hide')) ngHideBoot();
+      if (ngBooted) return;
+      var btn = document.getElementById('ng-recover');
+      if (btn) btn.style.display = 'inline-block';
     }, 7000);
+
+    // 복구 버튼: SW 등록 해제 + 모든 캐시 삭제 + 새로고침.
+    // PWA 가 잘못된 캐시에 갇혔을 때 사용자가 직접 누를 수 있음.
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.id === 'ng-recover') {
+        e.target.disabled = true;
+        e.target.textContent = '초기화 중...';
+        var done = Promise.resolve();
+        if ('serviceWorker' in navigator) {
+          done = done.then(function () {
+            return navigator.serviceWorker.getRegistrations();
+          }).then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          });
+        }
+        if ('caches' in window) {
+          done = done.then(function () { return caches.keys(); })
+            .then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            });
+        }
+        done.finally(function () {
+          // 강제 리로드
+          location.reload();
+        });
+      }
+    });
   </script>
 </body>
 </html>
