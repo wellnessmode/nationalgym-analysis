@@ -275,6 +275,8 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
         AudioRecorderPanel(
           onTranscriptChunk: _handleTranscript,
           disabled: _saving || _aiCleaning,
+          idleTitle: '회의 음성 인식',
+          idleSubtitle: '버튼을 누르고 말씀하면 본문에 자동 입력됩니다',
         ),
         const SizedBox(height: Tokens.s8),
 

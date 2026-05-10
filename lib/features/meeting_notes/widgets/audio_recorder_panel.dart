@@ -18,10 +18,20 @@ class AudioRecorderPanel extends StatefulWidget {
   /// 부모가 외부에서 비활성화 (저장 중 등)
   final bool disabled;
 
+  /// 패널 헤더 라벨 (idle 상태). 컨텍스트별 커스터마이즈.
+  final String idleTitle;
+  final String idleSubtitle;
+
+  /// 사용자가 패널 우상단 X 를 눌렀을 때 (선택). null 이면 X 미표시.
+  final VoidCallback? onClose;
+
   const AudioRecorderPanel({
     super.key,
     required this.onTranscriptChunk,
     this.disabled = false,
+    this.idleTitle = '음성 인식',
+    this.idleSubtitle = '버튼을 누르고 말씀하면 본문에 자동 입력됩니다',
+    this.onClose,
   });
 
   @override
@@ -52,6 +62,8 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
   }
 
   Future<void> _ensureInit() async {
+    // 매번 _ensureInit 시 잔여 세션 강제 cancel 시도 (이전 부팅의 좀비 마이크 제거)
+    try { await _speech.cancel(); } catch (_) {}
     if (_initialized) return;
     final ok = await _speech.initialize(
       onStatus: (status) {
@@ -184,16 +196,14 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
-                _listening ? '음성 인식 중' : '회의 음성 인식',
+                _listening ? '음성 인식 중' : widget.idleTitle,
                 style: Tokens.ts14.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 2),
               Text(
                 _listening
                     ? _fmt(_elapsed)
-                    : (_error != null
-                        ? _error!
-                        : '버튼을 누르고 말씀하면 본문에 자동 입력됩니다'),
+                    : (_error != null ? _error! : widget.idleSubtitle),
                 style: Tokens.ts12.copyWith(
                   color: _listening
                       ? Tokens.danger
@@ -203,11 +213,27 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
               ),
             ]),
           ),
-          if (_committed.isNotEmpty || _pending.isNotEmpty)
+          // 녹음 중에는 항상 명시적 정지 버튼 (사용자가 못 찾는 경우 방지)
+          if (_listening)
+            IconButton(
+              icon: const Icon(Icons.stop_circle, color: Tokens.danger, size: 28),
+              tooltip: '정지',
+              onPressed: _stop,
+            )
+          else if (_committed.isNotEmpty || _pending.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.refresh, size: 18),
               tooltip: '초기화',
               onPressed: widget.disabled ? null : _reset,
+            ),
+          if (widget.onClose != null)
+            IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              tooltip: '음성 패널 닫기',
+              onPressed: () async {
+                if (_listening) await _stop();
+                widget.onClose!();
+              },
             ),
         ]),
         const SizedBox(height: Tokens.s12),

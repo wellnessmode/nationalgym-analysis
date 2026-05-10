@@ -368,6 +368,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 child: AudioRecorderPanel(
                   onTranscriptChunk: _handleTranscript,
                   disabled: _saving || _aiCleaning,
+                  idleTitle: '음성으로 메모',
+                  idleSubtitle: '버튼을 누르고 말하면 메모 본문에 자동 입력됩니다',
+                  onClose: () => setState(() => _showAudio = false),
                 ),
               ),
               Padding(
