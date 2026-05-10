@@ -55,8 +55,8 @@ class _AdminGateSetupScreenState extends ConsumerState<AdminGateSetupScreen> {
     setState(() => _saving = true);
     try {
       await ref.read(adminGateRepositoryProvider).setPassword(n);
-      // 새로 설정했으므로 현재 세션 unlock 상태로 처리
-      ref.read(adminGateUnlockedProvider.notifier).state = true;
+      // 설정 / 변경했으면 보안 강화 위해 세션 캐시도 초기화 → 다음 진입 때 다시 물음
+      ref.read(adminGateUnlockedProvider.notifier).state = false;
       if (!mounted) return;
       _snack('비밀번호가 저장되었습니다');
       Navigator.of(context).pop();
