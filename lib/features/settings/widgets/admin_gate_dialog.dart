@@ -5,12 +5,10 @@ import '../data/admin_gate_repository.dart';
 import '../screens/admin_gate_setup_screen.dart';
 
 /// 메모 체크 / 로그 체크 진입 전 게이트 비밀번호 묻는 모달.
-/// 통과하면 [adminGateUnlockedProvider] 를 true 로 + true 반환.
+/// 매 진입마다 무조건 확인 (세션 캐시 X).
+/// 통과 시 true, 실패/취소 시 false 반환.
 /// 게이트 미설정이면 설정 화면으로 안내 후 false 반환.
 Future<bool> ensureAdminGateUnlocked(BuildContext context, WidgetRef ref) async {
-  // 이미 이번 세션에서 통과했으면 통과
-  if (ref.read(adminGateUnlockedProvider)) return true;
-
   final repo = ref.read(adminGateRepositoryProvider);
   bool isSet;
   try {
@@ -42,7 +40,7 @@ Future<bool> ensureAdminGateUnlocked(BuildContext context, WidgetRef ref) async 
     return false;
   }
 
-  // 설정돼 있음 → 입력 모달
+  // 설정돼 있음 → 매 진입마다 입력 모달
   final ok = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -81,7 +79,7 @@ class _AdminGatePromptDialogState extends ConsumerState<_AdminGatePromptDialog> 
       final ok = await ref.read(adminGateRepositoryProvider).verify(input);
       if (!mounted) return;
       if (ok) {
-        ref.read(adminGateUnlockedProvider.notifier).state = true;
+        // 캐시 안 함 — 매번 다시 묻도록
         Navigator.of(context).pop(true);
       } else {
         setState(() => _error = '비밀번호가 일치하지 않습니다');
