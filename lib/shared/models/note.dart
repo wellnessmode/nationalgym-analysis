@@ -6,6 +6,7 @@ class Note {
   final String? sharedWithUserId; // null = private
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? deletedAt; // null = 활성 / 값 있음 = 작성자가 삭제 (대표만 열람)
 
   Note({
     required this.id,
@@ -15,9 +16,11 @@ class Note {
     required this.sharedWithUserId,
     required this.createdAt,
     required this.updatedAt,
+    this.deletedAt,
   });
 
   bool get isShared => sharedWithUserId != null;
+  bool get isDeleted => deletedAt != null;
 
   /// iOS Notes-style: title 비어있으면 content 첫 줄을 제목으로 표시.
   String get displayTitle {
@@ -44,6 +47,7 @@ class Note {
     String? sharedWithUserId,
     bool clearShare = false,
     DateTime? updatedAt,
+    DateTime? deletedAt,
   }) =>
       Note(
         id: id,
@@ -53,6 +57,7 @@ class Note {
         sharedWithUserId: clearShare ? null : (sharedWithUserId ?? this.sharedWithUserId),
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt ?? this.deletedAt,
       );
 
   factory Note.fromJson(Map<String, dynamic> j) => Note(
@@ -63,5 +68,8 @@ class Note {
         sharedWithUserId: j['shared_with_user_id'] as String?,
         createdAt: DateTime.parse(j['created_at'] as String),
         updatedAt: DateTime.parse(j['updated_at'] as String),
+        deletedAt: j['deleted_at'] == null
+            ? null
+            : DateTime.parse(j['deleted_at'] as String),
       );
 }

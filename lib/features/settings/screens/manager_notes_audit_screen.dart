@@ -212,11 +212,30 @@ class _AuditNoteTile extends StatelessWidget {
             style: Tokens.ts11.copyWith(fontWeight: FontWeight.w800, color: Tokens.navy900),
           ),
         ),
+        if (note.isDeleted) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: Tokens.danger.withOpacity(0.13),
+              borderRadius: BorderRadius.circular(Tokens.r999),
+            ),
+            child: Text(
+              '삭제됨',
+              style: Tokens.ts11.copyWith(fontWeight: FontWeight.w800, color: Tokens.danger),
+            ),
+          ),
+        ],
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
-            style: Tokens.ts14.copyWith(fontWeight: FontWeight.w700),
+            style: Tokens.ts14.copyWith(
+              fontWeight: FontWeight.w700,
+              color: note.isDeleted ? Tokens.textMuted : Tokens.text,
+              decoration: note.isDeleted ? TextDecoration.lineThrough : null,
+              decorationColor: Tokens.textMuted,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -226,12 +245,17 @@ class _AuditNoteTile extends StatelessWidget {
         padding: const EdgeInsets.only(top: 4),
         child: Row(children: [
           Text(
-            DateFormat('MM-dd HH:mm').format(note.updatedAt.toLocal()),
-            style: Tokens.ts11.copyWith(color: Tokens.textFaint),
+            note.isDeleted && note.deletedAt != null
+                ? '삭제 ${DateFormat('MM-dd HH:mm').format(note.deletedAt!.toLocal())}'
+                : DateFormat('MM-dd HH:mm').format(note.updatedAt.toLocal()),
+            style: Tokens.ts11.copyWith(
+              color: note.isDeleted ? Tokens.danger : Tokens.textFaint,
+              fontWeight: note.isDeleted ? FontWeight.w700 : FontWeight.w400,
+            ),
           ),
           if (sharedWithName != null) ...[
             const SizedBox(width: 6),
-            Text('· $sharedWithName와 공유 중',
+            Text('· $sharedWithName와 공유',
                 style: Tokens.ts11.copyWith(color: Tokens.gold600, fontWeight: FontWeight.w600)),
           ],
           if (preview.isNotEmpty) ...[
