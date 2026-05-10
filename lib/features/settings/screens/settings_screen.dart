@@ -7,6 +7,9 @@ import '../../../services/fcm_service.dart';
 import '../../../services/supabase_client.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/section.dart';
+import '../data/admin_gate_repository.dart';
+import '../widgets/admin_gate_dialog.dart';
+import 'admin_gate_setup_screen.dart';
 import 'help_screen.dart';
 import 'manager_notes_audit_screen.dart';
 import 'staff_activity_screen.dart';
@@ -48,6 +51,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // 자동 로그인 해제: 다음 사람이 이 기기로 들어왔을 때 이 사용자 비밀번호로
     // 자동 진입되지 않도록 password + autoLogin 플래그 제거. 아이디 기억은 유지.
     await AuthStorage.clearSensitive();
+    // 대표 전용 게이트 unlock 상태도 초기화
+    ref.read(adminGateUnlockedProvider.notifier).state = false;
     // global scope: 모든 기기·세션 무효화. 캐시된 세션도 확실히 정리.
     await supabase.auth.signOut(scope: SignOutScope.global);
     ref.invalidate(currentUserProvider);
@@ -203,9 +208,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.fact_check_outlined, color: Tokens.gold600),
               title: const Text('메모 체크', style: TextStyle(fontWeight: FontWeight.w600)),
               trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const ManagerNotesAuditScreen(),
-              )),
+              onTap: () async {
+                final ok = await ensureAdminGateUnlocked(context, ref);
+                if (!ok || !context.mounted) return;
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const ManagerNotesAuditScreen(),
+                ));
+              },
             ),
             // 로그 체크 — ceo@nationalgym.kr 만
             if (me?.email == 'ceo@nationalgym.kr')
@@ -213,8 +222,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: const Icon(Icons.timeline, color: Tokens.gold600),
                 title: const Text('로그 체크', style: TextStyle(fontWeight: FontWeight.w600)),
                 trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
+                onTap: () async {
+                  final ok = await ensureAdminGateUnlocked(context, ref);
+                  if (!ok || !context.mounted) return;
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const StaffActivityScreen(),
+                  ));
+                },
+              ),
+            // 게이트 비밀번호 설정 (ceo only)
+            if (me?.email == 'ceo@nationalgym.kr')
+              ListTile(
+                leading: const Icon(Icons.shield_outlined, color: Tokens.gold600),
+                title: const Text('메모/로그 체크 비밀번호 설정', style: TextStyle(fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.chevron_right, color: Tokens.textFaint),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const StaffActivityScreen(),
+                  builder: (_) => const AdminGateSetupScreen(),
                 )),
               ),
           ]),
