@@ -71,13 +71,10 @@ class NoteRepository {
     return Note.fromJson(res);
   }
 
-  /// 메모 삭제 — soft delete. row 는 보존, deleted_at 설정.
-  /// 매니저는 삭제된 메모 안 보임 (RLS), 대표는 메모 체크에서 열람 가능.
+  /// 메모 삭제 — soft delete via SECURITY DEFINER RPC.
+  /// RLS WITH CHECK 충돌 우회. 작성자/admin 만 호출 가능 (함수 내부 검증).
   Future<void> delete(String id) async {
-    await supabase
-        .from('notes')
-        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
-        .eq('id', id);
+    await supabase.rpc('soft_delete_note', params: {'note_id': id});
   }
 
   /// Gemini Edge Function — 메모 raw 텍스트(음성 인식 결과 포함)를 정돈된 메모로 변환.
