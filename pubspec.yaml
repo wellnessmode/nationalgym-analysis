@@ -57,15 +57,11 @@ flutter:
     - assets/brand_logo.png
 
   # Pretendard — 한국어 우선 본문체. CanvasKit 이 한글 글리프 그릴 수 있도록 번들.
-  # 폰트 파일은 CI 빌드 시 download (assets/fonts/* 는 .gitignore).
+  # Regular + Bold 만 (Medium / Black 은 번들 크기 절약 위해 제외).
   fonts:
     - family: Pretendard
       fonts:
         - asset: assets/fonts/Pretendard-Regular.otf
           weight: 400
-        - asset: assets/fonts/Pretendard-Medium.otf
-          weight: 500
         - asset: assets/fonts/Pretendard-Bold.otf
           weight: 700
-        - asset: assets/fonts/Pretendard-Black.otf
-          weight: 900

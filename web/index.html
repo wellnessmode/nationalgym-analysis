@@ -37,14 +37,6 @@
 
   <title>National Gym Workspace</title>
 
-  <!-- Pretendard 한국어 웹폰트 — tofu 박스 방지 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="stylesheet" as="style" crossorigin
-    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
-  <style>
-    body, html { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-  </style>
-
   <!-- ===========================================
        앱 부팅 전 로딩 화면 — Flutter / CanvasKit / 한글 폰트 로드 동안
        tofu 박스 노출 차단. brand navy + gold 스피너.
@@ -149,6 +141,30 @@
         });
       }
     });
+
+    // 새 버전 자동 적용: 백그라운드에서 새 SW 가 'installed' 되면 활성화하고
+    // 페이지 살짝 reload. 사용자가 '버전 끼임' 으로 멈추는 일 방지.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        // controller 가 바뀌면 (= 새 SW 가 활성화됨) 한 번만 reload
+        if (!window.__ngReloaded) {
+          window.__ngReloaded = true;
+          location.reload();
+        }
+      });
+      navigator.serviceWorker.ready.then(function (reg) {
+        reg.addEventListener('updatefound', function () {
+          var newSw = reg.installing;
+          if (!newSw) return;
+          newSw.addEventListener('statechange', function () {
+            if (newSw.state === 'installed' && navigator.serviceWorker.controller) {
+              // 이미 컨트롤하는 SW 가 있는 상태에서 새 게 설치됨 → 즉시 활성화 요청
+              newSw.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      });
+    }
   </script>
 </body>
 </html>

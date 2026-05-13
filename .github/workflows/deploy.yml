@@ -155,14 +155,12 @@ jobs:
           exit $rc
         continue-on-error: true
 
-      - name: Download Pretendard fonts (Korean glyphs for CanvasKit)
+      - name: Download Pretendard fonts (Regular + Bold only for bundle size)
         run: |
           mkdir -p assets/fonts
           BASE=https://github.com/orioncactus/pretendard/raw/v1.3.9/packages/pretendard/dist/public/static
           curl -fsSL "$BASE/Pretendard-Regular.otf" -o assets/fonts/Pretendard-Regular.otf
-          curl -fsSL "$BASE/Pretendard-Medium.otf"  -o assets/fonts/Pretendard-Medium.otf
           curl -fsSL "$BASE/Pretendard-Bold.otf"    -o assets/fonts/Pretendard-Bold.otf
-          curl -fsSL "$BASE/Pretendard-Black.otf"   -o assets/fonts/Pretendard-Black.otf
           ls -la assets/fonts/
 
       - name: Build Web (CanvasKit + bundled Pretendard)
