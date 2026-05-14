@@ -265,6 +265,13 @@ canvas.main-oc{display:block;width:100%;height:auto}
 #camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
 .gbox{position:absolute;border:2px solid rgba(0,168,120,.85);top:6%;bottom:4%;left:16%;right:16%;border-radius:6px}
+/* v1.16.1: SLR 가로 촬영 — 휴대폰을 가로로 돌렸을 때 박스를 가로 형태로 (트레이너 피드백) */
+.cam-ov.cam-landscape .gbox{top:14%;bottom:14%;left:5%;right:5%}
+.cam-ov.cam-landscape #camGuideSvgWrap{top:14%!important;bottom:14%!important;left:5%!important;right:5%!important}
+@media (orientation:landscape){
+  .cam-ov.cam-landscape .gbox{top:8%;bottom:8%;left:5%;right:5%}
+  .cam-ov.cam-landscape #camGuideSvgWrap{top:8%!important;bottom:8%!important;left:5%!important;right:5%!important}
+}
 .gtip{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,168,120,.85);color:#fff;font-size:12px;padding:4px 14px;border-radius:12px;white-space:nowrap;font-weight:600}
 .gcv{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.22);transform:translateX(-50%)}
 .gch{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.16)}
@@ -700,14 +707,19 @@ const POSE_GUIDES = {
     <text x="61" y="16" fill="#ffd700" font-size="3.5" font-family="sans-serif">귀</text>
     <text x="63" y="44" fill="#ff6060" font-size="3.5" font-family="sans-serif">견봉</text>
     <text x="68" y="112" fill="#ff6060" font-size="3.5" font-family="sans-serif">대전자</text>
+    <!-- v1.16.1: 좌/우 방향 명확화 (트레이너 피드백) -->
+    <!-- 머리·척추가 위치한 쪽 = 카메라 정면 보는 방향 / 발이 위치한 쪽 = 등 쪽 -->
+    <text x="50" y="13" text-anchor="middle" fill="#ffd700" font-size="5" font-weight="bold" font-family="sans-serif">📷 카메라는 고객 좌측면</text>
+    <text x="2" y="216" fill="#9de8c8" font-size="3.5" font-family="sans-serif">← 앞 (배 방향)</text>
+    <text x="98" y="216" text-anchor="end" fill="#9de8c8" font-size="3.5" font-family="sans-serif">뒤 (등 방향) →</text>
     <!-- 정상범위 하단 라벨 -->
     <text x="50" y="196" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: CVA ≥ 50° · 귀-어깨-대전자 일직선</text>
-    <text x="50" y="204" text-anchor="middle" fill="#9de8c8" font-size="3.5">※ 고객 좌측에서 촬영</text>`
+    <text x="50" y="204" text-anchor="middle" fill="#9de8c8" font-size="3.5">※ 고객 좌측에서 촬영 (카메라가 고객의 좌측 어깨선과 수직)</text>`
   },
 
   sh_flex_l: {
-    label:'Lt. Shoulder Abduction — 좌측 팔 옆으로 최대 외전',
-    warning:'전신 보이도록 · 좌측 팔 옆에서 위로',
+    label:'Lt. Shoulder Abduction — 고객 좌측 팔 (카메라 우측에 보임)',
+    warning:'전신 보이도록 · 고객 좌측 팔을 옆으로 최대 거상',
     viewBox:'0 0 100 220',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
@@ -716,13 +728,15 @@ const POSE_GUIDES = {
     <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
     <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
     <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
-    <!-- LEFT ARM RAISED - GOLD -->
-    <path class="hi" d="M27,44 Q20,30 17,14 Q15,7 21,6 Q27,5 28,12 L31,28 Q33,40 31,46 Z"/>
-    <ellipse class="hi" cx="17" cy="8" rx="7" ry="4" transform="rotate(-20 17 8)"/>
-    <text class="tx" x="4" y="12">↑ Lt.</text>
-    <!-- RIGHT ARM NATURAL -->
-    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
-    <path class="bg" d="M80,77 Q83,90 81,100 Q80,105 76,105 Q72,104 72,99 L73,86 Q74,78 78,76 Z"/>
+    <!-- v1.16.1: 카메라 관점 보정 — 고객 좌측 = 카메라 우측 (트레이너 피드백) -->
+    <!-- LEFT (카메라) ARM NATURAL — 이쪽이 고객의 우측 -->
+    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
+    <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
+    <!-- RIGHT (카메라) ARM RAISED - GOLD — 이쪽이 고객의 좌측 -->
+    <path class="hi" d="M73,44 Q80,30 83,14 Q85,7 79,6 Q73,5 72,12 L69,28 Q67,40 69,46 Z"/>
+    <ellipse class="hi" cx="82" cy="8" rx="6" ry="4" transform="rotate(20 82 8)"/>
+    <text class="tx" x="76" y="12" text-anchor="end">Lt. ↑</text>
+    <text class="tx" x="76" y="18" text-anchor="end" font-size="3.2">(고객 좌측)</text>
     <!-- BODY -->
     <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
     <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
@@ -736,8 +750,8 @@ const POSE_GUIDES = {
   },
 
   sh_flex_r: {
-    label:'Rt. Shoulder Abduction — 우측 팔 옆으로 최대 외전',
-    warning:'전신 보이도록 · 우측 팔 옆에서 위로',
+    label:'Rt. Shoulder Abduction — 고객 우측 팔 (카메라 좌측에 보임)',
+    warning:'전신 보이도록 · 고객 우측 팔을 옆으로 최대 거상',
     viewBox:'0 0 100 220',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
@@ -745,14 +759,15 @@ const POSE_GUIDES = {
     <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
     <path class="bg" d="M45,32 Q47,40 47,42 L53,42 Q53,40 55,32 Z"/>
     <path class="bg" d="M25,42 Q28,40 47,42 L53,42 Q72,40 75,42 L73,72 Q65,68 53,70 L47,70 Q35,68 27,72 Z"/>
-    <!-- LEFT ARM NATURAL -->
-    <path class="bg" d="M27,44 Q19,56 17,72 Q16,78 20,79 Q24,80 26,75 L29,59 Q31,48 29,46 Z"/>
-    <path class="bg" d="M20,77 Q17,90 19,100 Q20,105 24,105 Q28,104 28,99 L27,86 Q26,78 22,76 Z"/>
-    <!-- RIGHT ARM RAISED - GOLD -->
-    <path class="hi" d="M73,44 Q80,30 83,14 Q85,7 79,6 Q73,5 72,12 L69,28 Q67,40 69,46 Z"/>
-    <ellipse class="hi" cx="82" cy="8" rx="6" ry="4" transform="rotate(20 82 8)"/>
-    <text class="tx" x="76" y="12" text-anchor="end">Rt. ↑</text>
-    <!-- BODY -->
+    <!-- v1.16.1: 카메라 관점 보정 — 고객 우측 = 카메라 좌측 (트레이너 피드백) -->
+    <!-- LEFT (카메라) ARM RAISED - GOLD — 이쪽이 고객의 우측 -->
+    <path class="hi" d="M27,44 Q20,30 17,14 Q15,7 21,6 Q27,5 28,12 L31,28 Q33,40 31,46 Z"/>
+    <ellipse class="hi" cx="17" cy="8" rx="7" ry="4" transform="rotate(-20 17 8)"/>
+    <text class="tx" x="4" y="12">↑ Rt.</text>
+    <text class="tx" x="4" y="18" font-size="3.2">(고객 우측)</text>
+    <!-- RIGHT (카메라) ARM NATURAL — 이쪽이 고객의 좌측 -->
+    <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
+    <path class="bg" d="M80,77 Q83,90 81,100 Q80,105 76,105 Q72,104 72,99 L73,86 Q74,78 78,76 Z"/>
     <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
     <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
     <path class="bg" d="M28,114 Q24,126 24,144 Q24,150 31,150 Q38,150 38,144 L40,126 Q42,116 35,114 Z"/>
@@ -903,8 +918,8 @@ const POSE_GUIDES = {
   },
 
   sku: {
-    label:'Standing Knee Up — 한쪽 무릎 최대 거상',
-    warning:'단색 배경 · 지지발 안정 유지',
+    label:'Standing Knee Up 좌측 — 고객 좌측 무릎 거상 (카메라 우측에 보임)',
+    warning:'단색 배경 · 지지발 안정 유지 · 고객 좌측 무릎 최대 거상',
     viewBox:'0 0 100 220',
     svg:`<defs>
       <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style>
@@ -919,14 +934,16 @@ const POSE_GUIDES = {
     <!-- TORSO + HIP -->
     <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
     <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
-    <!-- RAISED LEFT KNEE - GOLD -->
-    <path class="hi" d="M28,114 Q22,124 20,136 Q19,143 26,144 Q33,145 35,138 L39,126 Q41,115 36,113 Z"/>
-    <path class="hi" d="M20,140 Q18,152 20,162 Q22,168 28,168 Q34,168 35,162 L36,142 Q36,138 28,138 Z"/>
-    <text class="tx" x="6" y="130">↑ 무릎</text>
-    <!-- STANDING RIGHT LEG -->
-    <path class="bg" d="M72,114 Q76,128 76,148 Q76,155 69,155 Q62,155 62,148 L62,128 Q60,116 65,113 Z"/>
-    <path class="bg" d="M62,148 Q62,144 69,144 Q76,144 76,148 L76,170 Q76,176 69,176 Q63,176 62,170 Z"/>
-    <path class="bg" d="M59,171 Q58,179 69,180 Q79,180 80,172 L62,172 Z"/>
+    <!-- v1.16.1: 카메라 관점 — 고객 좌측 = 카메라 우측 (트레이너 피드백) -->
+    <!-- LEFT (카메라) STANDING LEG — 고객의 우측 -->
+    <path class="bg" d="M28,114 Q24,128 24,148 Q24,155 31,155 Q38,155 38,148 L38,128 Q40,116 35,113 Z"/>
+    <path class="bg" d="M24,148 Q24,144 31,144 Q38,144 38,148 L38,170 Q38,176 31,176 Q25,176 24,170 Z"/>
+    <path class="bg" d="M21,171 Q20,179 31,180 Q41,180 42,172 L38,172 Z"/>
+    <!-- RIGHT (카메라) RAISED KNEE - GOLD — 고객의 좌측 -->
+    <path class="hi" d="M72,114 Q78,124 80,136 Q81,143 74,144 Q67,145 65,138 L61,126 Q59,115 64,113 Z"/>
+    <path class="hi" d="M80,140 Q82,152 80,162 Q78,168 72,168 Q66,168 65,162 L64,142 Q64,138 72,138 Z"/>
+    <text class="tx" x="84" y="130" text-anchor="end">↑ Lt. 무릎</text>
+    <text class="tx" x="84" y="136" text-anchor="end" font-size="3.2">(고객 좌측)</text>
     <!-- PELVIC LEVEL LINE -->
     <line x1="20" y1="114" x2="80" y2="114" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
     <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>
@@ -934,8 +951,8 @@ const POSE_GUIDES = {
   },
 
   sku_r: {
-    label:'Standing Knee Up 우측 — 우측 무릎 최대 거상',
-    warning:'단색 배경 · 지지발 안정 유지',
+    label:'Standing Knee Up 우측 — 고객 우측 무릎 거상 (카메라 좌측에 보임)',
+    warning:'단색 배경 · 지지발 안정 유지 · 고객 우측 무릎 최대 거상',
     viewBox:'0 0 100 220',
     svg:`<defs><style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.1;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.18);stroke:#ffd700;stroke-width:1.3;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:4.5px;font-family:sans-serif}</style></defs>
     <ellipse class="bg" cx="50" cy="19" rx="11" ry="14"/>
@@ -945,12 +962,16 @@ const POSE_GUIDES = {
     <path class="bg" d="M73,44 Q81,56 83,72 Q84,78 80,79 Q76,80 74,75 L71,59 Q69,48 71,46 Z"/>
     <path class="bg" d="M31,70 Q39,74 47,74 L53,74 Q61,74 69,70 L71,96 Q62,100 50,100 Q38,100 29,96 Z"/>
     <path class="bg" d="M29,96 Q38,104 50,104 Q62,104 71,96 L72,114 Q63,120 50,120 Q37,120 28,114 Z"/>
-    <path class="hi" d="M72,114 Q78,124 80,136 Q81,143 74,144 Q67,145 65,138 L61,126 Q59,115 64,113 Z"/>
-    <path class="hi" d="M80,140 Q82,152 80,162 Q78,168 72,168 Q66,168 65,162 L64,142 Q64,138 72,138 Z"/>
-    <text class="tx" x="84" y="130">무릎 ↑</text>
-    <path class="bg" d="M28,114 Q24,128 24,148 Q24,155 31,155 Q38,155 38,148 L38,128 Q40,116 35,113 Z"/>
-    <path class="bg" d="M24,148 Q24,144 31,144 Q38,144 38,148 L38,170 Q38,176 31,176 Q25,176 24,170 Z"/>
-    <path class="bg" d="M21,171 Q20,179 31,180 Q41,180 42,172 L38,172 Z"/>
+    <!-- v1.16.1: 카메라 관점 — 고객 우측 = 카메라 좌측 -->
+    <!-- LEFT (카메라) RAISED KNEE - GOLD — 고객의 우측 -->
+    <path class="hi" d="M28,114 Q22,124 20,136 Q19,143 26,144 Q33,145 35,138 L39,126 Q41,115 36,113 Z"/>
+    <path class="hi" d="M20,140 Q18,152 20,162 Q22,168 28,168 Q34,168 35,162 L36,142 Q36,138 28,138 Z"/>
+    <text class="tx" x="6" y="130">↑ Rt. 무릎</text>
+    <text class="tx" x="6" y="136" font-size="3.2">(고객 우측)</text>
+    <!-- RIGHT (카메라) STANDING LEG — 고객의 좌측 -->
+    <path class="bg" d="M72,114 Q76,128 76,148 Q76,155 69,155 Q62,155 62,148 L62,128 Q60,116 65,113 Z"/>
+    <path class="bg" d="M62,148 Q62,144 69,144 Q76,144 76,148 L76,170 Q76,176 69,176 Q63,176 62,170 Z"/>
+    <path class="bg" d="M59,171 Q58,179 69,180 Q79,180 80,172 L62,172 Z"/>
     <line x1="20" y1="114" x2="80" y2="114" stroke="#ff6060" stroke-width=".7" stroke-dasharray="2,2" opacity=".65"/>
     <text x="50" y="110" text-anchor="middle" fill="#ff6060" font-size="3.8" font-family="sans-serif" opacity=".75">골반 수평선</text>
     <text x="50" y="200" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상: 무릎 90° · 지지측 골반 수평</text>`
@@ -1447,6 +1468,25 @@ const LS = 'ng_npt_v3';
 const CONN=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]];
 const LBL={0:'코',11:'L어깨',12:'R어깨',23:'L골반',24:'R골반',25:'L무릎',26:'R무릎',27:'L발목',28:'R발목'};
 const KEY=[0,11,12,13,14,15,16,23,24,25,26,27,28];
+// v1.16.1: 검사별로 의미 있는 랜드마크만 표시 — 불필요한 점/선 숨김 (트레이너 피드백)
+// undefined인 검사는 기본 KEY 전체 사용. 명시된 경우만 필터.
+const TEST_KEY={
+  ant:[0,11,12,23,24,25,26,27,28],   // 전신 (팔꿈치/손목 제외)
+  post:[11,12,23,24,25,26,27,28],    // 후면 — 머리 안 잡힘
+  lat:[7,8,11,12,23,24,25,26,27,28], // 측면 — 귀 포함
+  sh_flex_l:[0,11,12,13,14,15,16],   // 어깨 외전 — 상체만
+  sh_flex_r:[0,11,12,13,14,15,16],
+  sku:[11,12,23,24,25,26,27,28],     // 무릎 거상 — 머리 제외, 하체 강조
+  sku_r:[11,12,23,24,25,26,27,28],
+  trunk_b:[11,12,23,24],             // 전굴 후면 — 어깨/골반만
+  trunk_l:[11,12,23,24,25,26],       // 전굴 측면 — 발목 제외
+  ohs_b:[11,12,23,24,25,26,27,28],   // OHS 후면 — 하체 정렬
+  ohs_l:[11,12,23,24,25,26,27,28],   // OHS 측면
+  slr_l:[23,24,25,26,27,28],         // SLR — 골반·다리만
+  slr_r:[23,24,25,26,27,28],
+  neck_l:[0,7,8,11,12],              // 경추 회전 — 머리·귀·어깨만
+  neck_r:[0,7,8,11,12],
+};
 const NORMS = {
   shoulderTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:10},
   shoulderHDiff:{max:15,unit:'px',lbl:'정상 15px 이하',w:5},
@@ -1551,7 +1591,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.16.0';
+const APP_VERSION='v1.16.1';
 const BUILD_TIME='2026-04-11 08:00';
 
 // ═══════════════════════════════════════════
@@ -1603,6 +1643,13 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.16.1', date:'2026-05-13', items:[
+    '🪞 가이드라인 좌/우 카메라 관점 보정 — Shoulder Abduction(좌·우)·Standing Knee Up(좌·우): 고객 좌측은 카메라 우측에 보이도록 미러 (트레이너 피드백)',
+    '📱 SLR(가로 촬영)용 가로 형태 가이드 박스 — 휴대폰을 가로로 돌리면 박스가 가로로 펼쳐짐',
+    '🦴 검사별 불필요한 랜드마크 숨김 — 경추 검사는 머리·어깨만, 어깨 외전은 상체만, SLR은 골반·다리만 등',
+    '↔ 측면(Lateral) 가이드 좌/우 방향 명확화 — "📷 카메라는 고객 좌측면" + "← 앞 / 뒤 →" 라벨',
+    '📋 체크리스트 축소 제안서 신설 — checklist-reduction.html (회의 검토용, 11개 항목 -28% 제안)',
+  ]},
   {ver:'v1.16.0', date:'2026-05-08', items:[
     '🧭 검사 순서 재정렬 — 자세별 그룹화로 회원 촬영 동선 최소화',
     '   전면 5개 → 좌측면 3개 → 후면 3개 → 누워서 2개 → 엎드림 6개 → 앉아서 3개',
@@ -2545,7 +2592,10 @@ function openCam(tid,slot){
   document.getElementById('ctSlot').textContent=slot==='B'?'▶ Before':'▶ After';
   document.getElementById('camTip').textContent=t.tip||'전신이 가이드 안에';
   updateCamGuide(tid);
-  document.getElementById('camOv').classList.add('show');
+  // v1.16.1: SLR은 가로 촬영 — 가이드 박스를 가로 형태로 (트레이너 피드백)
+  const camOv=document.getElementById('camOv');
+  camOv.classList.toggle('cam-landscape', tid==='slr_l'||tid==='slr_r');
+  camOv.classList.add('show');
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
     .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
@@ -4021,11 +4071,18 @@ function redrawSlot(tid,slot){
     // ─ 임상 기준선 오버레이 (Plumb line + 수평 기준선 + 각도 라벨) ─
     drawClinicalReferences(c,lm,W,H,tid,slot);
     const lw2=Math.max(3,W*.005);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);
-    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
+    // v1.16.1: 검사별 의미 있는 랜드마크만 표시 (트레이너 피드백 #3)
+    const activeKeys=TEST_KEY[tid]||KEY;
+    const keySet=new Set(activeKeys);
+    CONN.forEach(([a,b])=>{
+      if(!keySet.has(a)||!keySet.has(b))return;
+      if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;
+      c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke();
+    });
     // v1.15.1: 편집 모드일 때 점을 더 크게 + 호 표시
     const isEditing=editPose&&editPose.tid===tid&&editPose.slot===slot;
     const pr=isEditing?Math.max(14,W*.018):Math.max(7,W*.009);
-    KEY.forEach(i=>{
+    activeKeys.forEach(i=>{
       const pt=lm[i];if(!pt||pt.visibility<.4)return;
       const x=pt.x*W,y=pt.y*H;
       if(isEditing){
@@ -4236,6 +4293,9 @@ function redrawOL(tid){
   c.transform(fScale,0,0,fScale,fTx,fTy);
   c.drawImage(bS.img,0,0,bW,bH);
   c.restore();
+  // v1.16.1: 검사별 랜드마크 필터 (트레이너 피드백 #3)
+  const _activeKeys=TEST_KEY[tid]||KEY;
+  const _keySet=new Set(_activeKeys);
   // Before skeleton red
   if(bS.pose){
     const lm=bS.pose;
@@ -4249,18 +4309,18 @@ function redrawOL(tid){
     c.translate(-cx2,-cy2);
     c.transform(fScale,0,0,fScale,fTx,fTy);c.globalAlpha=Math.min(beforeAlpha+.35,.82);
     c.strokeStyle='rgba(190,20,20,.95)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
-    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bW,lm[a].y*bH);c.lineTo(lm[b].x*bW,lm[b].y*bH);c.stroke()});
+    CONN.forEach(([a,b])=>{if(!_keySet.has(a)||!_keySet.has(b))return;if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*bW,lm[a].y*bH);c.lineTo(lm[b].x*bW,lm[b].y*bH);c.stroke()});
     const pr=Math.max(6,bW*.009);
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*bW,y=pt.y*bH;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle='rgba(190,20,20,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.6)';c.lineWidth=1.5;c.stroke()});
+    _activeKeys.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*bW,y=pt.y*bH;c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle='rgba(190,20,20,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.6)';c.lineWidth=1.5;c.stroke()});
     c.restore();
   }
   // After skeleton blue
   if(aS.pose){
     const lm=aS.pose;c.globalAlpha=1;
     c.strokeStyle='rgba(15,70,200,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);
-    CONN.forEach(([a,b])=>{if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
+    CONN.forEach(([a,b])=>{if(!_keySet.has(a)||!_keySet.has(b))return;if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke()});
     const pr2=Math.max(6,W*.009);
-    KEY.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr2,0,Math.PI*2);c.fillStyle='rgba(15,70,200,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke();
+    _activeKeys.forEach(i=>{const pt=lm[i];if(!pt||pt.visibility<.4)return;const x=pt.x*W,y=pt.y*H;c.beginPath();c.arc(x,y,pr2,0,Math.PI*2);c.fillStyle='rgba(15,70,200,.9)';c.fill();c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=1.5;c.stroke();
       if(LBL[i]&&W>280){c.font=`bold ${Math.max(10,W*.014)}px -apple-system,sans-serif`;c.textAlign='center';c.strokeStyle='rgba(0,0,0,.7)';c.lineWidth=3;c.strokeText(LBL[i],x,y-pr2-4);c.fillStyle='#fff';c.fillText(LBL[i],x,y-pr2-4)}
     });
   }
