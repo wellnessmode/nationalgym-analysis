@@ -152,26 +152,43 @@
     });
 
     // 새 버전 자동 적용: 백그라운드에서 새 SW 가 'installed' 되면 활성화하고
-    // 페이지 살짝 reload. 사용자가 '버전 끼임' 으로 멈추는 일 방지.
+    // 자동 업데이트:
+    // 1. 백그라운드에서 새 SW 감지 (Flutter 가 build hash 기반으로 알아서 detect)
+    // 2. 새 SW 가 'installed' 상태 되면 메시지로 skipWaiting 트리거
+    //    (Flutter 의 flutter_service_worker.js 는 문자열 'skipWaiting' 을 기다림)
+    // 3. controllerchange 이벤트 (= 새 SW 활성화됨) → 페이지 한 번 자동 reload
+    // 4. visibility / focus 시점에 reg.update() 강제 호출 (캐시 stale 방지)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', function () {
-        // controller 가 바뀌면 (= 새 SW 가 활성화됨) 한 번만 reload
         if (!window.__ngReloaded) {
           window.__ngReloaded = true;
           location.reload();
         }
       });
       navigator.serviceWorker.ready.then(function (reg) {
+        function activateIfWaiting(sw) {
+          if (sw && sw.state === 'installed' && navigator.serviceWorker.controller) {
+            // Flutter SW 는 message data 가 정확히 문자열 'skipWaiting' 일 때만 처리
+            sw.postMessage('skipWaiting');
+          }
+        }
+        // 이미 대기 중인 SW 있으면 즉시
+        activateIfWaiting(reg.waiting);
         reg.addEventListener('updatefound', function () {
           var newSw = reg.installing;
           if (!newSw) return;
           newSw.addEventListener('statechange', function () {
-            if (newSw.state === 'installed' && navigator.serviceWorker.controller) {
-              // 이미 컨트롤하는 SW 가 있는 상태에서 새 게 설치됨 → 즉시 활성화 요청
-              newSw.postMessage({ type: 'SKIP_WAITING' });
-            }
+            activateIfWaiting(newSw);
           });
         });
+        // 앱 포어그라운드로 돌아오거나 탭 보이게 되면 새 빌드 있는지 강제 확인
+        function maybeUpdate() { try { reg.update(); } catch (_) {} }
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') maybeUpdate();
+        });
+        window.addEventListener('focus', maybeUpdate);
+        // 부팅 시 한 번 더 (홈 화면에서 들어오자마자 확인)
+        maybeUpdate();
       });
     }
   </script>
