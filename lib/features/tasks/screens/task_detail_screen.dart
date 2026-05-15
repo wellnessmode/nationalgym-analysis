@@ -11,6 +11,7 @@ import '../../attachments/widgets/attachment_section.dart';
 import '../providers/task_providers.dart';
 import '../widgets/dday_badge.dart';
 import '../widgets/priority_chip.dart';
+import 'task_form_screen.dart';
 
 class TaskDetailScreen extends ConsumerWidget {
   final String taskId;
