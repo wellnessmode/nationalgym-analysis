@@ -57,7 +57,8 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
   @override
   void dispose() {
     _ticker?.cancel();
-    _speech.stop();
+    // fire-and-forget — iOS PWA 에서 stop/cancel 이 hang 될 수 있어 await 안 함
+    _speech.cancel().catchError((_) {});
     super.dispose();
   }
 
@@ -141,12 +142,20 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
 
   Future<void> _stop() async {
     _ticker?.cancel();
-    await _speech.stop();
+    // iOS Safari PWA 에서 stop() 이 hang 되는 알려진 이슈 → 즉시 UI 갱신 + cancel 호출.
+    // 2초 timeout 두고 그 안에 안 끝나면 강제로 listening=false (앱 멈춤 방지).
     if (mounted) setState(() => _listening = false);
     if (_pending.isNotEmpty) {
       _committed = (_committed.isEmpty ? _pending : '$_committed $_pending').trim();
       _pending = '';
       widget.onTranscriptChunk(_committed);
+      if (mounted) setState(() {});
+    }
+    // cancel() 은 partial result 버리고 즉시 종료 → stop() 보다 안정적
+    try {
+      await _speech.cancel().timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // hang 되어도 위 상태는 이미 풀렸으므로 사용자는 진행 가능
     }
   }
 
