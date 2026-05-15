@@ -83,6 +83,23 @@ class TaskRepository {
     return Task.fromJson(res);
   }
 
+  /// 업무 내용 편집 — 작성자(requester) 만 가능 (RLS 가 보장).
+  Future<Task> updateContent(
+    String id, {
+    required String title,
+    String? content,
+    DateTime? dueDate,
+    required TaskPriority priority,
+  }) async {
+    final res = await supabase.from('tasks').update({
+      'title': title,
+      'content': content,
+      'due_date': dueDate?.toIso8601String().split('T').first,
+      'priority': priority.dbValue,
+    }).eq('id', id).select().single();
+    return Task.fromJson(res);
+  }
+
   // ── Comments ─────────────────────────────────────────────────
 
   Future<List<TaskComment>> listComments(String taskId) async {

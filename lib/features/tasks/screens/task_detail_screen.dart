@@ -67,13 +67,24 @@ class TaskDetailScreen extends ConsumerWidget {
         actions: [
           taskAsync.maybeWhen(
             data: (t) {
+              final canEdit = me != null && t.requesterId == me.id;
               final canDelete = me != null && (me.isAdmin || t.requesterId == me.id);
-              if (!canDelete) return const SizedBox.shrink();
-              return IconButton(
-                tooltip: '삭제',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmDelete(context, ref, t),
-              );
+              return Row(mainAxisSize: MainAxisSize.min, children: [
+                if (canEdit)
+                  IconButton(
+                    tooltip: '편집',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => TaskFormScreen(existing: t),
+                    )),
+                  ),
+                if (canDelete)
+                  IconButton(
+                    tooltip: '삭제',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(context, ref, t),
+                  ),
+              ]);
             },
             orElse: () => const SizedBox.shrink(),
           ),
@@ -98,24 +109,11 @@ class _Body extends ConsumerStatefulWidget {
 
 class _BodyState extends ConsumerState<_Body> {
   final _commentCtrl = TextEditingController();
-  final _memoCtrl = TextEditingController();
   bool _saving = false;
-  bool _memoChanged = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _memoCtrl.text = widget.task.memo ?? '';
-    _memoCtrl.addListener(() {
-      final changed = _memoCtrl.text != (widget.task.memo ?? '');
-      if (changed != _memoChanged) setState(() => _memoChanged = changed);
-    });
-  }
 
   @override
   void dispose() {
     _commentCtrl.dispose();
-    _memoCtrl.dispose();
     super.dispose();
   }
 
@@ -127,21 +125,6 @@ class _BodyState extends ConsumerState<_Body> {
       ref.invalidate(taskByIdProvider(widget.task.id));
       ref.invalidate(filteredTasksProvider);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('상태: ${s.label}')));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<void> _saveMemo() async {
-    setState(() => _saving = true);
-    try {
-      await ref.read(taskRepositoryProvider).updateMemo(widget.task.id, _memoCtrl.text);
-      if (mounted) {
-        setState(() => _memoChanged = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('메모 저장됨')));
-      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
     } finally {
@@ -242,37 +225,6 @@ class _BodyState extends ConsumerState<_Body> {
                 onTap: _saving || t.status == s ? null : () => _changeStatus(s),
               ),
         ]),
-      ),
-
-      // Memo
-      Padding(
-        padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s24, Tokens.s16, Tokens.s8),
-        child: Row(children: [
-          Text(
-            '메모',
-            style: Tokens.ts11.copyWith(
-              color: Tokens.textMuted,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const Spacer(),
-          if (_memoChanged)
-            TextButton(
-              onPressed: _saving ? null : _saveMemo,
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-              child: const Text('저장'),
-            ),
-        ]),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Tokens.s16),
-        child: TextField(
-          controller: _memoCtrl,
-          maxLines: 4,
-          style: Tokens.ts14,
-          decoration: const InputDecoration(hintText: '메모 입력...'),
-        ),
       ),
 
       // Attachments

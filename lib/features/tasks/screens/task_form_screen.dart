@@ -5,13 +5,16 @@ import '../../../core/tokens.dart';
 import '../../../shared/models/branch.dart';
 import '../../../shared/models/app_user.dart';
 import '../../../shared/models/enums.dart';
+import '../../../shared/models/task.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/utils/branch_label.dart';
 import '../../attachments/widgets/attachment_picker_inline.dart';
 import '../providers/task_providers.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
-  const TaskFormScreen({super.key});
+  /// null: 신규 작성. 값 있음: 편집 (작성자만 진입).
+  final Task? existing;
+  const TaskFormScreen({super.key, this.existing});
   @override
   ConsumerState<TaskFormScreen> createState() => _TaskFormScreenState();
 }
@@ -25,6 +28,20 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   TaskPriority _priority = TaskPriority.normal;
   List<PendingAttachment> _pendingAttachments = [];
   bool _saving = false;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _titleCtrl.text = e.title;
+      _contentCtrl.text = e.content ?? '';
+      _dueDate = e.dueDate;
+      _priority = e.priority;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,7 +57,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       _snack('제목을 입력해주세요');
       return;
     }
-    if (me.isAdmin && (_branch == null || _assignee == null)) {
+    if (!_isEdit && me.isAdmin && (_branch == null || _assignee == null)) {
       _snack('지점과 담당자를 모두 선택해주세요');
       return;
     }
@@ -48,6 +65,23 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     setState(() => _saving = true);
     final repo = ref.read(taskRepositoryProvider);
     try {
+      // 편집 모드: content 만 갱신 (지점·담당자 변경 불가)
+      if (_isEdit) {
+        await repo.updateContent(
+          widget.existing!.id,
+          title: _titleCtrl.text.trim(),
+          content: _contentCtrl.text.trim().isEmpty ? null : _contentCtrl.text.trim(),
+          dueDate: _dueDate,
+          priority: _priority,
+        );
+        if (!mounted) return;
+        ref.invalidate(taskByIdProvider(widget.existing!.id));
+        ref.invalidate(filteredTasksProvider);
+        Navigator.of(context).pop();
+        _snack('수정됨');
+        return;
+      }
+
       late final String createdId;
       if (me.isAdmin) {
         final t = await repo.createDirective(
@@ -133,10 +167,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             return bs.any((b) => b.id == _branch!.id);
           }).toList()
         : allManagers;
-    final showBranch = isAdmin || branches.length > 1;
+    // 편집 모드: 지점·담당자 변경 X (이미 할당된 거 만지지 않음)
+    final showBranch = !_isEdit && (isAdmin || branches.length > 1);
+    final showAssignee = !_isEdit && isAdmin;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isAdmin ? '업무 할당' : '업무 추가')),
+      appBar: AppBar(title: Text(_isEdit
+          ? '업무 편집'
+          : (isAdmin ? '업무 할당' : '업무 추가'))),
       body: ListView(padding: const EdgeInsets.all(Tokens.s16), children: [
         _Label('제목'),
         TextField(
@@ -174,7 +212,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           const SizedBox(height: Tokens.s16),
         ],
 
-        if (isAdmin) ...[
+        if (showAssignee) ...[
           _Label('담당자'),
           DropdownButtonFormField<AppUser>(
             value: _assignee,
@@ -289,7 +327,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(isAdmin ? '업무 할당하기' : '업무 추가하기'),
+              : Text(_isEdit
+                  ? '수정 완료'
+                  : (isAdmin ? '업무 할당하기' : '업무 추가하기')),
         ),
       ]),
     );
