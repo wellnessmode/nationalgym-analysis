@@ -44,6 +44,8 @@ class UserRepository {
   }
 
   Future<void> updateFcmToken(String userId, String? token) async {
-    await supabase.from('users').update({'fcm_token': token}).eq('id', userId);
+    // claim_fcm_token RPC 로 다른 사용자가 같은 토큰을 보유한 경우 회수 후 세팅.
+    // 같은 브라우저에서 사용자 전환 시 잘못된 알림 전달 방지.
+    await supabase.rpc('claim_fcm_token', params: {'token': token ?? ''});
   }
 }

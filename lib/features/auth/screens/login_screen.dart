@@ -101,7 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final email = AuthConstants.resolveEmail(id);
-      await supabase.auth.signInWithPassword(email: email, password: pw);
+      // 네트워크 hang 방지 — 15초 timeout
+      await supabase.auth
+          .signInWithPassword(email: email, password: pw)
+          .timeout(const Duration(seconds: 15));
 
       // 성공 → 체크 상태에 따라 저장
       if (_rememberId) {

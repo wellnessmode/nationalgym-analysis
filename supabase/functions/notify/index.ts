@@ -187,6 +187,8 @@ async function handle(payload: NotifyPayload) {
     case 'task_completed': {
       // status 가 done 으로 바뀐 경우만
       if (old?.status === 'done' || record.status !== 'done') break;
+      // 본인이 본인 자체 업무 완료 시 자가 알림 차단
+      if (record.requester_id === record.assignee_id) break;
       const assignee = await getUser(record.assignee_id as string);
       await notifyUsers(
         [record.requester_id as string],
@@ -221,13 +223,16 @@ async function handle(payload: NotifyPayload) {
       break;
     }
     case 'meeting_created': {
-      // draft 면 어젠다, completed 면 회의 결과 알림 — 모두 admin에게
+      // draft 면 어젠다, completed 면 회의 결과 알림 — 모두 admin에게 (단, 작성자 제외)
       const isCompleted = record.status === 'completed';
       const branchName = await getBranchName(record.branch_id as string);
       const author = await getUser(record.author_id as string);
       const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+      const recipients = (admins || [])
+        .map((a: { id: string }) => a.id)
+        .filter((id) => id !== record.author_id);
       await notifyUsers(
-        (admins || []).map((a: { id: string }) => a.id),
+        recipients,
         isCompleted ? '회의록 완료' : '새 어젠다',
         `[${branchName}/${author?.name || ''}] ${record.topic}`,
         'meeting_note',
@@ -237,13 +242,16 @@ async function handle(payload: NotifyPayload) {
       break;
     }
     case 'meeting_status_changed': {
-      // draft → completed 전환 시 admin 알림
+      // draft → completed 전환 시 admin 알림 (단, 작성자 제외)
       if (old?.status !== 'draft' || record.status !== 'completed') break;
       const branchName = await getBranchName(record.branch_id as string);
       const author = await getUser(record.author_id as string);
       const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+      const recipients = (admins || [])
+        .map((a: { id: string }) => a.id)
+        .filter((id) => id !== record.author_id);
       await notifyUsers(
-        (admins || []).map((a: { id: string }) => a.id),
+        recipients,
         '회의록 완료',
         `[${branchName}/${author?.name || ''}] ${record.topic}`,
         'meeting_note',
@@ -259,11 +267,17 @@ async function handle(payload: NotifyPayload) {
         .eq('id', record.meeting_note_id as string)
         .maybeSingle();
       if (!meeting) break;
-      // 작성자 제외 모든 참여자(=author + admin) 에게 알림
+      // 회의록 작성자 + 모든 admin 에게 알림 (단, 댓글 작성자 본인 제외)
       const author = await getUser(record.user_id as string);
-      const recipients = [meeting.author_id].filter((uid) => uid && uid !== record.user_id);
+      const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+      const allRecipients = new Set<string>();
+      if (meeting.author_id) allRecipients.add(meeting.author_id as string);
+      for (const a of (admins || []) as Array<{ id: string }>) {
+        allRecipients.add(a.id);
+      }
+      allRecipients.delete(record.user_id as string); // 댓글 작성자 제외
       await notifyUsers(
-        recipients,
+        Array.from(allRecipients),
         '회의록 댓글',
         `${author?.name || ''}: ${meeting.topic}`,
         'meeting_comment',
