@@ -166,6 +166,9 @@ jobs:
       - name: Build Web (CanvasKit + bundled Pretendard)
         run: |
           set +e
+          # KST 빌드 시각 + git short sha (사용자 노출용 버전 표기)
+          BUILD_TIME=$(TZ='Asia/Seoul' date +'%Y-%m-%d %H:%M')
+          BUILD_SHA=$(git rev-parse --short HEAD)
           flutter build web --release \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
@@ -176,6 +179,8 @@ jobs:
             --dart-define=FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }} \
             --dart-define=FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }} \
             --dart-define=FIREBASE_VAPID_PUBLIC_KEY=${{ secrets.FIREBASE_VAPID_PUBLIC_KEY }} \
+            --dart-define=BUILD_TIME="$BUILD_TIME" \
+            --dart-define=BUILD_SHA="$BUILD_SHA" \
             2>&1 | tee /tmp/build.log
           rc=${PIPESTATUS[0]}
           mkdir -p /tmp/build-logs

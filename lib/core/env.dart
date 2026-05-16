@@ -16,6 +16,11 @@ class Env {
   static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID');
   static const firebaseVapidKey = String.fromEnvironment('FIREBASE_VAPID_PUBLIC_KEY');
 
+  /// 빌드 시점 (KST). CI 가 --dart-define=BUILD_TIME=... 으로 주입.
+  static const buildTime = String.fromEnvironment('BUILD_TIME', defaultValue: '로컬');
+  /// 빌드된 git commit 짧은 SHA (7자).
+  static const buildSha = String.fromEnvironment('BUILD_SHA', defaultValue: 'dev');
+
   static void assertConfigured() {
     final missing = <String>[];
     if (supabaseUrl.isEmpty) missing.add('SUPABASE_URL');

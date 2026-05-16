@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show SignOutScope;
+import '../../../core/env.dart';
 import '../../../core/tokens.dart';
 import '../../../services/auth_storage.dart';
 import '../../../services/fcm_service.dart';
@@ -261,10 +262,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(Tokens.s16, Tokens.s32, Tokens.s16, 0),
           child: Center(
-            child: Text(
-              'NG · v0.1.0',
-              style: Tokens.ts11.copyWith(color: Tokens.textFaint),
-            ),
+            child: Column(children: [
+              Text(
+                'NG Workspace · v0.1.0',
+                style: Tokens.ts11.copyWith(color: Tokens.textFaint),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '빌드 ${Env.buildTime} · ${Env.buildSha}',
+                style: Tokens.ts11.copyWith(color: Tokens.textFaint),
+              ),
+            ]),
           ),
         ),
       ],
