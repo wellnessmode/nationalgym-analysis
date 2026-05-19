@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:record/record.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
 import '../../../core/tokens.dart';
 import '../../../services/supabase_client.dart';
 import '../../../shared/providers/auth_provider.dart';

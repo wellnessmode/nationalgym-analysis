@@ -159,10 +159,26 @@
     // 3. controllerchange 이벤트 (= 새 SW 활성화됨) → 페이지 한 번 자동 reload
     // 4. visibility / focus 시점에 reg.update() 강제 호출 (캐시 stale 방지)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
+      // controllerchange → 새 SW 활성화됨. 사용자 입력 중 강제 reload 하면 데이터 유실.
+      // 페이지가 hidden 일 때만 reload, visible 이면 다음 hidden 시점까지 대기.
+      var ngPendingReload = false;
+      function ngMaybeReload() {
         if (!window.__ngReloaded) {
           window.__ngReloaded = true;
           location.reload();
+        }
+      }
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (document.visibilityState === 'hidden') {
+          ngMaybeReload();
+        } else {
+          ngPendingReload = true;
+          // 입력 중이면 안 끊고, 백그라운드 갈 때 reload
+        }
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (ngPendingReload && document.visibilityState === 'hidden') {
+          ngMaybeReload();
         }
       });
       navigator.serviceWorker.ready.then(function (reg) {
