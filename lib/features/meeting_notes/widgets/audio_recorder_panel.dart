@@ -77,8 +77,18 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
       },
       onError: (err) {
         if (!mounted) return;
+        final code = err.errorMsg.toLowerCase();
+        // 정지 후 흔히 발생하는 정상-종료 신호들 — 사용자에게 에러로 보이면 안 됨
+        const benign = {
+          'error_no_match', 'no_match',
+          'error_no_speech', 'no-speech',
+          'error_aborted', 'aborted',
+          'error_canceled', 'canceled', 'cancelled',
+          'error_speech_timeout', 'speech_timeout',
+        };
+        final isBenign = benign.any((b) => code.contains(b));
         setState(() {
-          _error = err.errorMsg;
+          _error = isBenign ? null : err.errorMsg;
           _listening = false;
         });
         _ticker?.cancel();

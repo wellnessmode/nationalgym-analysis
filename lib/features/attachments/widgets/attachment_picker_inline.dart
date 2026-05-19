@@ -55,18 +55,33 @@ String _sizeLabel(int b) {
   return '${(b / 1024 / 1024 / 1024).toStringAsFixed(1)}GB';
 }
 
+/// 첨부 업로드 결과. ok = 성공 개수, errors = 실패별 사유 (사용자에게 표시).
+class UploadResult {
+  final int ok;
+  final int total;
+  final List<String> errors; // 실패 메시지 (파일명: 에러)
+  const UploadResult(this.ok, this.total, this.errors);
+  bool get hasError => errors.isNotEmpty;
+  String get summary {
+    if (total == 0) return '';
+    if (errors.isEmpty) return '첨부 $ok개';
+    return '첨부 $ok/$total — 실패: ${errors.first}${errors.length > 1 ? ' 외 ${errors.length - 1}건' : ''}';
+  }
+}
+
 /// 폼 저장 직후 호출 — 모은 파일들을 실제 attachments 테이블에 업로드.
 /// 정확히 [taskId] 또는 [meetingNoteId] 중 하나만 지정.
-Future<int> uploadPendingAttachments({
+Future<UploadResult> uploadPendingAttachments({
   required WidgetRef ref,
   required String uploaderId,
   required List<PendingAttachment> pending,
   String? taskId,
   String? meetingNoteId,
 }) async {
-  if (pending.isEmpty) return 0;
+  if (pending.isEmpty) return const UploadResult(0, 0, []);
   final repo = ref.read(attachmentRepositoryProvider);
   int ok = 0;
+  final errors = <String>[];
   for (final p in pending) {
     try {
       await repo.upload(
@@ -78,9 +93,23 @@ Future<int> uploadPendingAttachments({
         bytes: p.bytes,
       );
       ok++;
-    } catch (_) {}
+    } catch (e) {
+      final msg = e.toString();
+      // 가장 흔한 원인 요약 (전체 에러는 길어서 사용자가 못 읽음)
+      String short;
+      if (msg.contains('row-level security') || msg.contains('42501')) {
+        short = '권한 부족 (RLS)';
+      } else if (msg.contains('size') || msg.contains('too large')) {
+        short = '파일이 너무 큼';
+      } else if (msg.contains('already exists') || msg.contains('duplicate')) {
+        short = '중복 파일명';
+      } else {
+        short = msg.length > 80 ? '${msg.substring(0, 80)}…' : msg;
+      }
+      errors.add('${p.fileName}: $short');
+    }
   }
-  return ok;
+  return UploadResult(ok, pending.length, errors);
 }
 
 class AttachmentPickerInline extends ConsumerStatefulWidget {

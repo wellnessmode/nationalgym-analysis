@@ -110,9 +110,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       }
 
       // 첨부파일 일괄 업로드
-      int uploaded = 0;
+      UploadResult? upload;
       if (_pendingAttachments.isNotEmpty) {
-        uploaded = await uploadPendingAttachments(
+        upload = await uploadPendingAttachments(
           ref: ref,
           uploaderId: me.id,
           pending: _pendingAttachments,
@@ -123,9 +123,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       if (!mounted) return;
       ref.invalidate(filteredTasksProvider);
       Navigator.of(context).pop();
-      final msg = _pendingAttachments.isEmpty
-          ? '업무가 추가되었습니다'
-          : '업무 추가됨 (첨부 $uploaded/${_pendingAttachments.length})';
+      String msg = '업무가 추가되었습니다';
+      if (upload != null) {
+        msg = upload.hasError
+            ? '업무 추가됨 — ${upload.summary}'
+            : '업무 추가됨 (${upload.summary})';
+      }
       _snack(msg);
     } catch (e) {
       _snack('에러: $e');

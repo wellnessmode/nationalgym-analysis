@@ -29,6 +29,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
   final _actionsCtrl = TextEditingController();
   final Set<String> _selectedAttendees = {};
   List<PendingAttachment> _pendingAttachments = [];
+  UploadResult? _lastUpload;
   Branch? _branch;
   late DateTime _date;
   bool _saving = false;
@@ -110,14 +111,16 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           actionItems: _actionsCtrl.text.trim().isEmpty ? null : _actionsCtrl.text.trim(),
         );
         // 첨부파일 일괄 업로드
+        UploadResult? upload;
         if (_pendingAttachments.isNotEmpty) {
-          await uploadPendingAttachments(
+          upload = await uploadPendingAttachments(
             ref: ref,
             uploaderId: me.id,
             pending: _pendingAttachments,
             meetingNoteId: created.id,
           );
         }
+        _lastUpload = upload;
       } else {
         // 편집
         await repo.update(
@@ -129,20 +132,22 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
           status: status,
           meetingDate: _date,
         );
+        UploadResult? upload;
         if (_pendingAttachments.isNotEmpty) {
-          await uploadPendingAttachments(
+          upload = await uploadPendingAttachments(
             ref: ref,
             uploaderId: me.id,
             pending: _pendingAttachments,
             meetingNoteId: widget.existing!.id,
           );
         }
+        _lastUpload = upload;
         ref.invalidate(meetingNoteByIdProvider(widget.existing!.id));
       }
       if (!mounted) return;
       ref.invalidate(meetingNotesListProvider);
       Navigator.of(context).pop();
-      final extra = _pendingAttachments.isEmpty ? '' : ' · 첨부 ${_pendingAttachments.length}';
+      final extra = _lastUpload == null ? '' : ' · ${_lastUpload!.summary}';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('저장됨 (${status.label})$extra')));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
