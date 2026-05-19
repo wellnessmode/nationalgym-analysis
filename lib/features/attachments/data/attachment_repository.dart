@@ -7,6 +7,17 @@ import '../../../shared/models/attachment.dart';
 final attachmentRepositoryProvider =
     Provider<AttachmentRepository>((ref) => AttachmentRepository());
 
+/// task / meeting 별 첨부 list — ref.invalidate 시 자동 재조회.
+final taskAttachmentsProvider =
+    FutureProvider.family<List<Attachment>, String>((ref, taskId) async {
+  return ref.read(attachmentRepositoryProvider).listForTask(taskId);
+});
+
+final meetingAttachmentsProvider =
+    FutureProvider.family<List<Attachment>, String>((ref, mid) async {
+  return ref.read(attachmentRepositoryProvider).listForMeeting(mid);
+});
+
 class AttachmentRepository {
   static const _bucket = 'attachments';
 

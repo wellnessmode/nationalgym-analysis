@@ -27,23 +27,21 @@ class AttachmentSection extends ConsumerStatefulWidget {
 }
 
 class _AttachmentSectionState extends ConsumerState<AttachmentSection> {
-  late Future<List<Attachment>> _future;
   bool _uploading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _future = _load();
-  }
+  ProviderListenable<AsyncValue<List<Attachment>>> get _provider =>
+      widget.taskId != null
+          ? taskAttachmentsProvider(widget.taskId!)
+          : meetingAttachmentsProvider(widget.meetingNoteId!);
 
-  Future<List<Attachment>> _load() {
-    final repo = ref.read(attachmentRepositoryProvider);
-    return widget.taskId != null
-        ? repo.listForTask(widget.taskId!)
-        : repo.listForMeeting(widget.meetingNoteId!);
+  void _refresh() {
+    // FutureProvider.family invalidate — 자동으로 re-fetch
+    if (widget.taskId != null) {
+      ref.invalidate(taskAttachmentsProvider(widget.taskId!));
+    } else {
+      ref.invalidate(meetingAttachmentsProvider(widget.meetingNoteId!));
+    }
   }
-
-  void _refresh() => setState(() => _future = _load());
 
   Future<void> _pickFiles({FileType type = FileType.any, bool image = false}) async {
     final me = ref.read(currentUserProvider).valueOrNull;
@@ -207,58 +205,55 @@ class _AttachmentSectionState extends ConsumerState<AttachmentSection> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Attachment>>(
-      future: _future,
-      builder: (context, snap) {
-        final items = snap.data ?? [];
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.attach_file, size: 16, color: Tokens.textMuted),
-            const SizedBox(width: 4),
-            Text('첨부파일 (${items.length})',
-                style: Tokens.ts12.copyWith(
-                    color: Tokens.textMuted, fontWeight: FontWeight.w700)),
-            const Spacer(),
-            if (widget.canEdit)
-              TextButton.icon(
-                onPressed: _uploading ? null : _openAddSheet,
-                icon: _uploading
-                    ? const SizedBox(
-                        width: 12, height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.add, size: 16),
-                label: Text(_uploading ? '업로드 중...' : '추가'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Tokens.gold600,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-              ),
-          ]),
-          if (snap.connectionState == ConnectionState.waiting)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: LinearProgressIndicator(minHeight: 2),
-            )
-          else if (items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text('첨부된 파일이 없습니다',
-                  style: Tokens.ts12.copyWith(color: Tokens.textFaint)),
-            )
-          else
-            Column(
-              children: items
-                  .map((a) => _AttachmentTile(
-                        a: a,
-                        canDelete: widget.canEdit,
-                        onOpen: () => _open(a),
-                        onDelete: () => _delete(a),
-                      ))
-                  .toList(),
+    final asyncList = ref.watch(_provider);
+    final items = asyncList.valueOrNull ?? [];
+    final isLoading = asyncList.isLoading && items.isEmpty;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.attach_file, size: 16, color: Tokens.textMuted),
+        const SizedBox(width: 4),
+        Text('첨부파일 (${items.length})',
+            style: Tokens.ts12.copyWith(
+                color: Tokens.textMuted, fontWeight: FontWeight.w700)),
+        const Spacer(),
+        if (widget.canEdit)
+          TextButton.icon(
+            onPressed: _uploading ? null : _openAddSheet,
+            icon: _uploading
+                ? const SizedBox(
+                    width: 12, height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.add, size: 16),
+            label: Text(_uploading ? '업로드 중...' : '추가'),
+            style: TextButton.styleFrom(
+              foregroundColor: Tokens.gold600,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
-        ]);
-      },
-    );
+          ),
+      ]),
+      if (isLoading)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: LinearProgressIndicator(minHeight: 2),
+        )
+      else if (items.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text('첨부된 파일이 없습니다',
+              style: Tokens.ts12.copyWith(color: Tokens.textFaint)),
+        )
+      else
+        Column(
+          children: items
+              .map((a) => _AttachmentTile(
+                    a: a,
+                    canDelete: widget.canEdit,
+                    onOpen: () => _open(a),
+                    onDelete: () => _delete(a),
+                  ))
+              .toList(),
+        ),
+    ]);
   }
 }
 

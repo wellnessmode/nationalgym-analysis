@@ -119,6 +119,7 @@ class _BodyState extends ConsumerState<_Body> {
   }
 
   Future<void> _changeStatus(TaskStatus s) async {
+    if (_saving) return; // 빠른 더블탭 / 다른 상태 연타 차단
     setState(() => _saving = true);
     try {
       await ref.read(taskRepositoryProvider).updateStatus(widget.task.id, s);

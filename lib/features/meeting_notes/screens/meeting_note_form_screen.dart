@@ -6,6 +6,7 @@ import '../../../shared/models/branch.dart';
 import '../../../shared/models/enums.dart';
 import '../../../shared/models/meeting_note.dart';
 import '../../../shared/providers/auth_provider.dart';
+import '../../attachments/data/attachment_repository.dart';
 import '../../attachments/widgets/attachment_picker_inline.dart';
 import '../providers/meeting_note_providers.dart';
 import '../widgets/audio_recorder_panel.dart';
@@ -119,6 +120,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
             pending: _pendingAttachments,
             meetingNoteId: created.id,
           );
+          ref.invalidate(meetingAttachmentsProvider(created.id));
         }
         _lastUpload = upload;
       } else {
@@ -140,6 +142,7 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
             pending: _pendingAttachments,
             meetingNoteId: widget.existing!.id,
           );
+          ref.invalidate(meetingAttachmentsProvider(widget.existing!.id));
         }
         _lastUpload = upload;
         ref.invalidate(meetingNoteByIdProvider(widget.existing!.id));

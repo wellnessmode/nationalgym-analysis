@@ -8,6 +8,7 @@ import '../../../shared/models/enums.dart';
 import '../../../shared/models/task.dart';
 import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/utils/branch_label.dart';
+import '../../attachments/data/attachment_repository.dart';
 import '../../attachments/widgets/attachment_picker_inline.dart';
 import '../providers/task_providers.dart';
 
@@ -118,6 +119,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           pending: _pendingAttachments,
           taskId: createdId,
         );
+        // 상세 화면의 AttachmentSection 즉시 갱신되도록 provider invalidate
+        ref.invalidate(taskAttachmentsProvider(createdId));
       }
 
       if (!mounted) return;
