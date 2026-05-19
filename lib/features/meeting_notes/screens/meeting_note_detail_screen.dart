@@ -111,19 +111,24 @@ class _BodyState extends ConsumerState<_Body> {
   }
 
   Future<void> _addComment() async {
+    if (_saving) return; // 빠른 더블탭 방지
     final me = ref.read(currentUserProvider).valueOrNull;
-    if (me == null || _commentCtrl.text.trim().isEmpty) return;
+    final content = _commentCtrl.text.trim();
+    if (me == null || content.isEmpty) return;
+    _commentCtrl.clear();
     setState(() => _saving = true);
     try {
       await ref.read(meetingNoteRepositoryProvider).addComment(
             meetingNoteId: widget.note.id,
             userId: me.id,
-            content: _commentCtrl.text.trim(),
+            content: content,
           );
-      _commentCtrl.clear();
       if (mounted) ref.invalidate(meetingCommentsProvider(widget.note.id));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
+      if (mounted) {
+        _commentCtrl.text = content;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

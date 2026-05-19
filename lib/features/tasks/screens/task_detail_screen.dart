@@ -134,19 +134,25 @@ class _BodyState extends ConsumerState<_Body> {
   }
 
   Future<void> _addComment() async {
+    if (_saving) return; // 빠른 더블탭 방지 (setState async 사이 race)
     final me = ref.read(currentUserProvider).valueOrNull;
-    if (me == null || _commentCtrl.text.trim().isEmpty) return;
+    final content = _commentCtrl.text.trim();
+    if (me == null || content.isEmpty) return;
+    // 텍스트 캡처 + 입력란 즉시 비우기 → 같은 frame 내 두 번째 호출은 empty 로 빠짐
+    _commentCtrl.clear();
     setState(() => _saving = true);
     try {
       await ref.read(taskRepositoryProvider).addComment(
             taskId: widget.task.id,
             userId: me.id,
-            content: _commentCtrl.text.trim(),
+            content: content,
           );
-      _commentCtrl.clear();
       if (mounted) ref.invalidate(taskCommentsProvider(widget.task.id));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
+      if (mounted) {
+        _commentCtrl.text = content; // 실패 시 입력 복구
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('에러: $e')));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
