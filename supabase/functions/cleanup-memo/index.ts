@@ -14,8 +14,33 @@ interface Req {
   text: string;
 }
 
+function requireAuthenticated(req: Request): Response | null {
+  const auth = req.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  try {
+    const payloadB64 = auth.substring(7).split('.')[1];
+    const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.role !== 'authenticated') {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return null;
+  } catch (_) {
+    return new Response(JSON.stringify({ error: 'invalid token' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  const authErr = requireAuthenticated(req);
+  if (authErr) return authErr;
   if (!GEMINI_API_KEY) {
     return new Response(
       JSON.stringify({ error: 'GEMINI_API_KEY not configured' }),

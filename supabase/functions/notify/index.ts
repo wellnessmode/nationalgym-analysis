@@ -95,7 +95,12 @@ async function getAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
-async function sendFcm(fcmToken: string, title: string, body: string, data: Record<string, string>) {
+async function sendFcm(
+  fcmToken: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+): Promise<number> {
   const accessToken = await getAccessToken();
   const res = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FCM_PROJECT_ID}/messages:send`,
@@ -121,6 +126,7 @@ async function sendFcm(fcmToken: string, title: string, body: string, data: Reco
   if (!res.ok) {
     console.error(`FCM send failed: ${res.status} ${await res.text()}`);
   }
+  return res.status;
 }
 
 // ── 사용자 정보 헬퍼 ─────────────────────────────────────────────────
@@ -143,25 +149,32 @@ async function notifyUsers(
   refId: string,
   type: string,
 ) {
-  for (const uid of userIds) {
-    if (!uid) continue;
+  // 직렬 await → Promise.allSettled 병렬 — 5명 대상 시 5x 빨라짐.
+  const uniq = [...new Set(userIds.filter(Boolean))];
+  await Promise.allSettled(uniq.map(async (uid) => {
     const user = await getUser(uid);
-    if (!user) continue;
+    if (!user) return;
 
-    // notifications 테이블 기록 (앱 내 알림용)
-    await supabase.from('notifications').insert({
-      user_id: uid,
-      ref_type: refType,
-      ref_id: refId,
-      type,
-      message: `${title}: ${body}`,
-    });
-
-    // FCM push (토큰 있는 경우만)
-    if (user.fcm_token) {
-      await sendFcm(user.fcm_token, title, body, { ref_type: refType, ref_id: refId, type });
-    }
-  }
+    // 앱 내 알림 row + FCM push 도 병렬
+    await Promise.allSettled([
+      supabase.from('notifications').insert({
+        user_id: uid,
+        ref_type: refType,
+        ref_id: refId,
+        type,
+        message: `${title}: ${body}`,
+      }),
+      user.fcm_token
+        ? sendFcm(user.fcm_token, title, body, { ref_type: refType, ref_id: refId, type })
+            .then(async (status) => {
+              // 404 (UNREGISTERED) / 410 (NotFound) → 토큰 만료 → DB 정리
+              if (status === 404 || status === 410) {
+                await supabase.from('users').update({ fcm_token: null }).eq('id', uid);
+              }
+            })
+        : Promise.resolve(),
+    ]);
+  }));
 }
 
 // ── 이벤트 핸들러 ─────────────────────────────────────────────────────
