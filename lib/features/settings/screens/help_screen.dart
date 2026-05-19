@@ -54,8 +54,8 @@ class HelpScreen extends StatelessWidget {
             ),
             _Item(
               icon: Icons.mic,
-              title: '회의 음성 자동 받아쓰기',
-              body: '주제 입력 후 "인식 시작" → 마이크 권한 허용 → 회의 진행. 본문에 실시간 텍스트 누적, "정지"로 종료. iOS Safari는 화면 켜둔 채로.',
+              title: '회의 음성 녹음 + 자동 전사',
+              body: '주제 입력 후 "녹음 시작" → 마이크 권한 허용 → 회의 진행. "정지" 누르면 AI 가 전사하여 본문 끝에 추가. 멀리 떨어져 있어도 잘 인식 (자동 게인 / 노이즈 억제 적용).',
             ),
             _Item(
               icon: Icons.auto_awesome,
