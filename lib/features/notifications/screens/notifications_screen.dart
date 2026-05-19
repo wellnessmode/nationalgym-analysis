@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/tokens.dart';
 import '../../../shared/models/enums.dart';
+import '../../../shared/providers/auth_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../data/notification_repository.dart';
 import '../providers/notification_providers.dart';
@@ -22,7 +23,11 @@ class NotificationsScreen extends ConsumerWidget {
             data: (list) => list.any((n) => !n.isRead)
                 ? TextButton(
                     onPressed: () async {
-                      await ref.read(notificationRepositoryProvider).markAllRead();
+                      final me = ref.read(currentUserProvider).valueOrNull;
+                      if (me == null) return;
+                      await ref
+                          .read(notificationRepositoryProvider)
+                          .markAllRead(myUserId: me.id);
                       ref.invalidate(notificationsListProvider);
                       ref.invalidate(unreadNotificationCountProvider);
                     },

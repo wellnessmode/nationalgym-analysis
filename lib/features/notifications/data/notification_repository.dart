@@ -35,19 +35,22 @@ class AppNotification {
 }
 
 class NotificationRepository {
-  Future<List<AppNotification>> list({int limit = 50}) async {
+  /// RLS 가 user_id = me 로 1차 필터하지만 클라이언트도 명시적으로 eq → defense-in-depth.
+  Future<List<AppNotification>> list({required String myUserId, int limit = 50}) async {
     final res = await supabase
         .from('notifications')
         .select()
+        .eq('user_id', myUserId)
         .order('created_at', ascending: false)
         .limit(limit);
     return (res as List).map((j) => AppNotification.fromJson(j as Map<String, dynamic>)).toList();
   }
 
-  Future<int> unreadCount() async {
+  Future<int> unreadCount({required String myUserId}) async {
     final res = await supabase
         .from('notifications')
         .select('id')
+        .eq('user_id', myUserId)
         .eq('is_read', false);
     return (res as List).length;
   }
@@ -56,7 +59,11 @@ class NotificationRepository {
     await supabase.from('notifications').update({'is_read': true}).eq('id', id);
   }
 
-  Future<void> markAllRead() async {
-    await supabase.from('notifications').update({'is_read': true}).eq('is_read', false);
+  Future<void> markAllRead({required String myUserId}) async {
+    await supabase
+        .from('notifications')
+        .update({'is_read': true})
+        .eq('user_id', myUserId)
+        .eq('is_read', false);
   }
 }
