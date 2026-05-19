@@ -42,8 +42,16 @@ class AttachmentRepository {
 
     final parentSegment = taskId != null ? 'tasks/$taskId' : 'meetings/$meetingNoteId';
     final ts = DateTime.now().millisecondsSinceEpoch;
-    final safeName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._\-가-힣]'), '_');
-    final storagePath = '$parentSegment/${ts}_$safeName';
+    // Supabase Storage 객체 키는 ASCII 영숫자 + `._-/` 만 허용. 한글·공백·특수문자 X.
+    // 원본 파일명은 DB 의 file_name 컬럼에 보존, 경로는 ts + 확장자만 사용.
+    final dotIdx = fileName.lastIndexOf('.');
+    final ext = (dotIdx > 0 && dotIdx < fileName.length - 1)
+        ? fileName
+            .substring(dotIdx + 1)
+            .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')
+            .toLowerCase()
+        : 'bin';
+    final storagePath = '$parentSegment/$ts.$ext';
 
     await supabase.storage.from(_bucket).uploadBinary(
           storagePath,
