@@ -1,183 +1,185 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:record/record.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/tokens.dart';
+import '../../../services/supabase_client.dart';
+import '../../../shared/providers/auth_provider.dart';
 
-/// 실시간 음성 인식 패널 (Web Speech API 기반, 무료).
-/// - 시작: 마이크 권한 요청 + 인식 시작
-/// - 사용자가 말하면 인식된 텍스트가 onTranscriptChunk로 흘러감 (interim + final)
-/// - 정지: 누적된 최종 텍스트 반환
+/// 고품질 음성 녹음 + Gemini 전사 패널.
 ///
-/// 제약 (무료 Web Speech API):
-/// - 브라우저 탭이 활성 상태여야 함 (백그라운드 안 됨)
-/// - iOS Safari 14.5+ 지원, 일부 환경에서 길이 제한 있음
-class AudioRecorderPanel extends StatefulWidget {
-  /// 인식된 텍스트 청크 (interim 포함). 부모가 본문에 반영.
-  final void Function(String fullTranscript) onTranscriptChunk;
-
-  /// 부모가 외부에서 비활성화 (저장 중 등)
+/// 흐름:
+///   1. '녹음 시작' → MediaRecorder (브라우저 AGC / 노이즈 억제 / echo cancel 활성)
+///   2. '정지' → blob 받아 Supabase Storage 'recordings' 버킷에 업로드
+///   3. Edge Function transcribe-audio (Gemini 1.5 Flash audio) 호출
+///   4. 전사 결과를 [onTranscriptChunk] 콜백으로 전달 (부모가 본문에 append)
+///
+/// 시작 효과음 없음 (Web Speech API 미사용).
+class AudioRecorderPanel extends ConsumerStatefulWidget {
+  /// 한 세션의 전사 결과 (이 회차에 새로 전사된 텍스트만). 부모가 본문에 append.
+  final void Function(String chunk) onTranscriptChunk;
   final bool disabled;
-
-  /// 패널 헤더 라벨 (idle 상태). 컨텍스트별 커스터마이즈.
   final String idleTitle;
   final String idleSubtitle;
-
-  /// 사용자가 패널 우상단 X 를 눌렀을 때 (선택). null 이면 X 미표시.
   final VoidCallback? onClose;
 
   const AudioRecorderPanel({
     super.key,
     required this.onTranscriptChunk,
     this.disabled = false,
-    this.idleTitle = '음성 인식',
-    this.idleSubtitle = '버튼을 누르고 말씀하면 본문에 자동 입력됩니다',
+    this.idleTitle = '음성 녹음',
+    this.idleSubtitle = '버튼을 누르고 말씀하면 녹음 후 자동 전사됩니다',
     this.onClose,
   });
 
   @override
-  State<AudioRecorderPanel> createState() => _AudioRecorderPanelState();
+  ConsumerState<AudioRecorderPanel> createState() => _AudioRecorderPanelState();
 }
 
-class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
-  final stt.SpeechToText _speech = stt.SpeechToText();
-  bool _initialized = false;
-  bool _available = false;
+class _AudioRecorderPanelState extends ConsumerState<AudioRecorderPanel> {
+  final _recorder = AudioRecorder();
   bool _listening = false;
+  bool _transcribing = false;
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
-
-  /// 이전 세션까지 누적된 최종 텍스트
-  String _committed = '';
-
-  /// 현재 세션의 임시(interim) 텍스트
-  String _pending = '';
-
+  int _sessionCount = 0; // 성공한 전사 횟수 — UI 라벨용
   String? _error;
 
   @override
   void dispose() {
     _ticker?.cancel();
-    // fire-and-forget — iOS PWA 에서 stop/cancel 이 hang 될 수 있어 await 안 함
-    _speech.cancel().catchError((_) {});
+    _recorder.dispose();
     super.dispose();
   }
 
-  Future<void> _ensureInit() async {
-    // 매번 _ensureInit 시 잔여 세션 강제 cancel 시도 (이전 부팅의 좀비 마이크 제거)
-    try { await _speech.cancel(); } catch (_) {}
-    if (_initialized) return;
-    final ok = await _speech.initialize(
-      onStatus: (status) {
-        if (status == 'done' || status == 'notListening') {
-          if (_listening && mounted) {
-            setState(() => _listening = false);
-            _ticker?.cancel();
-          }
-        }
-      },
-      onError: (err) {
-        if (!mounted) return;
-        final code = err.errorMsg.toLowerCase();
-        // 정지 후 흔히 발생하는 정상-종료 신호들 — 사용자에게 에러로 보이면 안 됨
-        const benign = {
-          'error_no_match', 'no_match',
-          'error_no_speech', 'no-speech',
-          'error_aborted', 'aborted',
-          'error_canceled', 'canceled', 'cancelled',
-          'error_speech_timeout', 'speech_timeout',
-        };
-        final isBenign = benign.any((b) => code.contains(b));
-        setState(() {
-          _error = isBenign ? null : err.errorMsg;
-          _listening = false;
-        });
-        _ticker?.cancel();
-      },
-      debugLogging: false,
-    );
-    _initialized = true;
-    _available = ok;
-  }
-
   Future<void> _start() async {
-    if (widget.disabled) return;
+    if (widget.disabled || _listening || _transcribing) return;
     setState(() => _error = null);
-    await _ensureInit();
-    if (!_available) {
-      setState(() => _error = '이 기기에서 음성 인식 사용 불가 (Safari 14.5+ 또는 Chrome 권장)');
-      return;
+    try {
+      final hasPerm = await _recorder.hasPermission();
+      if (!hasPerm) {
+        setState(() => _error = '마이크 권한을 허용해주세요');
+        return;
+      }
+      // 가까이 안 있어도 인식되도록 브라우저 오디오 처리 적극 활성화.
+      // 결과: 자동 게인 / 노이즈 억제 / 에코 캔슬 ON.
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.opus,
+          bitRate: 96000,
+          sampleRate: 48000,
+          numChannels: 1,
+          autoGain: true,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+        path: 'recording.webm',
+      );
+      setState(() {
+        _listening = true;
+        _elapsed = Duration.zero;
+      });
+      _ticker?.cancel();
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() => _elapsed += const Duration(seconds: 1));
+      });
+    } catch (e) {
+      setState(() => _error = '녹음 시작 실패: $e');
     }
-
-    setState(() {
-      _pending = '';
-      _listening = true;
-      _elapsed = Duration.zero;
-    });
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _elapsed += const Duration(seconds: 1));
-    });
-
-    await _speech.listen(
-      localeId: 'ko_KR',
-      listenOptions: stt.SpeechListenOptions(
-        listenMode: stt.ListenMode.dictation,
-        partialResults: true,
-        cancelOnError: false,
-      ),
-      pauseFor: const Duration(seconds: 30),
-      listenFor: const Duration(minutes: 60),
-      onResult: (result) {
-        if (!mounted) return;
-        if (result.finalResult) {
-          _committed = (_committed.isEmpty
-                  ? result.recognizedWords
-                  : '$_committed ${result.recognizedWords}')
-              .trim();
-          _pending = '';
-        } else {
-          _pending = result.recognizedWords;
-        }
-        widget.onTranscriptChunk(_currentFullText());
-        setState(() {});
-      },
-    );
-  }
-
-  String _currentFullText() {
-    if (_pending.isEmpty) return _committed;
-    if (_committed.isEmpty) return _pending;
-    return '$_committed $_pending';
   }
 
   Future<void> _stop() async {
+    if (!_listening) return;
     _ticker?.cancel();
-    // iOS Safari PWA 에서 stop() 이 hang 되는 알려진 이슈 → 즉시 UI 갱신 + cancel 호출.
-    // 2초 timeout 두고 그 안에 안 끝나면 강제로 listening=false (앱 멈춤 방지).
-    if (mounted) setState(() => _listening = false);
-    if (_pending.isNotEmpty) {
-      _committed = (_committed.isEmpty ? _pending : '$_committed $_pending').trim();
-      _pending = '';
-      widget.onTranscriptChunk(_committed);
-      if (mounted) setState(() {});
-    }
-    // cancel() 은 partial result 버리고 즉시 종료 → stop() 보다 안정적
+    setState(() => _listening = false);
+
+    String? path;
     try {
-      await _speech.cancel().timeout(const Duration(seconds: 2));
-    } catch (_) {
-      // hang 되어도 위 상태는 이미 풀렸으므로 사용자는 진행 가능
+      path = await _recorder.stop();
+    } catch (_) {}
+    if (path == null) {
+      setState(() => _error = '녹음 데이터를 받지 못했어요');
+      return;
+    }
+
+    // 웹: path 가 blob URL. 바이트 받아오기.
+    Uint8List? bytes;
+    try {
+      if (kIsWeb || path.startsWith('blob:')) {
+        final res = await http.get(Uri.parse(path));
+        bytes = res.bodyBytes;
+      } else {
+        // 모바일 네이티브 경로 케이스 — 지금은 미지원
+        setState(() => _error = '이 플랫폼에선 아직 미지원');
+        return;
+      }
+    } catch (e) {
+      setState(() => _error = '데이터 수집 실패: $e');
+      return;
+    }
+    if (bytes.isEmpty) {
+      setState(() => _error = '녹음 길이가 너무 짧습니다');
+      return;
+    }
+
+    await _uploadAndTranscribe(bytes);
+  }
+
+  Future<void> _uploadAndTranscribe(Uint8List bytes) async {
+    setState(() => _transcribing = true);
+    final me = ref.read(currentUserProvider).valueOrNull;
+    final uploaderId = me?.id ?? 'anon';
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final storagePath = 'live/$uploaderId/$ts.webm';
+
+    try {
+      // 1) 업로드
+      await supabase.storage
+          .from('recordings')
+          .uploadBinary(storagePath, bytes,
+              fileOptions: const FileOptions(upsert: false, contentType: 'audio/webm'));
+
+      // 2) Edge Function 호출 (Gemini 전사)
+      final res = await supabase.functions.invoke(
+        'transcribe-audio',
+        body: {'storage_path': storagePath, 'mime_type': 'audio/webm'},
+      );
+      final data = res.data;
+      if (data is! Map || data['ok'] != true) {
+        final err = (data is Map ? data['error']?.toString() : null) ?? '전사 실패';
+        setState(() => _error = err);
+        return;
+      }
+      final text = (data['text'] as String?)?.trim() ?? '';
+      if (text.isEmpty) {
+        setState(() => _error = '음성에서 인식된 내용이 없습니다');
+        return;
+      }
+
+      // 3) 이번 회차의 텍스트만 부모에게 전달 (부모가 append 책임)
+      _sessionCount++;
+      widget.onTranscriptChunk(text);
+
+      // 4) 보관 정책: storage 의 파일은 둠 (백업 + 감사용). 자동 삭제는 별도 정책.
+    } catch (e) {
+      setState(() => _error = '처리 실패: $e');
+    } finally {
+      if (mounted) setState(() => _transcribing = false);
     }
   }
 
   Future<void> _reset() async {
     if (_listening) await _stop();
     setState(() {
-      _committed = '';
-      _pending = '';
+      _sessionCount = 0;
       _elapsed = Duration.zero;
       _error = null;
     });
-    widget.onTranscriptChunk('');
+    // 부모 본문은 건드리지 않음 — 사용자가 직접 지울지 결정.
   }
 
   String _fmt(Duration d) {
@@ -191,10 +193,14 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
     return Container(
       padding: const EdgeInsets.all(Tokens.s14),
       decoration: BoxDecoration(
-        color: _listening ? Tokens.danger.withOpacity(0.06) : Tokens.surfaceAlt,
+        color: _listening
+            ? Tokens.danger.withOpacity(0.06)
+            : (_transcribing ? Tokens.gold500.withOpacity(0.06) : Tokens.surfaceAlt),
         borderRadius: BorderRadius.circular(Tokens.r12),
         border: Border.all(
-          color: _listening ? Tokens.danger.withOpacity(0.30) : Tokens.border,
+          color: _listening
+              ? Tokens.danger.withOpacity(0.30)
+              : (_transcribing ? Tokens.gold500.withOpacity(0.30) : Tokens.border),
         ),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -202,11 +208,15 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: _listening ? Tokens.danger : Tokens.navy900,
+              color: _listening
+                  ? Tokens.danger
+                  : (_transcribing ? Tokens.gold600 : Tokens.navy900),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              _listening ? Icons.graphic_eq : Icons.mic,
+              _listening
+                  ? Icons.graphic_eq
+                  : (_transcribing ? Icons.auto_awesome : Icons.mic),
               color: Colors.white,
               size: 20,
             ),
@@ -215,35 +225,44 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
-                _listening ? '음성 인식 중' : widget.idleTitle,
+                _listening
+                    ? '녹음 중'
+                    : (_transcribing ? '전사 처리 중...' : widget.idleTitle),
                 style: Tokens.ts14.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 2),
               Text(
                 _listening
                     ? _fmt(_elapsed)
-                    : (_error != null ? _error! : widget.idleSubtitle),
+                    : (_transcribing
+                        ? 'Gemini 가 음성 분석 중'
+                        : (_error != null ? _error! : widget.idleSubtitle)),
                 style: Tokens.ts12.copyWith(
                   color: _listening
                       ? Tokens.danger
-                      : (_error != null ? Tokens.danger : Tokens.textMuted),
-                  fontWeight: _listening ? FontWeight.w700 : FontWeight.w400,
+                      : (_transcribing
+                          ? Tokens.gold600
+                          : (_error != null ? Tokens.danger : Tokens.textMuted)),
+                  fontWeight: (_listening || _transcribing)
+                      ? FontWeight.w700
+                      : FontWeight.w400,
                 ),
               ),
             ]),
           ),
-          // 녹음 중에는 항상 명시적 정지 버튼 (사용자가 못 찾는 경우 방지)
           if (_listening)
             IconButton(
               icon: const Icon(Icons.stop_circle, color: Tokens.danger, size: 28),
               tooltip: '정지',
               onPressed: _stop,
+              enableFeedback: false,
             )
-          else if (_committed.isNotEmpty || _pending.isNotEmpty)
+          else if (_sessionCount > 0)
             IconButton(
               icon: const Icon(Icons.refresh, size: 18),
               tooltip: '초기화',
-              onPressed: widget.disabled ? null : _reset,
+              onPressed: widget.disabled || _transcribing ? null : _reset,
+              enableFeedback: false,
             ),
           if (widget.onClose != null)
             IconButton(
@@ -253,6 +272,7 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
                 if (_listening) await _stop();
                 widget.onClose!();
               },
+              enableFeedback: false,
             ),
         ]),
         const SizedBox(height: Tokens.s12),
@@ -260,23 +280,37 @@ class _AudioRecorderPanelState extends State<AudioRecorderPanel> {
           height: 44,
           child: !_listening
               ? FilledButton.icon(
-                  onPressed: widget.disabled ? null : _start,
-                  icon: const Icon(Icons.mic, size: 18),
-                  label: Text(_committed.isEmpty ? '인식 시작' : '이어서 인식'),
+                  onPressed: (widget.disabled || _transcribing) ? null : () {
+                    HapticFeedback.lightImpact();
+                    _start();
+                  },
+                  icon: _transcribing
+                      ? const SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.mic, size: 18),
+                  label: Text(_transcribing
+                      ? '처리 중...'
+                      : (_sessionCount == 0 ? '녹음 시작' : '이어서 녹음')),
                   style: FilledButton.styleFrom(
                     backgroundColor: Tokens.surface,
                     foregroundColor: Tokens.text,
                     side: const BorderSide(color: Tokens.borderStrong),
+                    enableFeedback: false,
                   ),
                 )
               : FilledButton.icon(
                   onPressed: _stop,
                   icon: const Icon(Icons.stop, size: 18),
                   label: const Text('정지'),
-                  style: FilledButton.styleFrom(backgroundColor: Tokens.danger),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Tokens.danger,
+                    enableFeedback: false,
+                  ),
                 ),
         ),
       ]),
     );
   }
+
 }

@@ -32,6 +32,9 @@ dependencies:
 
   # 회의록 음성 인식 (Web Speech API, 무료, 가입 불필요)
   speech_to_text: ^7.0.0
+  # 고품질 녹음 (MediaRecorder + AGC + noise suppression, 모든 브라우저)
+  record: ^5.1.2
+  http: ^1.2.2
 
   # 파일 첨부 (사진·동영상·PDF·엑셀·워드 등)
   file_picker: ^8.1.4

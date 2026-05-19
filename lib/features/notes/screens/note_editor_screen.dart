@@ -122,12 +122,12 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  /// 음성 인식 결과 → baseline 본문 뒤에 추가 (interim 포함이라 전체 교체 패턴)
-  void _handleTranscript(String transcript) {
-    final base = _voiceBaseline.isEmpty
-        ? transcript
-        : '${_voiceBaseline}${_voiceBaseline.endsWith('\n') ? '' : '\n'}$transcript';
-    _bodyCtrl.text = base;
+  /// 음성 녹음 한 회차의 전사 결과 → 본문 끝에 append.
+  void _handleTranscript(String chunk) {
+    if (chunk.isEmpty) return;
+    final cur = _bodyCtrl.text;
+    final sep = cur.isEmpty || cur.endsWith('\n') ? '' : '\n';
+    _bodyCtrl.text = '$cur$sep$chunk';
     _bodyCtrl.selection = TextSelection.fromPosition(
       TextPosition(offset: _bodyCtrl.text.length),
     );

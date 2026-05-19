@@ -166,9 +166,13 @@ class _MeetingNoteFormScreenState extends ConsumerState<MeetingNoteFormScreen> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  /// 음성 인식 결과를 본문 컨트롤러에 반영. interim 포함이라 전체 교체.
-  void _handleTranscript(String text) {
-    _contentCtrl.text = text;
+  /// 음성 녹음 한 회차의 전사 결과를 본문 끝에 append.
+  /// 기존 사용자 입력 / 이전 회차 결과 보존.
+  void _handleTranscript(String chunk) {
+    if (chunk.isEmpty) return;
+    final cur = _contentCtrl.text;
+    final sep = cur.isEmpty || cur.endsWith('\n') ? '' : '\n';
+    _contentCtrl.text = '$cur$sep$chunk';
     _contentCtrl.selection = TextSelection.fromPosition(
       TextPosition(offset: _contentCtrl.text.length),
     );
