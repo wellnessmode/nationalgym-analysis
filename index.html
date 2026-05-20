@@ -1013,86 +1013,7 @@ const POSE_GUIDES = {
     <text x="155" y="96" fill="#00c890" font-size="4.5" font-family="sans-serif">발 →</text>`
   },
 
-  neck_l: {
-    label:'경추 좌회전 — 앉은 자세, 머리만 좌측으로 회전',
-    warning:'상체는 정면 유지 · 목만 좌측 최대 회전 · 기울이지 말 것',
-    viewBox:'0 0 100 220',
-    svg:`<defs>
-      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.2;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.20);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4.5px;font-family:sans-serif}</style>
-    </defs>
-    <!-- ═ 앉은 자세 흉상 (sitting bust) — 앉은키라 상체만 크게 ═ -->
-    <!-- HEAD (rotated left — 좌측으로 회전, 기울임 없음) -->
-    <!-- 회전된 머리는 옆얼굴 형태 (정면 윤곽이 아닌 측면 윤곽) -->
-    <ellipse class="hi" cx="50" cy="44" rx="22" ry="28"/>
-    <!-- NOSE pointing left (shows head has rotated) -->
-    <path class="hi" d="M28,42 Q22,44 26,48 Q30,48 32,46 Z"/>
-    <!-- CHIN/JAW line (좌측으로 회전한 경계) -->
-    <path d="M38,68 Q34,66 30,60" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,2" opacity=".8"/>
-    <!-- EAR (우측 귀가 카메라 쪽으로 보임) -->
-    <circle cx="68" cy="44" r="3" fill="#ffd700" opacity=".9"/>
-    <text class="tx" x="72" y="46">귀</text>
-    <!-- NECK (수직 유지, 회전 없음 — 목은 척추와 일자) -->
-    <path class="bg" d="M42,72 Q46,78 46,86 L54,86 Q54,78 58,72 Z"/>
-    <!-- SHOULDERS + UPPER TORSO (정면 유지, 좌우 어깨 수평) -->
-    <path class="bg" d="M18,86 Q26,82 46,84 L54,84 Q74,82 82,86 L82,118 Q74,112 54,114 L46,114 Q26,112 18,118 Z"/>
-    <!-- ARMS hanging naturally (정면 기준) -->
-    <path class="bg" d="M20,88 Q12,108 12,134 Q12,144 18,144 Q24,144 25,136 L27,108 Q29,92 24,88 Z"/>
-    <path class="bg" d="M80,88 Q88,108 88,134 Q88,144 82,144 Q76,144 75,136 L73,108 Q71,92 76,88 Z"/>
-    <!-- LOWER TORSO (앉은 자세라 골반까지만 보이고 하체는 생략) -->
-    <path class="bg" d="M18,118 Q30,128 50,128 Q70,128 82,118 L84,168 Q50,176 16,168 Z"/>
-    <!-- SHOULDERS REFERENCE LINE (수평 유지 확인용) -->
-    <line x1="6" y1="86" x2="94" y2="86" stroke="#ff6060" stroke-width=".8" stroke-dasharray="3,2" opacity=".65"/>
-    <text class="tx" x="2" y="84" style="font-size:3.8px">어깨선</text>
-    <!-- SPINE LINE (수직 유지 — 목 회전만이지 기울임 아님) -->
-    <line x1="50" y1="72" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
-    <!-- ROTATION ARC (머리 위에서 좌회전 방향 화살표) -->
-    <path d="M40,18 Q20,22 14,36" fill="none" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
-    <path d="M14,36 L17,31 M14,36 L19,38" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
-    <text x="8" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">← 좌회전</text>
-    <!-- BOTTOM NOTE -->
-    <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
-    <text x="50" y="188" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상 경추 회전 ROM: 70~80°</text>
-    <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
-  },
-
-  neck_r: {
-    label:'경추 우회전 — 앉은 자세, 머리만 우측으로 회전',
-    warning:'상체는 정면 유지 · 목만 우측 최대 회전 · 기울이지 말 것',
-    viewBox:'0 0 100 220',
-    svg:`<defs>
-      <style>.bg{fill:rgba(0,180,120,.10);stroke:#00c890;stroke-width:1.2;stroke-dasharray:4,2.5}.hi{fill:rgba(255,215,0,.20);stroke:#ffd700;stroke-width:1.4;stroke-dasharray:4,2.5}.tx{fill:#ffd700;font-size:5px;font-family:sans-serif}.tn{fill:#00c890;font-size:4.5px;font-family:sans-serif}</style>
-    </defs>
-    <!-- HEAD (rotated right) -->
-    <ellipse class="hi" cx="50" cy="44" rx="22" ry="28"/>
-    <!-- NOSE pointing right -->
-    <path class="hi" d="M72,42 Q78,44 74,48 Q70,48 68,46 Z"/>
-    <!-- CHIN/JAW line (우측으로 회전) -->
-    <path d="M62,68 Q66,66 70,60" fill="none" stroke="#ffd700" stroke-width="1.2" stroke-dasharray="3,2" opacity=".8"/>
-    <!-- EAR (좌측 귀 가시) -->
-    <circle cx="32" cy="44" r="3" fill="#ffd700" opacity=".9"/>
-    <text class="tx" x="20" y="46">귀</text>
-    <!-- NECK (수직) -->
-    <path class="bg" d="M42,72 Q46,78 46,86 L54,86 Q54,78 58,72 Z"/>
-    <!-- SHOULDERS + UPPER TORSO (정면) -->
-    <path class="bg" d="M18,86 Q26,82 46,84 L54,84 Q74,82 82,86 L82,118 Q74,112 54,114 L46,114 Q26,112 18,118 Z"/>
-    <!-- ARMS -->
-    <path class="bg" d="M20,88 Q12,108 12,134 Q12,144 18,144 Q24,144 25,136 L27,108 Q29,92 24,88 Z"/>
-    <path class="bg" d="M80,88 Q88,108 88,134 Q88,144 82,144 Q76,144 75,136 L73,108 Q71,92 76,88 Z"/>
-    <!-- LOWER TORSO -->
-    <path class="bg" d="M18,118 Q30,128 50,128 Q70,128 82,118 L84,168 Q50,176 16,168 Z"/>
-    <!-- 수평 어깨선 -->
-    <line x1="6" y1="86" x2="94" y2="86" stroke="#ff6060" stroke-width=".8" stroke-dasharray="3,2" opacity=".65"/>
-    <text class="tx" x="2" y="84" style="font-size:3.8px">어깨선</text>
-    <!-- 수직 척추선 -->
-    <line x1="50" y1="72" x2="50" y2="170" stroke="#ffd700" stroke-width="1" stroke-dasharray="3,2" opacity=".75"/>
-    <!-- 우회전 화살표 -->
-    <path d="M60,18 Q80,22 86,36" fill="none" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
-    <path d="M86,36 L83,31 M86,36 L81,38" stroke="#ffd700" stroke-width="1.6" opacity=".9"/>
-    <text x="56" y="12" fill="#ffd700" font-size="6" font-family="sans-serif" font-weight="bold">우회전 →</text>
-    <text x="50" y="192" text-anchor="middle" class="tn">앉은 자세 · 목만 회전</text>
-    <text x="50" y="188" text-anchor="middle" fill="#00c890" font-size="4" font-weight="bold">정상 경추 회전 ROM: 70~80°</text>
-    <text x="50" y="202" text-anchor="middle" fill="#ff8080" font-size="4" font-family="sans-serif">상체 기울임 금지</text>`
-  },
+  // v1.17: neck_l/neck_r 경추 회전 사진 검사 제거 (트레이너 피드백 #12)
 
   slr_r: {
     label:'📱 가로 촬영 — Rt. SLR (정상 70~85°)',
@@ -1335,10 +1256,9 @@ const TESTS = [
   {id:'prone_ql',    n:17, sec:'prone', manual:true, title:'Quadratus Lumborum',            sub:'요방형근 좌우 비대칭 (엎드린 자세)', tip:'수기 검사 · 체크리스트 입력'},
   {id:'calf_achilles',n:18,sec:'prone', manual:true, title:'Achilles Tendon Palpation',     sub:'아킬레스건 촉진',                   tip:'수기 촉진 · 체크리스트 입력'},
   {id:'calf_palp',   n:19, sec:'prone', manual:true, title:'Calf Palpation',                sub:'종아리(비복근/가자미근) 촉진',        tip:'수기 촉진 · 체크리스트 입력'},
-  // ─── 경추 검사 — 베드 걸터앉아 ───
-  {id:'neck_l',      n:20, sec:'sit',   title:'경추 회전 — 좌측',  sub:'베드에 앉아 좌측 회전 · 회전각 측정',   tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
-  {id:'neck_r',      n:21, sec:'sit',   title:'경추 회전 — 우측',  sub:'베드에 앉아 우측 회전 · 회전각 측정',   tip:'베드 걸터앉은 상태, 뒤/측면에서 촬영'},
-  {id:'neck_palp',   n:22, sec:'sit',   manual:true, title:'Neck Palpation', sub:'Cervical Curve · SCM · Scalene · U.Trap', tip:'수기 촉진 · 체크리스트 입력'}
+  // ─── 경추 촉진 (수기) ───
+  // v1.17: 경추 회전 사진 검사(neck_l/neck_r) 제거 — 수기 촉진만 유지 (트레이너 피드백 #12)
+  {id:'neck_palp',   n:20, sec:'sit',   manual:true, title:'Neck Palpation', sub:'Cervical Curve · SCM · Scalene · U.Trap', tip:'수기 촉진 · 체크리스트 입력'}
 ];
 
 const TEST_CHECKLIST = {
@@ -1484,32 +1404,22 @@ const TEST_KEY={
   ohs_l:[11,12,23,24,25,26,27,28],   // OHS 측면
   slr_l:[23,24,25,26,27,28],         // SLR — 골반·다리만
   slr_r:[23,24,25,26,27,28],
-  neck_l:[0,7,8,11,12],              // 경추 회전 — 머리·귀·어깨만
-  neck_r:[0,7,8,11,12],
 };
+// v1.17: 트레이너 피드백 — 픽셀 단위·CVA·무릎비율·플럼라인 편차 제거, 각도 중심으로 단순화
 const NORMS = {
-  shoulderTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:10},
-  shoulderHDiff:{max:15,unit:'px',lbl:'정상 15px 이하',w:5},
-  hipTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:10},
-  hipHDiff:{max:15,unit:'px',lbl:'정상 15px 이하',w:5},
+  shoulderTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:10,signed:true},
+  hipTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:10,signed:true},
+  headTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:8,signed:true},
   spineAngle:{max:5,unit:'°',lbl:'정상 5° 이하',w:10},
   shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하',w:8},
-  headOffset:{max:30,unit:'px',lbl:'정상 30px 이하 (FHP)',w:8},
-  headTilt:{max:3,unit:'°',lbl:'정상 3° 이하',w:8},
-  cva:{min:50,unit:'°',lbl:'정상 50° 이상 (FHP 임상 기준)',w:10},
+  headOffsetAngle:{max:10,unit:'°',lbl:'정상 10° 이하 (FHP)',w:8},
   potsi:{max:27,unit:'',lbl:'정상 27 이하 (POTSI 측만 지수)',w:8},
   atsi:{max:27,unit:'',lbl:'정상 27 이하 (ATSI 전면 대칭)',w:8},
   qAngleL:{max:18,unit:'°',lbl:'정상 15~18° (Q-angle 좌)',w:6},
   qAngleR:{max:18,unit:'°',lbl:'정상 15~18° (Q-angle 우)',w:6},
   thoracicKyphosis:{max:5,unit:'°',lbl:'정상 5° 이하 (흉추 전경사)',w:7},
-  kneeAlign:{min:85,max:115,unit:'%',lbl:'정상 85~115%',w:10},
   slrAngle:{min:70,max:85,unit:'°',lbl:'정상 70~85° (SLR)',w:6},
-  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준, 척추 수평에 가까울수록 양호)',w:6},
-  // Plumb line deviations (측면): 절댓값 기준 허용 오차
-  devEar:{max:30,unit:'px',lbl:'정상 30px 이하 (귀-발목 일치)',w:6,signed:true},
-  devShoulder:{max:25,unit:'px',lbl:'정상 25px 이하 (어깨-발목 일치)',w:5,signed:true},
-  devHip:{max:25,unit:'px',lbl:'정상 25px 이하 (대전자-발목 일치)',w:5,signed:true},
-  devKnee:{max:25,unit:'px',lbl:'정상 25px 이하 (무릎-발목 일치)',w:5,signed:true},
+  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준)',w:6},
 };
 
 // ═══════════════════════════════════════════
@@ -1591,7 +1501,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.16.1';
+const APP_VERSION='v1.17.0';
 const BUILD_TIME='2026-04-11 08:00';
 
 // ═══════════════════════════════════════════
@@ -1643,6 +1553,16 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.17.0', date:'2026-05-20', items:[
+    '🎯 측정값 직관 표현 — 어깨/골반/머리 기울기 "1.5° 우↑" 형식 (어느 쪽이 위인지 명시, 트레이너 피드백 #1)',
+    '📉 항목 축소 — CVA / 무릎-골반 비율 / 픽셀 단위 모든 메트릭(높이차·플럼라인 편차) 제거 (피드백 #5·#8·#9)',
+    '↔ 두부 전방 이동(headOffset)을 각도로 변환 — 어깨선 기준 (피드백 #8)',
+    '↻ 체간 기울기·어깨-골반 편차 → 측면이 아닌 전면(ant)에서만 표시 (피드백 #10)',
+    '🚫 경추 회전 사진 검사(neck_l/neck_r) 제거 — 수기 촉진(neck_palp)만 유지 (피드백 #12)',
+    '📌 정확도 안내 — Compare 화면 상단에 1회만 노출 (피드백 #6)',
+    '💬 ⓘ 설명 간소화 — 한 줄 직관적 표현으로 통일 (피드백 #11)',
+    '✏️ 스켈레톤 편집 핸들 크기 축소 (피드백 #2 부분 적용 — 확대/삭제는 다음 릴리즈)',
+  ]},
   {ver:'v1.16.1', date:'2026-05-13', items:[
     '🪞 가이드라인 좌/우 카메라 관점 보정 — Shoulder Abduction(좌·우)·Standing Knee Up(좌·우): 고객 좌측은 카메라 우측에 보이도록 미러 (트레이너 피드백)',
     '📱 SLR(가로 촬영)용 가로 형태 가이드 박스 — 휴대폰을 가로로 돌리면 박스가 가로로 펼쳐짐',
@@ -3396,8 +3316,6 @@ const TEST_RELEVANT_METRICS = {
   sku_r:  ['pelvis_drop'],
   slr_l:  ['slr_angle_left'],
   slr_r:  ['slr_angle_right'],
-  neck_l: ['neck_rotation'],
-  neck_r: ['neck_rotation'],
 };
 // 각 테스트의 간단한 "포커스" 설명 — AI 프롬프트에 명시해 다른 부위 언급 금지
 const TEST_FOCUS = {
@@ -3414,8 +3332,6 @@ const TEST_FOCUS = {
   sku_r:'우측 Standing Knee Up — 오직 우측 무릎 거상 시 좌측 골반 drop(Trendelenburg sign)과 우측 지지측 hip 안정성만 분석. 좌측 언급 금지.',
   slr_l:'좌측 S.L.R. 테스트 — 오직 좌측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
   slr_r:'우측 S.L.R. 테스트 — 오직 우측 햄스트링 단축 여부(다리 올림 각도 기준)와 골반 posterior tilt 보상 여부만 분석. 어깨·목·흉추 언급 절대 금지.',
-  neck_l:'경추 좌회전 검사 — 오직 좌측 회전 ROM(회전각)과 이 각도가 시사하는 경추 및 상부승모근·SCM·Scalene 긴장만 분석. 어깨·골반·하지 언급 절대 금지.',
-  neck_r:'경추 우회전 검사 — 오직 우측 회전 ROM(회전각)과 이 각도가 시사하는 경추 및 상부승모근·SCM·Scalene 긴장만 분석. 어깨·골반·하지 언급 절대 금지.',
 };
 
 // v1.8: 체크리스트 AI 가이드 — 수동 실행, slot 명시 지원
@@ -4079,17 +3995,17 @@ function redrawSlot(tid,slot){
       if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;
       c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke();
     });
-    // v1.15.1: 편집 모드일 때 점을 더 크게 + 호 표시
+    // v1.17: 편집 모드 핸들 크기 축소 (트레이너 피드백 #2) — 14→9, 외곽 ring +5→+3
     const isEditing=editPose&&editPose.tid===tid&&editPose.slot===slot;
-    const pr=isEditing?Math.max(14,W*.018):Math.max(7,W*.009);
+    const pr=isEditing?Math.max(9,W*.012):Math.max(7,W*.009);
     activeKeys.forEach(i=>{
       const pt=lm[i];if(!pt||pt.visibility<.4)return;
       const x=pt.x*W,y=pt.y*H;
       if(isEditing){
-        c.beginPath();c.arc(x,y,pr+5,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.95)';c.lineWidth=3;c.setLineDash([4,3]);c.stroke();c.setLineDash([]);
+        c.beginPath();c.arc(x,y,pr+3,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.9)';c.lineWidth=2;c.setLineDash([3,2]);c.stroke();c.setLineDash([]);
       }
       c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=isEditing?'rgba(245,158,11,.9)':ptCol;c.fill();
-      c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=isEditing?2.5:2;c.stroke();
+      c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=isEditing?2:2;c.stroke();
     });
   }
   s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(170,110,0,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,6,0,Math.PI*2);c.fillStyle='rgba(190,120,0,.9)';c.fill()})});
@@ -4120,7 +4036,11 @@ function rebuildCompare(){
   const ctn=document.getElementById('cmpContent');if(!ctn)return;
   const hasPairs=TESTS.filter(t=>SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img);
   if(!hasPairs.length){ctn.innerHTML='<p style="text-align:center;padding:40px 20px;color:var(--tx3);font-size:14px">Before와 After 촬영 후 비교 분석이 여기에 표시됩니다.</p>';return}
-  let h='';
+  // v1.17: 정확도 안내 상단 1회만 (트레이너 피드백 #6)
+  let h=`<div class="fr-tilt-note" style="margin:0 14px 14px">
+    <b>📐 정확도 안내</b> · 같은 자세라도 카메라 기울기·거리·렌즈 왜곡이 수치에 영향을 줍니다. Before/After는 동일 위치·삼각대·휴대폰 수평계로 촬영하세요.
+    <a href="methodology.html" target="_blank" rel="noopener" style="color:#1e40af;font-weight:700;text-decoration:underline">📖 측정 방법론 →</a>
+  </div>`;
   hasPairs.forEach(t=>{
     h+=`<div class="overlap-card" id="ocard_${t.id}">
       <div class="oc-head">
@@ -4954,11 +4874,33 @@ function calcM(lm,W,H){
   const v=(...ids)=>ids.every(i=>lm[i]&&lm[i].visibility>.4);
   const a2=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
   const m={};
-  if(v(11,12)){m.shoulderTilt=Math.abs(a2({x:lm[11].x*W,y:lm[11].y*H},{x:lm[12].x*W,y:lm[12].y*H}));m.shoulderHDiff=Math.abs((lm[11].y-lm[12].y)*H);m.shSide=lm[11].y>lm[12].y?'Rt.':'Lt.'}
-  if(v(23,24)){m.hipTilt=Math.abs(a2({x:lm[23].x*W,y:lm[23].y*H},{x:lm[24].x*W,y:lm[24].y*H}));m.hipHDiff=Math.abs((lm[23].y-lm[24].y)*H);m.hipSide=lm[23].y>lm[24].y?'Rt.':'Lt.'}
-  if(v(11,12,23,24)){const msX=(lm[11].x+lm[12].x)/2*W,msY=(lm[11].y+lm[12].y)/2*H,mhX=(lm[23].x+lm[24].x)/2*W,mhY=(lm[23].y+lm[24].y)/2*H;m.spineAngle=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);m.shoulderHipAlign=Math.abs(msX-mhX)/W*100}
-  if(v(0,11,12))m.headOffset=Math.abs(lm[0].x*W-(lm[11].x+lm[12].x)/2*W);
-  if(v(25,26,23,24)){const hw=Math.abs((lm[23].x-lm[24].x)*W),kw=Math.abs((lm[25].x-lm[26].x)*W);if(hw>0)m.kneeAlign=kw/hw*100}
+  // v1.17: 부호 유지 — 양수=우측 높음, 음수=좌측 높음 (트레이너 피드백 #1)
+  // signedTilt() helper: 좌(11/23) → 우(12/24) 방향 각도, 양수=우측이 위로 올라감
+  if(v(11,12)){
+    const L={x:lm[11].x*W,y:lm[11].y*H},R={x:lm[12].x*W,y:lm[12].y*H};
+    const ang=Math.atan2(L.y-R.y,R.x-L.x)*180/Math.PI; // R이 L보다 위에 있으면 양수
+    m.shoulderTilt=ang;
+  }
+  if(v(23,24)){
+    const L={x:lm[23].x*W,y:lm[23].y*H},R={x:lm[24].x*W,y:lm[24].y*H};
+    m.hipTilt=Math.atan2(L.y-R.y,R.x-L.x)*180/Math.PI;
+  }
+  if(v(11,12,23,24)){
+    const msX=(lm[11].x+lm[12].x)/2*W,msY=(lm[11].y+lm[12].y)/2*H;
+    const mhX=(lm[23].x+lm[24].x)/2*W,mhY=(lm[23].y+lm[24].y)/2*H;
+    m.spineAngle=Math.abs(a2({x:mhX,y:mhY},{x:msX,y:msY})+90);
+    m.shoulderHipAlign=Math.abs(msX-mhX)/W*100;
+  }
+  // v1.17: 두부 전방 이동 — 픽셀 → 각도 (어깨선 기준 수직 대비 머리 위치 각도, 트레이너 피드백 #8)
+  if(v(0,11,12)){
+    const msX=(lm[11].x+lm[12].x)/2*W;
+    const msY=(lm[11].y+lm[12].y)/2*H;
+    const hX=lm[0].x*W, hY=lm[0].y*H;
+    // 어깨중점 → 머리 벡터의 수직선 대비 각도
+    // 양수 = 머리가 앞쪽으로 (FHP), 음수 = 뒤쪽으로
+    const dx=hX-msX, dy=msY-hY; // dy>0 = 머리가 어깨보다 위에 있음
+    if(dy>0) m.headOffsetAngle=Math.atan2(dx,dy)*180/Math.PI;
+  }
   // SLR 각도: 골반-발목 벡터의 수평선 대비 각도 (0°=수평 누운 다리, 90°=수직 상향)
   // v(23,27)는 좌측 기준 — SLR 좌우는 TEST_RELEVANT_METRICS로 분리됨
   if(v(23,27)){
@@ -4988,12 +4930,11 @@ function calcM(lm,W,H){
       m.cva=Math.abs(Math.atan2(dy,Math.abs(dx))*180/Math.PI); // 수평선 대비 각도
     }
   }
-  // Head Tilt (전면 기준): 양쪽 눈(2, 5) 연결선과 수평선의 각도
+  // v1.17: Head Tilt 부호 유지 — 양수=우측이 위, 음수=좌측이 위 (트레이너 피드백 #1)
   // lm[2]=Lt eye, lm[5]=Rt eye
   if(v(2,5)){
-    const dx=Math.abs((lm[2].x-lm[5].x)*W);
-    const dy=(lm[2].y-lm[5].y)*H;
-    if(dx>0) m.headTilt=Math.abs(Math.atan(dy/dx)*180/Math.PI);
+    const L={x:lm[2].x*W,y:lm[2].y*H},R={x:lm[5].x*W,y:lm[5].y*H};
+    m.headTilt=Math.atan2(L.y-R.y,R.x-L.x)*180/Math.PI;
   }
   // Plumb line deviations (측면 전용): 귀/어깨/골반/무릎/발목이 발목 수직선에서 얼마나 벗어났는지
   // 정상 이상 자세: 귀-어깨-대전자-무릎-외측복사뼈가 하나의 수직선 위
@@ -5547,39 +5488,30 @@ function navClinical(tid,dir){
   renderClinicalBox(tid);
 }
 
-// v1.16: 측정값 상세 설명 — 트레이너용 상세 임상 정보 포함 (피드백 #3)
-// 형식: [무엇을 측정 / 어떻게 계산 / 값 해석] 3줄
+// v1.17: 트레이너 피드백 #11 — 한 줄 직관적 설명. 픽셀·CVA·무릎비율·플럼라인 제거.
 const METRIC_DESC={
-  shoulderTilt:'좌·우 어깨 견봉(어깨끝 뼈)을 잇는 직선이 수평선과 이루는 각도(°). 양수=우측 어깨가 더 높음, 음수=좌측 어깨가 더 높음. 정상 ±3° 이내.',
-  shoulderHDiff:'좌우 어깨 견봉의 수직 좌표 차이(픽셀). 카메라 거리·해상도에 따라 절댓값은 달라지므로 Before/After 변화 추세 위주로 봅니다. ※ 어깨 기울기(°)와 의미가 중복되며 픽셀 단위는 비교성이 떨어집니다.',
-  hipTilt:'좌·우 골반(ASIS, 전상장골극)을 잇는 직선이 수평선과 이루는 각도(°). 양수=우측 골반이 높음. 정상 ±3° 이내. 1.5° 이상이면 임상적 의미.',
-  hipHDiff:'좌우 골반의 수직 좌표 차이(픽셀). hipTilt와 동일 정보의 픽셀 표현. ※ 픽셀 단위는 거리·해상도 영향을 크게 받음.',
-  headOffset:'귀 또는 머리 중심에서 어깨 중심까지 수평 방향 거리(픽셀). 양수=머리가 어깨보다 앞쪽, 즉 전방머리자세(FHP)의 직접 지표. ※ 측면 사진에서만 신뢰 가능 — 전면에서는 거의 의미 없음.',
-  headTilt:'양쪽 귀 또는 눈선을 잇는 직선의 수평 대비 각도(°). 양수=우측으로 기울어짐. 사경(torticollis)·SCM 우세 평가. 정상 ±3° 이내.',
-  cva:'귀(이주, tragus)와 7번 경추(C7)를 잇는 선이 수평선과 이루는 각도(Craniovertebral Angle). 작을수록 거북목. 50° 이상 정상, 48° 이하 임상적 FHP. ※ 좌측면 사진에서 측정.',
-  spineAngle:'어깨 중점(좌·우 견봉의 중간점)과 골반 중점(좌·우 ASIS 중간점)을 잇는 직선이 수직선과 이루는 각도(°). 몸통의 좌우 기울기. 정상 ±5° 이내.',
-  shoulderHipAlign:'어깨 중점과 골반 중점의 수평 편차(키 대비 %). 어깨가 골반보다 좌·우로 얼마나 벗어나 있는지. 척추 측만의 보조 지표. 정상 3% 이내.',
-  kneeAlign:'OHS 자세에서 양쪽 무릎 사이 수평 거리 대비 양쪽 골반 사이 수평 거리의 비율(%). 100%=무릎과 골반 폭 동일, <100%=무릎 collapse(외반), >115%=무릎 외측 이탈. 정상 85~115%.',
-  slrAngle:'SLR(누워서 다리 들기) 시 들어올린 다리와 바닥(고관절-발목 직선과 수평선)이 이루는 각도. 햄스트링 유연성 직접 지표. 정상 70~85°. <70° 단축, >85° 과가동.',
-  trunkFlex:'서서 전굴(forward bending) 자세에서 척추 라인(어깨 중점-골반 중점)이 수직선 대비 얼마나 굽혀졌는지 각도. 90°=완전 수평, 0°=직립. 70° 이상이면 양호.',
-  devEar:'좌측면 사진에서 발목을 지나는 수직 플럼라인 기준 귀의 수평 편차(픽셀). 양수=귀가 앞쪽, 음수=뒤쪽. ±30px 이내 정상. FHP 보조 지표.',
-  devShoulder:'발목 플럼라인 기준 어깨 견봉의 수평 편차(픽셀). 양수=어깨가 앞쪽. ±25px 이내 정상. round shoulder 평가.',
-  devHip:'발목 플럼라인 기준 대전자(greater trochanter, 고관절 외측)의 수평 편차(픽셀). ±25px 이내 정상. 골반 전·후방 이동 평가.',
-  devKnee:'발목 플럼라인 기준 무릎 중심의 수평 편차(픽셀). ±25px 이내 정상. knee hyperextension/flexion 보조 지표.',
-  potsi:'POTSI(Posterior Trunk Symmetry Index, Suzuki 1999) — 후면 사진에서 어깨·견갑하각·골반 3쌍 좌우 차이를 종합한 측만 지수. 0=완전 대칭, 27 이하 정상, 27 초과 측만 의심.',
-  atsi:'ATSI(Anterior Trunk Symmetry Index) — 전면 사진에서 어깨·골반·무릎 좌우 차이의 종합 지수. 0=완전 대칭, 27 이하 정상.',
-  qAngleL:'좌측 Q-angle: ASIS(전상장골극)→슬개골 중심 선과 경골조면→슬개골 중심 선이 이루는 각도. 정상 남성 13°·여성 18° 부근. 큰 값=무릎 외반(genu valgum) 위험.',
-  qAngleR:'우측 Q-angle: 위와 동일하게 우측 다리에 적용.',
-  thoracicKyphosis:'좌측면 사진에서 흉추 상부(C7~T7 추정선)의 전방 경사 각도. 큰 값=hyperkyphosis(굽은 등). 정상 5° 이하 (사진 기반 추정값).',
+  shoulderTilt:'양쪽 어깨를 잇는 직선과 수평선의 각도. 부호로 어느 쪽이 올라갔는지 표시 (우↑ 또는 좌↑).',
+  hipTilt:'양쪽 골반(ASIS)을 잇는 직선과 수평선의 각도. 부호로 어느 쪽이 올라갔는지 표시.',
+  headTilt:'양쪽 눈선과 수평선의 각도. 부호로 머리가 어느 쪽으로 기울었는지 표시.',
+  spineAngle:'어깨 중점과 골반 중점을 잇는 선이 수직에서 벗어난 각도. 몸통의 좌우 기울기.',
+  shoulderHipAlign:'어깨 중점과 골반 중점의 좌우 편차 (키 대비 %). 척추 측만 보조 지표.',
+  headOffsetAngle:'어깨선 기준 머리 위치 각도. 양수=머리가 앞으로 나간 정도(FHP, 전면 측정).',
+  slrAngle:'누워서 다리 들기 시 다리와 바닥 사이 각도. 햄스트링 유연성 지표.',
+  trunkFlex:'서서 전굴 시 척추가 수직 대비 얼마나 굽혀졌는지 각도. 클수록 유연.',
+  potsi:'후면 몸통 좌우 비대칭 종합 지수(POTSI). 27 이하 정상.',
+  atsi:'전면 몸통 좌우 비대칭 종합 지수(ATSI). 27 이하 정상.',
+  qAngleL:'좌측 고관절-무릎-발목 정렬 각도. 큰 값=무릎 외반(genu valgum) 위험.',
+  qAngleR:'우측 고관절-무릎-발목 정렬 각도. 큰 값=무릎 외반 위험.',
+  thoracicKyphosis:'어깨와 골반 수평 편차로 추정한 흉추 후만. 라운드숄더 지표.',
 };
 
 // v1.15: 측정 항목 그룹 — 결과지 가독성 향상 (트레이너 피드백 #7)
 const METRIC_GROUPS=[
-  {label:'어깨 / 머리', keys:['shoulderTilt','shoulderHDiff','headTilt','headOffset','cva','thoracicKyphosis']},
-  {label:'골반', keys:['hipTilt','hipHDiff']},
+  // v1.17: 그룹 단순화 — 픽셀/플럼라인/CVA/무릎비율 제거
+  {label:'어깨 / 머리', keys:['shoulderTilt','headTilt','headOffsetAngle','thoracicKyphosis']},
+  {label:'골반', keys:['hipTilt']},
   {label:'체간', keys:['spineAngle','shoulderHipAlign','trunkFlex']},
-  {label:'무릎 / 하지', keys:['kneeAlign','slrAngle','qAngleL','qAngleR']},
-  {label:'플럼라인 편차', keys:['devEar','devShoulder','devHip','devKnee']},
+  {label:'무릎 / 하지', keys:['slrAngle','qAngleL','qAngleR']},
   {label:'종합 대칭 지수', keys:['potsi','atsi']},
 ];
 
@@ -5591,23 +5523,43 @@ function toggleMetricDesc(id){
 }
 
 function buildMetricsHTML(tid,bm,am){
+  // v1.17: 트레이너 피드백 #10 — 체간기울기·어깨-골반편차는 전면에서만 측정 (측면에서 부정확)
+  // 픽셀·CVA·무릎비율·플럼라인·경추회전 제거 (피드백 #5, #8, #9, #12)
   const relevant={
-    // v1.16: 두부 전방 이동(headOffset)은 측면 검사에서만 의미 있음 — 전면에서 제외 (트레이너 피드백)
-    ant:['shoulderTilt','shoulderHDiff','headTilt','hipTilt','hipHDiff','shoulderHipAlign','kneeAlign','atsi','qAngleL','qAngleR'],
-    post:['shoulderTilt','shoulderHDiff','hipTilt','hipHDiff','shoulderHipAlign','potsi'],
-    lat:['cva','headOffset','spineAngle','shoulderHipAlign','thoracicKyphosis','devEar','devShoulder','devHip','devKnee'],
-    sh_flex_l:['shoulderTilt','shoulderHDiff'],sh_flex_r:['shoulderTilt','shoulderHDiff'],
-    trunk_b:['spineAngle','shoulderHipAlign'],trunk_l:['trunkFlex','spineAngle'],
-    ohs_b:['kneeAlign','hipTilt'],ohs_l:['cva','spineAngle','shoulderHipAlign','devHip','devKnee'],
-    sku:['hipHDiff','hipTilt'],sku_r:['hipHDiff','hipTilt'],
+    ant:['shoulderTilt','headTilt','hipTilt','headOffsetAngle','spineAngle','shoulderHipAlign','atsi','qAngleL','qAngleR'],
+    post:['shoulderTilt','hipTilt','potsi'],
+    lat:['thoracicKyphosis'],
+    sh_flex_l:['shoulderTilt'],sh_flex_r:['shoulderTilt'],
+    trunk_b:[],trunk_l:['trunkFlex'],
+    ohs_b:['hipTilt'],ohs_l:[],
+    sku:['hipTilt'],sku_r:['hipTilt'],
     slr_l:['slrAngle','hipTilt'],slr_r:['slrAngle','hipTilt'],
-    neck_l:['headTilt'],neck_r:['headTilt'],
   };
   const allowed=relevant[tid]||Object.keys(NORMS);
-  const labels={shoulderTilt:'어깨 기울기',shoulderHDiff:'어깨 높이 차',hipTilt:'골반 기울기',hipHDiff:'골반 높이 차',headOffset:'두부 전방 이동',headTilt:'머리 기울기',cva:'CVA (두개척추각)',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',kneeAlign:'무릎/골반 비율',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',devEar:'귀↔플럼선',devShoulder:'어깨↔플럼선',devHip:'대전자↔플럼선',devKnee:'무릎↔플럼선',potsi:'POTSI 몸통 대칭 지수',atsi:'ATSI 전면 대칭 지수',qAngleL:'Q-angle (좌)',qAngleR:'Q-angle (우)',thoracicKyphosis:'흉추 전경사'};
+  const labels={shoulderTilt:'어깨 기울기',hipTilt:'골반 기울기',headTilt:'머리 기울기',headOffsetAngle:'두부 전방 이동',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',potsi:'POTSI 몸통 대칭 지수',atsi:'ATSI 전면 대칭 지수',qAngleL:'Q-angle (좌)',qAngleR:'Q-angle (우)',thoracicKyphosis:'흉추 전경사'};
 
   // 측정값이 있고 + 이 검사에 해당되는 키만 통과
   const has=k=>(bm[k]!==undefined||am[k]!==undefined)&&allowed.includes(k);
+
+  // v1.17: 직관적 부호 표현 — "어느 쪽이 위인지" 명시 (트레이너 피드백 #1)
+  // shoulderTilt/hipTilt/headTilt — 양수=우측 위, 음수=좌측 위
+  // headOffsetAngle — 양수=앞으로(FHP)
+  function fmtVal(k,v,n){
+    if(v===undefined)return'—';
+    const prec=n?.unit==='°'?1:n?.unit==='%'?1:0;
+    const abs=Math.abs(v).toFixed(prec);
+    const u=n?.unit||'';
+    if(k==='shoulderTilt'||k==='hipTilt'||k==='headTilt'){
+      if(Math.abs(v)<0.05)return`0${u} 수평`;
+      const side=v>0?'우':'좌';
+      return`${abs}${u} ${side}↑`;
+    }
+    if(k==='headOffsetAngle'){
+      if(Math.abs(v)<0.05)return`0${u}`;
+      return`${abs}${u} ${v>0?'전방↑':'후방↑'}`;
+    }
+    return v.toFixed(prec)+u;
+  }
 
   let body='';
   body+=`<div class="fr-head"><div>측정 항목</div><div class="fh-b">Before</div><div class="fh-a">After</div><div class="fh-d">Δ 변화</div></div>`;
@@ -5622,16 +5574,18 @@ function buildMetricsHTML(tid,bm,am){
       const bv=bm[k],av=am[k];
       const n=NORMS[k];
       const prec=n?.unit==='°'?1:n?.unit==='%'?1:0;
-      const bStr=bv!==undefined?bv.toFixed(prec)+(n?.unit||''):'—';
-      const aStr=av!==undefined?av.toFixed(prec)+(n?.unit||''):'—';
-      const bAb=n&&((n.max!==undefined&&bv!==undefined&&(n.signed?Math.abs(bv):bv)>n.max)||(n.min!==undefined&&bv!==undefined&&bv<n.min));
-      const aAb=n&&((n.max!==undefined&&av!==undefined&&(n.signed?Math.abs(av):av)>n.max)||(n.min!==undefined&&av!==undefined&&av<n.min));
-      const delta=bv!==undefined&&av!==undefined?av-bv:null;
+      const bStr=fmtVal(k,bv,n);
+      const aStr=fmtVal(k,av,n);
+      const bAb=n&&bv!==undefined&&((n.max!==undefined&&(n.signed?Math.abs(bv):bv)>n.max)||(n.min!==undefined&&bv<n.min));
+      const aAb=n&&av!==undefined&&((n.max!==undefined&&(n.signed?Math.abs(av):av)>n.max)||(n.min!==undefined&&av<n.min));
+      // delta: 절댓값 변화 기준 (부호 있는 항목은 |after| - |before|)
+      const deltaRaw=bv!==undefined&&av!==undefined?(n?.signed?(Math.abs(av)-Math.abs(bv)):(av-bv)):null;
       const hb=n?.min!==undefined&&n?.max===undefined;
-      const better=delta!==null&&(hb?delta>=1:delta<=-1);
-      const worse=delta!==null&&(hb?delta<=-1:delta>=1);
+      const better=deltaRaw!==null&&(hb?deltaRaw>=1:deltaRaw<=-1);
+      const worse=deltaRaw!==null&&(hb?deltaRaw<=-1:deltaRaw>=1);
       const descId=`mdesc_${tid}_${k}`;
       const desc=METRIC_DESC[k];
+      const deltaStr=deltaRaw!==null?(deltaRaw>0?'+':'')+deltaRaw.toFixed(prec)+(n?.unit||''):'—';
       body+=`<div class="fr-row">
         <div class="fr-main">
           <div class="fr-name">${labels[k]||k}</div>
@@ -5640,7 +5594,7 @@ function buildMetricsHTML(tid,bm,am){
         </div>
         <div class="fv B${bAb?' abnorm':''}">${bStr}</div>
         <div class="fv A${aAb?' abnorm':''}">${aStr}</div>
-        <div class="fv ${delta!==null?(better?'ok':worse?'bad':'same'):'same'}">${delta!==null?(delta>0?'+':'')+delta.toFixed(prec)+(n?.unit||''):'—'}</div>
+        <div class="fv ${deltaRaw!==null?(better?'ok':worse?'bad':'same'):'same'}">${deltaStr}</div>
         ${desc?`<div class="fr-desc hidden" id="${descId}">${desc}</div>`:''}
       </div>`;
     });
@@ -5650,10 +5604,8 @@ function buildMetricsHTML(tid,bm,am){
     return `<div style="text-align:center;padding:20px 12px;color:var(--tx3);font-size:12px">측정값이 산출되지 않았습니다.</div>`;
   }
 
-  // v1.15: 카메라 기울기 안내 (트레이너 피드백 #6) + v1.16: 방법론 링크
-  const tiltNote=`<div class="fr-tilt-note"><b>📐 정확도 안내</b> · 같은 자세라도 카메라 기울기·거리·렌즈 왜곡이 수치에 영향을 줍니다. Before/After는 가능한 동일 위치·삼각대·휴대폰 수평계(Device level)로 촬영하세요. <a href="methodology.html" target="_blank" rel="noopener" style="color:#1e40af;font-weight:700;text-decoration:underline">📖 측정 방법론 자세히 보기 →</a></div>`;
-
-  return `<div class="fr-grid">${body}</div>${tiltNote}<div class="ai-box" id="aiClin_${tid}"><div class="ai-loading"><div class="spin"></div><span>AI 분석 생성 중...</span></div></div>`;
+  // v1.17: 정확도 안내는 상단 1회만 (rebuildCompare에서 상단 배치) — 여기서는 제거 (트레이너 피드백 #6)
+  return `<div class="fr-grid">${body}</div><div class="ai-box" id="aiClin_${tid}"><div class="ai-loading"><div class="spin"></div><span>AI 분석 생성 중...</span></div></div>`;
 }
 
 // ═══════════════════════════════════════════
