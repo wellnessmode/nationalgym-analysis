@@ -160,7 +160,7 @@
     // 4. visibility / focus 시점에 reg.update() 강제 호출 (캐시 stale 방지)
     if ('serviceWorker' in navigator) {
       // controllerchange → 새 SW 활성화됨. 사용자 입력 중 강제 reload 하면 데이터 유실.
-      // 페이지가 hidden 일 때만 reload, visible 이면 다음 hidden 시점까지 대기.
+      // 페이지가 hidden 일 때 reload 또는 사용자가 직접 '적용' 버튼 누를 때 reload.
       var ngPendingReload = false;
       function ngMaybeReload() {
         if (!window.__ngReloaded) {
@@ -168,12 +168,27 @@
           location.reload();
         }
       }
+      function ngShowUpdatePrompt() {
+        if (document.getElementById('ng-update-toast')) return;
+        var t = document.createElement('div');
+        t.id = 'ng-update-toast';
+        t.style.cssText = 'position:fixed; bottom:16px; left:50%; transform:translateX(-50%);' +
+          'background:#0A1628; color:#fff; padding:10px 16px; border-radius:999px;' +
+          'box-shadow:0 4px 16px rgba(0,0,0,0.3); z-index:99999; font-size:13px;' +
+          'font-family:Pretendard, -apple-system, sans-serif; display:flex; gap:12px; align-items:center;';
+        t.innerHTML = '<span>새 버전이 준비됐어요</span>' +
+          '<button style="background:#C9A35C; color:#0A1628; border:0; padding:6px 12px; border-radius:999px; font-weight:700; cursor:pointer; font-size:12px;">지금 적용</button>' +
+          '<button style="background:transparent; color:#fff; border:0; cursor:pointer; font-size:18px; line-height:1;">×</button>';
+        t.children[1].addEventListener('click', ngMaybeReload);
+        t.children[2].addEventListener('click', function () { t.remove(); });
+        document.body.appendChild(t);
+      }
       navigator.serviceWorker.addEventListener('controllerchange', function () {
         if (document.visibilityState === 'hidden') {
           ngMaybeReload();
         } else {
           ngPendingReload = true;
-          // 입력 중이면 안 끊고, 백그라운드 갈 때 reload
+          ngShowUpdatePrompt();
         }
       });
       document.addEventListener('visibilitychange', function () {
