@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/auth_constants.dart';
 import '../../../core/tokens.dart';
 import '../../../services/auth_storage.dart';
 import '../../../services/biometric_service.dart';
+import '../../../services/fcm_service.dart';
 import '../../../services/supabase_client.dart';
 import 'forgot_password_screen.dart';
 
@@ -119,6 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await AuthStorage.setPassword(null);
       }
+
+      // 로그인 성공 → FCM 토큰 자동 복원 (silent — 권한 이미 있으면 prompt X).
+      // 로그아웃 시 토큰을 NULL 로 비웠으므로, 매 로그인마다 재연결 필요.
+      unawaited(_silentRestoreFcm());
     } on AuthException catch (e) {
       // 자동 로그인 실패 → 저장된 비밀번호가 만료/변경됨. 정리.
       if (savedAlreadyVerified) {
@@ -130,6 +136,19 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _error = '로그인 실패: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// 로그인 성공 직후 FCM 토큰 자동 복원 (silent).
+  /// 권한 미허용이면 skip — 사용자가 설정에서 활성화하면 됨.
+  /// claim_fcm_token RPC 가 current_user_id() 서버사이드로 찾으므로 userId 불필요.
+  Future<void> _silentRestoreFcm() async {
+    try {
+      final token = await FcmService.getTokenIfAuthorized();
+      if (token == null || token.isEmpty) return;
+      await supabase.rpc('claim_fcm_token', params: {'token': token});
+    } catch (_) {
+      // 실패해도 로그인 자체엔 영향 X
     }
   }
 
