@@ -8,10 +8,16 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>NationalGym — 바디스캔</title>
+<!-- v1.19.1: 한글 전용 웹폰트 Pretendard (CDN) — 시스템 폰트보다 정제된 룩 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+/* v1.19.1: Pretendard를 기본 폰트로 (로드 실패 시 시스템 폰트로 자동 폴백) */
+:root{--font-ko:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+body{font-family:var(--font-ko)}
 :root{
   --bg:#f5f4f0;--bg2:#fff;--bg3:#f0efe9;--bg4:#e6e5de;
   --brd:#e0ddd4;--brd2:#c4c2b8;
@@ -23,7 +29,7 @@
   --r:10px;--r2:16px;--r3:24px;
   --sh:0 2px 12px rgba(0,0,0,.07);--sh2:0 4px 24px rgba(0,0,0,.12);
 }
-html,body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;min-height:100%;font-size:15px;overscroll-behavior-y:none}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--font-ko);min-height:100%;font-size:15px;overscroll-behavior-y:none}
 button,input,select,textarea{font-family:inherit}
 .hdr{position:sticky;top:0;z-index:300;background:#0d0d0d;height:54px;display:flex;align-items:center;padding:0 12px;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .hdr::-webkit-scrollbar{display:none}
@@ -295,6 +301,7 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-subtitle{font-size:17px;color:#9de8c8;margin-top:8px;font-weight:600}
 .ls-divider{width:48px;height:3px;background:#00d48b;margin:18px auto;border-radius:2px}
 .ls-tagline{font-size:14px;color:#d1d5db;line-height:1.65;max-width:380px;margin:0 auto 8px;text-align:center;font-weight:500}
+.ls-version{font-size:12px;color:#00d48b;font-weight:700;margin-top:10px;letter-spacing:.03em;font-variant-numeric:tabular-nums}
 .ls-features{max-width:560px;margin:0 auto 28px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ls-feat{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 16px;background:linear-gradient(160deg,rgba(0,168,120,.08) 0%,rgba(255,255,255,.03) 100%);border:1px solid rgba(0,212,139,.22);border-radius:16px;min-height:108px}
 .ls-feat-ic{font-size:24px;line-height:1}
@@ -371,6 +378,15 @@ input[type=range]{accent-color:var(--green)}
     <div class="ls-subtitle">전문 체형 분석 프로그램</div>
     <div class="ls-divider"></div>
     <div class="ls-tagline">전·후 비교로 개선 결과를 시각화하는<br>NationalGym 전용 체형분석 솔루션</div>
+    <div class="ls-version" id="lsVersion"></div>
+  </div>
+  <!-- v1.19.1: 변경 내역 — 히어로 바로 아래(상단), 즉시 보이도록 -->
+  <div id="lsChangelog" class="ls-changelog">
+    <div class="ls-cl-hd open" onclick="toggleChangelog()">
+      <span class="ls-cl-hd-title">📋 업데이트 내역</span>
+      <span class="ls-cl-arrow" id="lsClArrow">▼</span>
+    </div>
+    <div class="ls-cl-body" id="lsClBody"></div>
   </div>
   <div class="ls-features">
     <div class="ls-feat"><div class="ls-feat-ic">📸</div><div class="ls-feat-t">전문 검사</div><div class="ls-feat-s">정적 자세 · 어깨 외전<br>OHS · SLR · 전굴</div></div>
@@ -384,14 +400,6 @@ input[type=range]{accent-color:var(--green)}
       체형분석 시작
     </button>
     <button class="ls-btn-secondary" onclick="startAnalysis();setTimeout(()=>{showPhase('report');cloudLoadList()},300)">☁️ 클라우드에서 세션 불러오기</button>
-  </div>
-  <!-- v1.19: 변경 내역 — 홈에 상시, 날짜 기준 -->
-  <div id="lsChangelog" class="ls-changelog">
-    <div class="ls-cl-hd" onclick="toggleChangelog()">
-      <span class="ls-cl-hd-title">📋 최근 업데이트</span>
-      <span class="ls-cl-arrow" id="lsClArrow">▼</span>
-    </div>
-    <div class="ls-cl-body" id="lsClBody"></div>
   </div>
   <div class="ls-footer" id="lsFooter"></div>
 </div>
@@ -602,93 +610,104 @@ function _silhouetteParams(){
 // NOTE: SVG 좌측(x<50) = 카메라 왼쪽 = 고객 우측(mirror). "Lt." 강조는 SVG 우측에 그려야 함.
 function _bodyFrontPath(p, raise){
   const cx=50, sh=p.shy, hp=p.hipy, w=p.waisty;
-  // 어깨~골반~허벅지~종아리~발 합쳐진 부드러운 경로
-  // 머리는 별도 ellipse, 팔은 별도 path (raise에 따라 위치 다름)
-  // 본체(목→어깨→몸통→골반→다리→발)
-  const torso = `M ${cx-2} ${p.necky-3} Q ${cx-3} ${p.necky+4} ${cx-p.shW} ${sh}
-                 C ${cx-p.shW+2} ${sh+10}, ${cx-p.waistW} ${w-12}, ${cx-p.waistW} ${w}
-                 C ${cx-p.waistW} ${w+12}, ${cx-p.pvW} ${hp-6}, ${cx-p.pvW} ${hp}
-                 L ${cx-p.pvW+1} ${p.kneey-12}
-                 C ${cx-p.pvW+1} ${p.kneey-4}, ${cx-p.pvW-1} ${p.kneey+2}, ${cx-p.pvW} ${p.kneey+8}
-                 L ${cx-p.pvW+2} ${p.ankley}
-                 L ${cx-p.pvW-1} ${p.ankley+5}
-                 Q ${cx-p.pvW+2} ${p.ankley+9} ${cx-2} ${p.ankley+6}
-                 L ${cx+2} ${p.ankley+6}
-                 Q ${cx+p.pvW-2} ${p.ankley+9} ${cx+p.pvW+1} ${p.ankley+5}
-                 L ${cx+p.pvW-2} ${p.ankley}
-                 L ${cx+p.pvW} ${p.kneey+8}
-                 C ${cx+p.pvW+1} ${p.kneey+2}, ${cx+p.pvW-1} ${p.kneey-4}, ${cx+p.pvW-1} ${p.kneey-12}
-                 L ${cx+p.pvW} ${hp}
-                 C ${cx+p.pvW} ${hp-6}, ${cx+p.waistW} ${w+12}, ${cx+p.waistW} ${w}
-                 C ${cx+p.waistW} ${w-12}, ${cx+p.shW-2} ${sh+10}, ${cx+p.shW} ${sh}
-                 Q ${cx+3} ${p.necky+4} ${cx+2} ${p.necky-3} Z`;
-  return torso;
+  // v1.19.1: 토르소만 (머리·다리 제외) — 가랑이에서 닫힘. 다리는 _legPath로 별도 → 치마 X
+  return `M ${cx-3} ${p.necky-2}
+          Q ${cx-4} ${p.necky+5} ${cx-p.shW} ${sh}
+          C ${cx-p.shW+2} ${sh+12}, ${cx-p.waistW} ${w-10}, ${cx-p.waistW} ${w}
+          C ${cx-p.waistW} ${w+10}, ${cx-p.pvW} ${hp-6}, ${cx-p.pvW} ${hp+2}
+          L ${cx-p.pvW+2} ${hp+10}
+          Q ${cx-p.pvW/2} ${hp+13} ${cx-1.5} ${hp+14}
+          L ${cx+1.5} ${hp+14}
+          Q ${cx+p.pvW/2} ${hp+13} ${cx+p.pvW-2} ${hp+10}
+          L ${cx+p.pvW} ${hp+2}
+          C ${cx+p.pvW} ${hp-6}, ${cx+p.waistW} ${w+10}, ${cx+p.waistW} ${w}
+          C ${cx+p.waistW} ${w-10}, ${cx+p.shW-2} ${sh+12}, ${cx+p.shW} ${sh}
+          Q ${cx+4} ${p.necky+5} ${cx+3} ${p.necky-2} Z`;
 }
-// 자연스럽게 늘어뜨린 팔 (어깨 → 손목)
+// 팔 (어깨→손목). side 'l'(SVG왼쪽)/'r', raised=외전(거상)
 function _armPath(p, side, raised){
-  // side: 'l' = SVG 왼쪽(=고객 오른쪽), 'r' = SVG 오른쪽(=고객 왼쪽)
   const cx=50, sh=p.shy;
   const xS = side==='l'? cx-p.shW : cx+p.shW;
+  const dir = side==='l'? -1 : 1;
   if(raised){
-    // 옆으로 머리 위까지 외전(거상). 어깨에서 사선으로 위/바깥 → 머리 위.
-    const dir = side==='l'? -1 : 1;
-    const xE = xS + dir*8;
-    const xW = xS + dir*4;
+    // 옆으로 머리 위까지 외전 — 어깨에서 사선 위/바깥 → 머리 옆 위
+    const xE = xS + dir*8, xW = xS + dir*4;
     return `M ${xS-dir*2} ${sh} Q ${xS+dir*7} ${sh-22} ${xE} ${sh-44}
             C ${xE+dir*1} ${sh-56}, ${xW+dir*2} ${sh-58}, ${xW} ${sh-62}
             Q ${xW-dir*4} ${sh-50} ${xS-dir*5} ${sh-20} Z`;
   }
-  // 자연 하강 (어깨 → 팔꿈치 → 손목, 손은 골반 옆)
-  const dir = side==='l'? -1 : 1;
+  // 자연 하강 (어깨 → 손목, 골반 옆)
   return `M ${xS-dir*2} ${sh+2} Q ${xS+dir*3} ${sh+22} ${xS+dir*4} ${p.waisty-4}
           C ${xS+dir*5} ${p.waisty+6}, ${xS+dir*3} ${p.hipy-2}, ${xS+dir*2} ${p.hipy+2}
           L ${xS-dir*3} ${p.hipy}
           Q ${xS-dir*1} ${p.waisty} ${xS-dir*4} ${sh+18} Z`;
 }
-// 무릎 거상 (전면 SKU) — side: 'l'(SVG 왼쪽)/'r'
+// v1.19.1: 한쪽 다리 (전면) — side 'l'(SVG 왼쪽)/'r'. 허벅지 안쪽(가랑이)~발목, 인심 갭 형성.
+function _legPath(p, side){
+  const cx=50, hp=p.hipy, kn=p.kneey, an=p.ankley;
+  const dir = side==='l' ? -1 : 1;
+  const hipO = cx + dir*(p.pvW-1);     // 골반 바깥
+  const hipI = cx + dir*1.5;           // 가랑이(안쪽)
+  const knO  = cx + dir*(p.pvW-3);
+  const knI  = cx + dir*4.5;
+  const anO  = cx + dir*(p.pvW-4);
+  const anI  = cx + dir*5;
+  return `M ${hipO} ${hp+9}
+          C ${hipO} ${hp+28}, ${knO} ${kn-22}, ${knO} ${kn}
+          C ${knO} ${kn+14}, ${anO} ${an-12}, ${anO} ${an}
+          L ${anI} ${an}
+          C ${anI} ${an-12}, ${knI} ${kn+12}, ${knI} ${kn}
+          C ${knI} ${kn-20}, ${hipI+dir*1} ${hp+30}, ${hipI} ${hp+15}
+          Z`;
+}
+// v1.19.1: 거상된 무릎 (전면 SKU) — 고관절 굴곡 ~90°, 허벅지 앞으로/위로, 종아리 아래로
 function _kneeUpFront(p, side){
-  const cx=50;
+  const cx=50, hp=p.hipy;
   const dir = side==='l'? -1 : 1;
-  const xH = cx + dir*(p.pvW-2);
-  return `M ${xH-2} ${p.hipy+2} Q ${xH+dir*8} ${p.hipy+14} ${xH+dir*12} ${p.hipy+24}
-          L ${xH+dir*16} ${p.hipy+36}
-          C ${xH+dir*14} ${p.hipy+44}, ${xH+dir*8} ${p.hipy+44}, ${xH+dir*4} ${p.hipy+38}
-          Q ${xH-dir*4} ${p.hipy+26} ${xH-6} ${p.hipy+14} Z`;
+  const hipX = cx + dir*(p.pvW-2);
+  // 허벅지: 골반 → 앞/위로 들림 (무릎이 골반보다 높게)
+  const knX = hipX + dir*16, knY = hp-4;
+  return `M ${hipX} ${hp+4}
+          C ${hipX+dir*6} ${hp+4}, ${knX-dir*2} ${hp-2}, ${knX} ${knY}
+          C ${knX+dir*5} ${knY+1}, ${knX+dir*5} ${knY+9}, ${knX} ${knY+10}
+          L ${knX} ${knY+10}
+          C ${knX-dir*2} ${hp+18}, ${knX-dir*3} ${hp+30}, ${knX-dir*4} ${hp+38}
+          L ${knX-dir*9} ${hp+38}
+          C ${knX-dir*8} ${hp+28}, ${knX-dir*7} ${hp+16}, ${hipX-dir*1} ${hp+11}
+          Z`;
 }
 // 통합 SVG 빌더 — facing: 'front'|'back'|'side', raise: 강조 동작
 function buildSilhouette(opts){
   const p=_silhouetteParams();
   const o = Object.assign({facing:'front', raise:null, arms:'down', labelL:'', labelR:'', warning:'', note:'', extras:''}, opts);
   const cx=50;
-  // 머리 (전면/후면은 정원, 측면은 살짝 앞으로)
   const headOffset = o.facing==='side' ? 2 : 0;
   const head=`<ellipse cx="${cx+headOffset}" cy="${p.necky-13}" rx="${p.headRx}" ry="${p.headRy}" class="bg-fill"/>`;
-  // 양팔 위치 결정: 'down'(기본) | 'left-up'(SVG 왼쪽 팔만 거상) | 'right-up' | 'both-up'(OHS)
-  const armL = (o.arms==='left-up' || o.arms==='both-up') ? _armPath(p,'l',true)
-             : _armPath(p,'l',false);
-  const armR = (o.arms==='right-up' || o.arms==='both-up') ? _armPath(p,'r',true)
-             : _armPath(p,'r',false);
+  const armL = (o.arms==='left-up' || o.arms==='both-up') ? _armPath(p,'l',true) : _armPath(p,'l',false);
+  const armR = (o.arms==='right-up' || o.arms==='both-up') ? _armPath(p,'r',true) : _armPath(p,'r',false);
   const armLcls = (o.arms==='left-up'||o.arms==='both-up') ? 'hi-fill' : 'bg-fill';
   const armRcls = (o.arms==='right-up'||o.arms==='both-up') ? 'hi-fill' : 'bg-fill';
-  // 무릎 거상 (강조)
-  let extraLimb='';
-  if(o.raise==='kneeUp-l'){ extraLimb=`<path d="${_kneeUpFront(p,'l')}" class="hi-fill"/>`; }
-  if(o.raise==='kneeUp-r'){ extraLimb=`<path d="${_kneeUpFront(p,'r')}" class="hi-fill"/>`; }
-  // 본체
-  const body=`<path d="${_bodyFrontPath(p,o.raise)}" class="bg-fill"/>`;
-  // 발 (전면=발끝 길게/카메라쪽, 후면=뒤꿈치 짧게)
-  let feet='';
-  if(o.facing==='front'){
-    feet=`<path class="bg-fill" d="M ${cx-p.pvW+1} ${p.ankley+4} Q ${cx-p.pvW-1} ${p.ankley+14} ${cx-p.pvW+5} ${p.ankley+17} L ${cx-3} ${p.ankley+15} L ${cx-3} ${p.ankley+5} Z"/>
-           <path class="bg-fill" d="M ${cx+p.pvW-1} ${p.ankley+4} Q ${cx+p.pvW+1} ${p.ankley+14} ${cx+p.pvW-5} ${p.ankley+17} L ${cx+3} ${p.ankley+15} L ${cx+3} ${p.ankley+5} Z"/>`;
-  } else if(o.facing==='back'){
-    feet=`<path class="bg-fill" d="M ${cx-p.pvW} ${p.ankley+4} Q ${cx-p.pvW-1} ${p.ankley+10} ${cx-p.pvW+3} ${p.ankley+12} L ${cx-3} ${p.ankley+10} L ${cx-3} ${p.ankley+5} Z"/>
-           <path class="bg-fill" d="M ${cx+p.pvW} ${p.ankley+4} Q ${cx+p.pvW+1} ${p.ankley+10} ${cx+p.pvW-3} ${p.ankley+12} L ${cx+3} ${p.ankley+10} L ${cx+3} ${p.ankley+5} Z"/>`;
+  // 토르소
+  const torso=`<path d="${_bodyFrontPath(p,o.raise)}" class="bg-fill"/>`;
+  // 다리: 무릎 거상이면 한 다리는 들고(골드) 반대는 지지(정상)
+  let legs='', feetSides=[];
+  if(o.raise==='kneeUp-r'){ // SVG 오른쪽 무릎 거상 → 왼쪽 다리 지지
+    legs=`<path d="${_legPath(p,'l')}" class="bg-fill"/><path d="${_kneeUpFront(p,'r')}" class="hi-fill"/>`;
+    feetSides=['l'];
+  } else if(o.raise==='kneeUp-l'){
+    legs=`<path d="${_legPath(p,'r')}" class="bg-fill"/><path d="${_kneeUpFront(p,'l')}" class="hi-fill"/>`;
+    feetSides=['r'];
+  } else {
+    legs=`<path d="${_legPath(p,'l')}" class="bg-fill"/><path d="${_legPath(p,'r')}" class="bg-fill"/>`;
+    feetSides=['l','r'];
   }
-  // 라벨 (박스 안 좌·우 코너) — 강조 부위에만 표시
+  // 발 (전면=발끝 길게/카메라쪽, 후면=뒤꿈치 짧게) — 지지 다리에만
+  const footFront=(dir)=>`<path class="bg-fill" d="M ${cx+dir*(p.pvW-4)} ${p.ankley+1} Q ${cx+dir*(p.pvW-2)} ${p.ankley+13} ${cx+dir*(p.pvW-7)} ${p.ankley+16} L ${cx+dir*3} ${p.ankley+14} L ${cx+dir*4} ${p.ankley+2} Z"/>`;
+  const footBack=(dir)=>`<path class="bg-fill" d="M ${cx+dir*(p.pvW-4)} ${p.ankley+1} Q ${cx+dir*(p.pvW-2)} ${p.ankley+9} ${cx+dir*(p.pvW-7)} ${p.ankley+11} L ${cx+dir*4} ${p.ankley+9} L ${cx+dir*4} ${p.ankley+2} Z"/>`;
+  let feet='';
+  feetSides.forEach(s=>{const dir=s==='l'?-1:1; feet += (o.facing==='back'?footBack(dir):footFront(dir));});
   const lbl = (o.labelL ? `<text x="6" y="14" class="tag-l">${o.labelL}</text>` : '') +
               (o.labelR ? `<text x="94" y="14" text-anchor="end" class="tag-r">${o.labelR}</text>` : '');
-  // 기준선 (어깨선·골반선) — 정적 자세에서만 표시
   const refLines = o.refLines ? `
     <line x1="6" y1="${p.shy}" x2="94" y2="${p.shy}" class="ref-h"/>
     <line x1="6" y1="${p.hipy}" x2="94" y2="${p.hipy}" class="ref-h"/>
@@ -699,17 +718,16 @@ function buildSilhouette(opts){
     .hi-fill{fill:rgba(255,200,0,.22);stroke:#ffc81e;stroke-width:1.3;stroke-dasharray:3.5,2.2;stroke-linejoin:round}
     .ref-h{stroke:#ff7777;stroke-width:.5;stroke-dasharray:3,2;opacity:.6;fill:none}
     .tn{fill:#7dd4b4;font-size:3.2px;font-family:sans-serif;font-weight:600}
-    .tag-l{fill:#ffd700;font-size:5.5px;font-weight:800;font-family:sans-serif}
-    .tag-r{fill:#ffd700;font-size:5.5px;font-weight:800;font-family:sans-serif}
+    .tag-l,.tag-r{fill:#ffd700;font-size:5.5px;font-weight:800;font-family:sans-serif}
     .ohs-bar{fill:rgba(255,200,0,.30);stroke:#ffc81e;stroke-width:1.0}
     .note{fill:#9de8c8;font-size:3.4px;font-family:sans-serif;font-weight:600}
   </style></defs>
   ${refLines}
   ${armL ? `<path d="${armL}" class="${armLcls}"/>`:''}
   ${armR ? `<path d="${armR}" class="${armRcls}"/>`:''}
-  ${body}
+  ${legs}
+  ${torso}
   ${head}
-  ${extraLimb}
   ${feet}
   ${lbl}
   ${o.extras||''}`;
@@ -1329,7 +1347,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.19.0';
+const APP_VERSION='v1.19.1';
 const BUILD_TIME='2026-06-03';
 
 // ═══════════════════════════════════════════
@@ -1381,6 +1399,12 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.19.1', date:'2026-06-03', items:[
+    '👤 실루엣 치마 현상 수정 — 양다리 분리(가랑이 갭) 구조로 재작성, 사람 형태로 보이도록',
+    '📋 업데이트 내역 위치 이동 — 홈 상단(히어로 바로 아래) 펼침 상태로 즉시 표시 + 버전·날짜 배너',
+    '🔤 한글 웹폰트 Pretendard 적용 (CDN) — 더 정제된 타이포 (로드 실패 시 시스템 폰트 자동 폴백)',
+    '📱 SLR 가로 가이드 비율 재검증 — 가로 화면 박스에 실루엣이 적정 크기로 채워지는 것 확인',
+  ]},
   {ver:'v1.19.0', date:'2026-06-03', items:[
     '🎨 메인 홈 전면 개편 — 큰 글씨, 2×2 그리드 카드, 변경내역 상시 표시(날짜 기준, 첫 항목 자동 펼침)',
     '👤 실루엣 전면 재설계 — 7.5두신 인체 비례, 부드러운 윤곽으로 교체',
@@ -1723,12 +1747,11 @@ function renderChangelog(){
   // 홈 화면에 처음부터 펼침 상태로 (변경내역 상시 표시)
   const cl=document.getElementById('lsChangelog');
   const hd=cl?.querySelector('.ls-cl-hd');
-  if(hd && !hd.classList.contains('open')){
-    hd.classList.add('open');
-  }
-  if(body && body.style.display!=='block'){
-    body.style.display='block';
-  }
+  if(hd) hd.classList.add('open');
+  if(body) body.style.display='block';
+  // 히어로 하단 버전 표기 (최신 날짜·버전)
+  const vEl=document.getElementById('lsVersion');
+  if(vEl && CHANGELOG.length) vEl.textContent=`${APP_VERSION} · ${CHANGELOG[0].date} 업데이트`;
 }
 function toggleChangelog(){
   const hd=document.querySelector('#lsChangelog .ls-cl-hd');
