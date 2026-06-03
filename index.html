@@ -273,9 +273,8 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
 /* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
 .gbox{position:absolute;border:2px solid rgba(0,212,139,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
-/* 안내문(라벨/경고) 자동 페이드아웃 */
-#camPoseLabel,#camWarning{transition:opacity .8s ease}
-.cam-guide.hint-faded #camWarning{opacity:0}
+/* 안내문(경고) 자동 페이드아웃 — opacity는 openCam에서 인라인 제어 */
+#camWarning{transition:opacity 1s ease}
 .gtip{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,168,120,.85);color:#fff;font-size:12px;padding:4px 14px;border-radius:12px;white-space:nowrap;font-weight:600}
 /* 박스 안의 중앙 십자선/격자 제거 — 시각 노이즈 줄이고 실루엣만 부각 */
 .gcv{display:none}
@@ -592,21 +591,25 @@ function _silhouetteParams(){
   const genderEl=document.getElementById('cGender');
   if(heightEl?.value){const n=parseFloat(heightEl.value);if(n>=140&&n<=210) h=n;}
   if(genderEl?.value==='F'||genderEl?.value==='M') g=genderEl.value;
-  // 어깨폭/골반폭(% of viewBox 100) — 여성은 어깨 좁고 골반 넓음
   const isF = g==='F';
+  // v1.19.3: 키 반영 — 기준 170cm 대비 t(−0.8~+1.0). 큰 키일수록 다리 길고(골반선↑) 약간 슬림.
+  const hr=Math.max(150,Math.min(195,h));
+  const t=(hr-170)/25;
+  // 성별 기본 폭(여성: 어깨 좁고 골반 넓음) + 키에 따른 미세 슬림 보정
+  const slim=1 - t*0.06; // 큰 키일수록 폭 약간 축소
   return {
-    g, h,
-    shW: isF? 28 : 33,  // 어깨 반폭
-    pvW: isF? 22 : 19,  // 골반 반폭
-    headRx: isF? 9.0 : 9.5,
-    headRy: isF? 11.5 : 12,
-    waistW: isF? 14 : 16,
-    necky:  34,
-    shy:   42, // 어깨선 y
-    waisty:78, // 허리
-    hipy:  104,// 골반선 y
-    kneey: 148,
-    ankley:178,
+    g, h, t,
+    shW: (isF? 28 : 33) * slim,   // 어깨 반폭
+    pvW: (isF? 22 : 19) * slim,   // 골반 반폭
+    waistW: (isF? 14 : 16) * slim,
+    headRx: (isF? 9.0 : 9.5) * (1 - t*0.05), // 큰 키 → 머리 상대적으로 약간 작게
+    headRy: (isF? 11.5 : 12) * (1 - t*0.05),
+    necky:  34 - t*1.5,
+    shy:    42 - t*1.5,   // 어깨선
+    waisty: 78 - t*2.5,
+    hipy:   104 - t*4,    // 골반선 — 큰 키일수록 위로(다리 길어짐)
+    kneey:  148 - t*1.5,
+    ankley: 178,          // 발목은 바닥 고정
   };
 }
 // 부드러운 풀바디 외곽 (전면). raise: 'lt-arm'|'rt-arm'|'lt-knee'|'rt-knee'|null
@@ -1350,7 +1353,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.19.2';
+const APP_VERSION='v1.19.3';
 const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
@@ -1402,6 +1405,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.19.3', date:'2026-06-04', items:[
+    '🐛 촬영 안내문 5초 후 사라지지 않던 문제 수정 (인라인 opacity 직접 제어)',
+    '🧍 실루엣에 키 반영 추가 — 큰 키일수록 다리 길고 약간 슬림, 작은 키는 컴팩트',
+    '🧍 성별 반영 보강 — 남성 어깨 넓게 / 여성 골반 넓게 (키 보정과 결합)',
+  ]},
   {ver:'v1.19.2', date:'2026-06-04', items:[
     '📅 업데이트 날짜 자동화 — 배포 시각(서버 최종 수정일)을 자동 표시해 날짜 어긋남 방지',
     '📷 모든 촬영 박스 화면 최대로 확대 — 여백 최소(상하 3.5%·좌우 3%)',
@@ -2429,13 +2437,12 @@ function openCam(tid,slot){
   // v1.18: SLR은 가로 촬영 — 수평계 계산을 가로 모드로 전환하는 플래그
   document.getElementById('camOv').classList.toggle('cam-landscape-shot', tid==='slr_l'||tid==='slr_r');
   document.getElementById('camOv').classList.add('show');
-  // v1.19.2: 안내문(경고) 5초 후 서서히 소멸 — 처음 5초만 노출
-  const gw=document.getElementById('camGuideWrap');
+  // v1.19.3: 안내문(경고) 5초 후 서서히 소멸 — 인라인 opacity로 직접 제어
+  // (이전 버그: 인라인 opacity:1 이 CSS .hint-faded 클래스를 이겨서 안 사라짐)
   const wrn=document.getElementById('camWarning');
-  if(gw) gw.classList.remove('hint-faded');
   if(wrn) wrn.style.opacity='1';
   clearTimeout(window._hintFadeTimer);
-  window._hintFadeTimer=setTimeout(()=>{ if(gw) gw.classList.add('hint-faded'); },5000);
+  window._hintFadeTimer=setTimeout(()=>{ if(wrn) wrn.style.opacity='0'; },5000);
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
     .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
