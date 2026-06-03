@@ -826,16 +826,16 @@ const POSE_GUIDES = {
           svg: ()=>buildSilhouette({facing:'back', arms:'down', refLines:true,
             extras:`<text x="50" y="216" text-anchor="middle" class="note">정상: 견갑 대칭 · 골반 수평 · POTSI &lt; 27</text>
                    <text x="50" y="206" text-anchor="middle" class="note" fill="#ffc81e">▲ 뒤꿈치가 카메라 쪽 (후면)</text>`}) },
-  sh_flex_l: { label:'Lt. Shoulder Abduction — 고객 좌측 팔 (카메라 우측에 보임)', warning:'전신 보이도록 · 고객 좌측 팔 옆으로 최대 거상', viewBox:'0 0 100 220',
-          svg: ()=>buildSilhouette({facing:'front', arms:'right-up', labelR:'Lt. ↑',
+  sh_flex_l: { label:'Lt. Shoulder Abduction — 후면 · 고객 좌측 팔 (화면 좌측에 보임)', warning:'후면 촬영 · 고객 좌측 팔 옆으로 최대 거상', viewBox:'0 0 100 220',
+          svg: ()=>buildSilhouette({facing:'back', arms:'left-up', labelL:'↑ Lt.',
             extras:`<text x="50" y="216" text-anchor="middle" class="note">정상: Lt. 팔 180° 외전 · 견갑 리듬 자연스럽게</text>`}) },
-  sh_flex_r: { label:'Rt. Shoulder Abduction — 고객 우측 팔 (카메라 좌측에 보임)', warning:'전신 보이도록 · 고객 우측 팔 옆으로 최대 거상', viewBox:'0 0 100 220',
-          svg: ()=>buildSilhouette({facing:'front', arms:'left-up', labelL:'↑ Rt.',
+  sh_flex_r: { label:'Rt. Shoulder Abduction — 후면 · 고객 우측 팔 (화면 우측에 보임)', warning:'후면 촬영 · 고객 우측 팔 옆으로 최대 거상', viewBox:'0 0 100 220',
+          svg: ()=>buildSilhouette({facing:'back', arms:'right-up', labelR:'Rt. ↑',
             extras:`<text x="50" y="216" text-anchor="middle" class="note">정상: Rt. 팔 180° 외전 · 견갑 리듬 자연스럽게</text>`}) },
-  sku:  { label:'Standing Knee Up — 좌측 (카메라 우측에 보임)', warning:'단색 배경 · 지지발 안정 · 고객 좌측 무릎 최대 거상', viewBox:'0 0 100 220',
+  sku:  { label:'Standing Knee Up — 좌측 (정면 · 카메라 우측에 보임)', warning:'정면 촬영 · 지지발 안정 · 고객 좌측 무릎 최대 거상', viewBox:'0 0 100 220',
           svg: ()=>buildSilhouette({facing:'front', arms:'down', raise:'kneeUp-r', labelR:'↑ Lt. 무릎',
             extras:`<text x="50" y="216" text-anchor="middle" class="note">정상: 무릎 90° · 지지측 골반 수평</text>`}) },
-  sku_r:{ label:'Standing Knee Up — 우측 (카메라 좌측에 보임)', warning:'단색 배경 · 지지발 안정 · 고객 우측 무릎 최대 거상', viewBox:'0 0 100 220',
+  sku_r:{ label:'Standing Knee Up — 우측 (정면 · 카메라 좌측에 보임)', warning:'정면 촬영 · 지지발 안정 · 고객 우측 무릎 최대 거상', viewBox:'0 0 100 220',
           svg: ()=>buildSilhouette({facing:'front', arms:'down', raise:'kneeUp-l', labelL:'Rt. 무릎 ↑',
             extras:`<text x="50" y="216" text-anchor="middle" class="note">정상: 무릎 90° · 지지측 골반 수평</text>`}) },
   ohs_b:{ label:'OHS 후면 — 팔 overhead, 최저점 유지', warning:'발 어깨너비 · 끝 약간 외회전 · 등이 카메라', viewBox:'0 0 100 220',
@@ -1052,11 +1052,11 @@ const TESTS = [
   {id:'lat',       n:2,  sec:'side',  title:'스탠딩 - 좌측면 (Lateral)',   sub:'거북목·흉추후만·요추전만',           tip:'고객 좌측에서 촬영 (좌측면 카메라 쪽)'},
   {id:'post',      n:3,  sec:'back',  title:'스탠딩 - 후면 (Posterior)',   sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
   // ─── 2) 숄더 외전 좌·우 ───
-  {id:'sh_flex_l', n:4,  sec:'front', title:'Shoulder Abduction — 좌측',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 좌측 팔 옆으로 최대 거상'},
-  {id:'sh_flex_r', n:5,  sec:'front', title:'Shoulder Abduction — 우측',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'정면, 우측 팔 옆으로 최대 거상'},
+  {id:'sh_flex_l', n:4,  sec:'back',  title:'Shoulder Abduction — 좌측 (후면)',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 좌측 팔 옆으로 최대 거상'},
+  {id:'sh_flex_r', n:5,  sec:'back',  title:'Shoulder Abduction — 우측 (후면)',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 우측 팔 옆으로 최대 거상'},
   // ─── 3) SKU 좌·우 ───
-  {id:'sku',       n:6,  sec:'front', title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · 정상 무릎 90°', tip:'전면, 좌측 무릎 최대 거상'},
-  {id:'sku_r',     n:7,  sec:'front', title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · 정상 무릎 90°', tip:'전면, 우측 무릎 최대 거상'},
+  {id:'sku',       n:6,  sec:'front', title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 좌측 무릎 최대 거상'},
+  {id:'sku_r',     n:7,  sec:'front', title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 우측 무릎 최대 거상'},
   // ─── 4) OHS 후면 → 좌측면 ───
   {id:'ohs_b',     n:8,  sec:'back',  title:'Overhead Squat — 후면',       sub:'발목 내번 · 골반 회전 · 무릎 collapse', tip:'후면, OHS 최저점 유지'},
   {id:'ohs_l',     n:9,  sec:'side',  title:'Overhead Squat — 좌측면',     sub:'상체 전방경사 · 흉추 가동성',           tip:'⚡ 고객 좌측 촬영, OHS 최저점'},
@@ -1212,8 +1212,8 @@ const TEST_KEY={
   ant:[0,11,12,23,24,25,26,27,28],   // 전신 (팔꿈치/손목 제외)
   post:[11,12,23,24,25,26,27,28],    // 후면 — 머리 안 잡힘
   lat:[7,11,23,25,27],               // 측면 — 좌측 한쪽만 (귀·어깨·골반·무릎·발목)
-  sh_flex_l:[0,11,12,13,14,15,16],   // 어깨 외전 — 상체만
-  sh_flex_r:[0,11,12,13,14,15,16],
+  sh_flex_l:[11,12,13,14,15,16],   // 어깨 외전(후면) — 어깨·팔만 (코 안 보임)
+  sh_flex_r:[11,12,13,14,15,16],
   sku:[11,12,23,24,25,26,27,28],     // 무릎 거상 — 머리 제외, 하체 강조
   sku_r:[11,12,23,24,25,26,27,28],
   trunk_b:[11,12,23,24],             // 전굴 후면 — 어깨/골반만
@@ -1353,7 +1353,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.19.3';
+const APP_VERSION='v1.19.4';
 const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
@@ -1405,6 +1405,10 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.19.4', date:'2026-06-04', items:[
+    '🔄 어깨 외전 검사를 후면 기준으로 변경 (견갑 리듬 관찰에 적합) — 가이드/안내 후면으로 통일',
+    '✅ 무릎 들기는 정면 유지',
+  ]},
   {ver:'v1.19.3', date:'2026-06-04', items:[
     '🐛 촬영 안내문 5초 후 사라지지 않던 문제 수정 (인라인 opacity 직접 제어)',
     '🧍 실루엣에 키 반영 추가 — 큰 키일수록 다리 길고 약간 슬림, 작은 키는 컴팩트',
