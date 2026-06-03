@@ -271,8 +271,11 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cam-body{flex:1;position:relative;overflow:hidden}
 #camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
-/* v1.19: 박스를 풀샷에 가깝게 (여백 최소). 박스 안엔 실루엣만, 안내문은 박스 바깥 상단/하단으로 분리 */
-.gbox{position:absolute;border:2px solid rgba(0,212,139,.95);top:9%;bottom:9%;left:5%;right:5%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.18)}
+/* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
+.gbox{position:absolute;border:2px solid rgba(0,212,139,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
+/* 안내문(라벨/경고) 자동 페이드아웃 */
+#camPoseLabel,#camWarning{transition:opacity .8s ease}
+.cam-guide.hint-faded #camWarning{opacity:0}
 .gtip{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,168,120,.85);color:#fff;font-size:12px;padding:4px 14px;border-radius:12px;white-space:nowrap;font-weight:600}
 /* 박스 안의 중앙 십자선/격자 제거 — 시각 노이즈 줄이고 실루엣만 부각 */
 .gcv{display:none}
@@ -520,13 +523,13 @@ input[type=range]{accent-color:var(--green)}
     <video id="camVid" autoplay playsinline muted></video>
     <div class="cam-guide" id="camGuideWrap">
       <div class="gbox"></div>
-      <!-- v1.19: 박스 안엔 실루엣만 — gbox와 동일 위치 -->
-      <div id="camGuideSvgWrap" style="position:absolute;top:9%;bottom:9%;left:5%;right:5%;pointer-events:none;overflow:hidden">
+      <!-- v1.19.2: 박스 거의 풀스크린 — 실루엣도 박스에 맞춰 확대 -->
+      <div id="camGuideSvgWrap" style="position:absolute;top:3.5%;bottom:3.5%;left:3%;right:3%;pointer-events:none;overflow:hidden">
         <svg id="camGuideSvg" viewBox="0 0 100 220" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;overflow:hidden"></svg>
       </div>
-      <!-- v1.19: 라벨/경고문은 박스 바깥 (상단·하단 여백 영역) -->
-      <div id="camPoseLabel" style="position:absolute;top:2%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#9de8c8;font-size:12.5px;font-weight:700;padding:6px 16px;border-radius:12px;white-space:nowrap;pointer-events:none;max-width:94%;text-align:center;letter-spacing:.02em"></div>
-      <div id="camWarning" style="position:absolute;bottom:2%;left:50%;transform:translateX(-50%);background:rgba(220,38,38,.92);color:#fff;font-size:12px;font-weight:700;padding:7px 16px;border-radius:12px;pointer-events:none;text-align:center;line-height:1.45;max-width:94%">⚠️ 거울 앞 촬영 금지 · 단색 배경 · 카메라 정면</div>
+      <!-- v1.19.2: 라벨/경고문은 박스 안쪽 상·하단 — 5초 후 경고문 자동 소멸 -->
+      <div id="camPoseLabel" style="position:absolute;top:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#9de8c8;font-size:12.5px;font-weight:700;padding:6px 16px;border-radius:12px;white-space:nowrap;pointer-events:none;max-width:90%;text-align:center;letter-spacing:.02em"></div>
+      <div id="camWarning" style="position:absolute;bottom:6%;left:50%;transform:translateX(-50%);background:rgba(220,38,38,.92);color:#fff;font-size:12px;font-weight:700;padding:7px 16px;border-radius:12px;pointer-events:none;text-align:center;line-height:1.45;max-width:90%">⚠️ 거울 앞 촬영 금지 · 단색 배경 · 카메라 정면</div>
       <!-- Device level indicator (phone tilt) -->
       <div id="camLevel" style="position:absolute;top:50%;right:12px;transform:translateY(-50%);background:rgba(0,0,0,.55);border-radius:14px;padding:8px 6px;display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none">
         <div style="font-size:9px;color:#9de8c8;font-weight:700;letter-spacing:.05em">LEVEL</div>
@@ -1347,8 +1350,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.19.1';
-const BUILD_TIME='2026-06-03';
+const APP_VERSION='v1.19.2';
+const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1399,6 +1402,12 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.19.2', date:'2026-06-04', items:[
+    '📅 업데이트 날짜 자동화 — 배포 시각(서버 최종 수정일)을 자동 표시해 날짜 어긋남 방지',
+    '📷 모든 촬영 박스 화면 최대로 확대 — 여백 최소(상하 3.5%·좌우 3%)',
+    '📱 SLR 가로 촬영 시 박스를 화면 거의 전체(여백 2%)로 → 실루엣 크게 채움',
+    '💬 박스 안 안내문은 처음 5초만 표시 후 서서히 사라짐(촬영 시야 방해 최소화)',
+  ]},
   {ver:'v1.19.1', date:'2026-06-03', items:[
     '👤 실루엣 치마 현상 수정 — 양다리 분리(가랑이 갭) 구조로 재작성, 사람 형태로 보이도록',
     '📋 업데이트 내역 위치 이동 — 홈 상단(히어로 바로 아래) 펼침 상태로 즉시 표시 + 버전·날짜 배너',
@@ -1749,9 +1758,21 @@ function renderChangelog(){
   const hd=cl?.querySelector('.ls-cl-hd');
   if(hd) hd.classList.add('open');
   if(body) body.style.display='block';
-  // 히어로 하단 버전 표기 (최신 날짜·버전)
+  // 히어로 하단 버전 표기 — 배포 시각(document.lastModified)을 자동 사용 → 날짜 드리프트 없음
   const vEl=document.getElementById('lsVersion');
-  if(vEl && CHANGELOG.length) vEl.textContent=`${APP_VERSION} · ${CHANGELOG[0].date} 업데이트`;
+  if(vEl) vEl.textContent=`${APP_VERSION} · 최종 업데이트 ${lastModifiedDateStr()}`;
+}
+// 서버가 내려준 파일 최종 수정일(=배포 시각)을 YYYY-MM-DD로. 실패 시 빌드상수 폴백.
+function lastModifiedDateStr(){
+  try{
+    const d=new Date(document.lastModified);
+    if(!isNaN(d.getTime()) && d.getFullYear()>2020){
+      const mm=String(d.getMonth()+1).padStart(2,'0');
+      const dd=String(d.getDate()).padStart(2,'0');
+      return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+  }catch(e){}
+  return BUILD_TIME;
 }
 function toggleChangelog(){
   const hd=document.querySelector('#lsChangelog .ls-cl-hd');
@@ -2408,6 +2429,13 @@ function openCam(tid,slot){
   // v1.18: SLR은 가로 촬영 — 수평계 계산을 가로 모드로 전환하는 플래그
   document.getElementById('camOv').classList.toggle('cam-landscape-shot', tid==='slr_l'||tid==='slr_r');
   document.getElementById('camOv').classList.add('show');
+  // v1.19.2: 안내문(경고) 5초 후 서서히 소멸 — 처음 5초만 노출
+  const gw=document.getElementById('camGuideWrap');
+  const wrn=document.getElementById('camWarning');
+  if(gw) gw.classList.remove('hint-faded');
+  if(wrn) wrn.style.opacity='1';
+  clearTimeout(window._hintFadeTimer);
+  window._hintFadeTimer=setTimeout(()=>{ if(gw) gw.classList.add('hint-faded'); },5000);
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
     .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
@@ -3024,15 +3052,13 @@ function updateCamGuide(tid){
   const isLandscape = vb.length===4 && vb[2]>vb[3]; // width > height
   const wrap=document.getElementById('camGuideSvgWrap');
   const gbox=document.querySelector('#camOv .gbox');
-  // v1.19: 풀샷 가까운 박스 + SLR(가로)는 실루엣이 적정 크기로 보이는 박스 비율
+  // v1.19.2: SLR(가로 viewBox)은 박스를 화면 최대로(여백 2%) → 휴대폰을 가로로 돌리면 실루엣이 크게 채워짐.
+  //          그 외 정적 자세는 박스 거의 풀(여백 상하 3.5%·좌우 3%).
   if(isLandscape){
-    // 사용자가 휴대폰을 가로로 돌렸을 때 — 실루엣 비율(viewBox 200×110 ≈ 1.82:1)에 맞춤
-    // 화면이 portrait(세로)라면 박스가 매우 납작해 보이므로 가운데에 중간 높이로 배치,
-    // landscape(가로)면 박스가 거의 풀샷
-    if(wrap){wrap.style.top='22%';wrap.style.bottom='22%';wrap.style.left='5%';wrap.style.right='5%';}
-    if(gbox){gbox.style.top='22%';gbox.style.bottom='22%';gbox.style.left='5%';gbox.style.right='5%';}
+    if(wrap){wrap.style.top='2%';wrap.style.bottom='2%';wrap.style.left='2%';wrap.style.right='2%';}
+    if(gbox){gbox.style.top='2%';gbox.style.bottom='2%';gbox.style.left='2%';gbox.style.right='2%';}
   }else{
-    if(wrap){wrap.style.top='9%';wrap.style.bottom='9%';wrap.style.left='5%';wrap.style.right='5%';}
+    if(wrap){wrap.style.top='3.5%';wrap.style.bottom='3.5%';wrap.style.left='3%';wrap.style.right='3%';}
     if(gbox){gbox.style.top='';gbox.style.bottom='';gbox.style.left='';gbox.style.right='';}
   }
 }
