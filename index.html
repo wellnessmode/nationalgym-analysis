@@ -524,6 +524,8 @@ input[type=range]{accent-color:var(--green)}
       <div class="gbox"></div>
       <!-- v1.19.2: 박스 거의 풀스크린 — 실루엣도 박스에 맞춰 확대 -->
       <div id="camGuideSvgWrap" style="position:absolute;top:3.5%;bottom:3.5%;left:3%;right:3%;pointer-events:none;overflow:hidden">
+        <!-- v1.20: 실사 PNG 가이드 (있으면 우선) -->
+        <img id="camGuideImg" alt="" style="display:none;width:100%;height:100%;object-fit:contain;opacity:.92">
         <svg id="camGuideSvg" viewBox="0 0 100 220" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;overflow:hidden"></svg>
       </div>
       <!-- v1.19.2: 라벨/경고문은 박스 안쪽 상·하단 — 5초 후 경고문 자동 소멸 -->
@@ -862,17 +864,38 @@ const DEFAULT_GUIDE = {
   viewBox:'0 0 100 220',
   svg:''
 };
+// v1.20: 실사 PNG 가이드 매핑 — {b:파일베이스, m:좌우반전} (없는 검사는 SVG 폴백)
+// 좌/우 쌍은 동일 이미지를 mirror(scaleX -1)로 재사용
+const POSE_IMG = {
+  ant:{b:'ant'}, lat:{b:'lat'}, post:{b:'post'},
+  sh_flex_l:{b:'shf',m:1}, sh_flex_r:{b:'shf'},   // 후면 외전
+  sku:{b:'sku',m:1},       sku_r:{b:'sku'},       // 정면 무릎 들기
+  ohs_b:{b:'ohs_b'}, ohs_l:{b:'ohs_l'},
+  trunk_l:{b:'trunk_l'}, trunk_b:{b:'trunk_b'},
+  slr_l:{b:'slr'}, slr_r:{b:'slr',m:1},
+};
 
 function updateCamGuide(tid){
   const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
   const svgEl=document.getElementById('camGuideSvg');
+  const imgEl=document.getElementById('camGuideImg');
   const labelEl=document.getElementById('camPoseLabel');
   const warnEl=document.getElementById('camWarning');
   const tipEl=document.getElementById('camTip');
-  if(svgEl){
-    svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
-    // v1.19: svg는 함수형(()=>string) 또는 문자열 모두 지원
-    svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
+  const pi=(typeof POSE_IMG!=='undefined')?POSE_IMG[tid]:null;
+  if(pi && imgEl){
+    imgEl.onerror=()=>{ imgEl.style.display='none'; if(svgEl) svgEl.style.display='block'; };
+    imgEl.src=`poses/${pi.b}.webp`;
+    imgEl.style.transform = pi.m ? 'scaleX(-1)' : 'none';
+    imgEl.style.display='block';
+    if(svgEl) svgEl.style.display='none';
+  }else{
+    if(imgEl) imgEl.style.display='none';
+    if(svgEl){
+      svgEl.style.display='block';
+      svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
+      svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
+    }
   }
   if(labelEl) labelEl.textContent=g.label||'';
   if(warnEl) warnEl.textContent='⚠️ '+g.warning;
@@ -1353,7 +1376,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.19.4';
+const APP_VERSION='v1.20.0';
 const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
@@ -1405,6 +1428,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.20.0', date:'2026-06-04', items:[
+    '🖼 촬영 가이드 실루엣을 실사 PNG로 교체 — 13개 자세 모두 (어깨외전=후면, 무릎들기=정면)',
+    '🟡 강조 부위(드는 팔/무릎/다리) 골드 표시 유지, 좌우는 자동 반전 처리',
+    '🪶 이미지 최적화 — 투명 WebP 10장 총 약 470KB (브라우저 캐시), 실패 시 기존 SVG 자동 폴백',
+  ]},
   {ver:'v1.19.4', date:'2026-06-04', items:[
     '🔄 어깨 외전 검사를 후면 기준으로 변경 (견갑 리듬 관찰에 적합) — 가이드/안내 후면으로 통일',
     '✅ 무릎 들기는 정면 유지',
@@ -3047,13 +3075,24 @@ JSON만.
 function updateCamGuide(tid){
   const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
   const svgEl=document.getElementById('camGuideSvg');
+  const imgEl=document.getElementById('camGuideImg');
   const labelEl=document.getElementById('camPoseLabel');
   const warnEl=document.getElementById('camWarning');
   const tipEl=document.getElementById('camTip');
-  if(svgEl){
-    svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
-    // v1.19: svg는 함수형(()=>string) 또는 문자열 모두 지원
-    svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
+  const pi=(typeof POSE_IMG!=='undefined')?POSE_IMG[tid]:null;
+  if(pi && imgEl){
+    imgEl.onerror=()=>{ imgEl.style.display='none'; if(svgEl) svgEl.style.display='block'; };
+    imgEl.src=`poses/${pi.b}.webp`;
+    imgEl.style.transform = pi.m ? 'scaleX(-1)' : 'none';
+    imgEl.style.display='block';
+    if(svgEl) svgEl.style.display='none';
+  }else{
+    if(imgEl) imgEl.style.display='none';
+    if(svgEl){
+      svgEl.style.display='block';
+      svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
+      svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
+    }
   }
   if(labelEl) labelEl.textContent=g.label||'';
   if(warnEl) warnEl.textContent='⚠️ '+g.warning;
