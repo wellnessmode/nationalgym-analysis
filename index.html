@@ -315,24 +315,21 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-btn-secondary{background:rgba(255,255,255,.07);color:#d1d5db;border:1px solid rgba(255,255,255,.14);padding:14px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit;letter-spacing:.01em}
 .ls-btn-secondary:active{background:rgba(255,255,255,.12)}
 /* v1.19: 변경 내역 — 홈 항상 표시, 날짜 기준, 첫 항목 펼침 */
-.ls-changelog{max-width:520px;margin:28px auto 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden}
-.ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;background:rgba(0,168,120,.06)}
-.ls-cl-hd-title{font-size:13px;font-weight:800;color:#9de8c8;letter-spacing:.05em;flex:1}
-.ls-cl-arrow{font-size:11px;color:rgba(255,255,255,.5);transition:transform .25s}
-.ls-cl-hd.open .ls-cl-arrow{transform:rotate(180deg)}
-.ls-cl-body{padding:6px 18px 14px;border-top:1px solid rgba(255,255,255,.06);max-height:420px;overflow-y:auto}
-.ls-cl-entry{padding:14px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(255,255,255,.04);border:1px solid rgba(0,212,139,.18);border-radius:14px;overflow:hidden}
+.ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;background:rgba(0,168,120,.10)}
+.ls-cl-hd-title{font-size:14px;font-weight:800;color:#9de8c8;letter-spacing:.04em;flex:1}
+.ls-cl-arrow{display:none}
+/* v1.20.2: 항상 펼쳐 보이게 — 아코디언 제거 */
+.ls-cl-body{padding:8px 16px 14px;max-height:300px;overflow-y:auto}
+.ls-cl-entry{padding:12px 0;border-bottom:1px dashed rgba(255,255,255,.10)}
 .ls-cl-entry:last-child{border-bottom:none}
-.ls-cl-entry-hd{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:2px 0}
+.ls-cl-entry-hd{display:flex;align-items:center;gap:10px;padding:2px 0;margin-bottom:8px}
 .ls-cl-entry-date{font-size:14px;font-weight:800;color:#00d48b;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.ls-cl-entry-ver{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);padding:2px 8px;background:rgba(255,255,255,.06);border-radius:6px}
-.ls-cl-entry-arrow{margin-left:auto;font-size:10px;color:rgba(255,255,255,.4);transition:transform .25s}
-.ls-cl-entry.open .ls-cl-entry-arrow{transform:rotate(180deg)}
-.ls-cl-entry-body{display:none;margin-top:10px}
-.ls-cl-entry.open .ls-cl-entry-body{display:block}
-.ls-cl-items{font-size:12.5px;color:#d1d5db;line-height:1.6;padding-left:4px;list-style:none}
-.ls-cl-items li{position:relative;padding-left:12px;margin-bottom:4px}
-.ls-cl-items li::before{content:'·';position:absolute;left:0;color:#00d48b;font-weight:900;font-size:13px}
+.ls-cl-entry-ver{font-size:10px;font-weight:700;color:rgba(255,255,255,.45);padding:2px 8px;background:rgba(255,255,255,.07);border-radius:6px}
+.ls-cl-items{font-size:12.5px;color:#e2e8f0;line-height:1.6;padding-left:2px;list-style:none}
+.ls-cl-items li{position:relative;padding-left:13px;margin-bottom:5px}
+.ls-cl-items li::before{content:'·';position:absolute;left:0;color:#00d48b;font-weight:900;font-size:15px;line-height:1}
+.ls-cl-more{display:block;width:100%;margin-top:6px;padding:10px;background:rgba(255,255,255,.05);color:#9de8c8;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
 .ls-footer{text-align:center;font-size:10px;color:rgba(255,255,255,.3);margin-top:22px;letter-spacing:.06em;font-weight:600}
 @media (max-width:380px){
   .ls-features{grid-template-columns:1fr 1fr;gap:8px}
@@ -382,11 +379,10 @@ input[type=range]{accent-color:var(--green)}
     <div class="ls-tagline">전·후 비교로 개선 결과를 시각화하는<br>NationalGym 전용 체형분석 솔루션</div>
     <div class="ls-version" id="lsVersion"></div>
   </div>
-  <!-- v1.19.1: 변경 내역 — 히어로 바로 아래(상단), 즉시 보이도록 -->
+  <!-- v1.20.2: 변경 내역 — 히어로 아래 항상 펼쳐 표시 -->
   <div id="lsChangelog" class="ls-changelog">
-    <div class="ls-cl-hd open" onclick="toggleChangelog()">
+    <div class="ls-cl-hd">
       <span class="ls-cl-hd-title">📋 업데이트 내역</span>
-      <span class="ls-cl-arrow" id="lsClArrow">▼</span>
     </div>
     <div class="ls-cl-body" id="lsClBody"></div>
   </div>
@@ -1376,7 +1372,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.20.1';
+const APP_VERSION='v1.20.2';
 const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
@@ -1428,6 +1424,9 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.20.2', date:'2026-06-04', items:[
+    '📋 홈 업데이트 내역 항상 펼쳐 표시 — 아코디언 제거, 최신 3개 바로 보이고 "이전 버전 더보기"로 추가 확인',
+  ]},
   {ver:'v1.20.1', date:'2026-06-04', items:[
     '🩹 실루엣 검은 반점 제거 — 내부 구멍 채워 완전 단색 실루엣으로 (특히 후면)',
     '🟡 강조 부위(드는 팔/무릎/다리) 내부를 골드로 채워 더 명확하게',
@@ -1786,23 +1785,20 @@ let poseEng=null,poseOk=false;
 function renderChangelog(){
   const body=document.getElementById('lsClBody');
   if(!body || typeof CHANGELOG==='undefined') return;
-  // v1.19: 날짜 중심, 첫 항목만 자동 펼침
-  body.innerHTML=CHANGELOG.map((c,i)=>`<div class="ls-cl-entry${i===0?' open':''}" onclick="this.classList.toggle('open');event.stopPropagation()">
+  // v1.20.2: 아코디언 제거 — 모든 항목 내용을 그대로 펼쳐 표시. 최신 3개는 바로 보이고
+  //          나머지는 "이전 버전 더보기"로 추가 표시.
+  const entryHTML=(c)=>`<div class="ls-cl-entry">
     <div class="ls-cl-entry-hd">
       <span class="ls-cl-entry-date">${c.date}</span>
       <span class="ls-cl-entry-ver">${c.ver}</span>
-      <span class="ls-cl-entry-arrow">▼</span>
     </div>
-    <div class="ls-cl-entry-body">
-      <ul class="ls-cl-items">${c.items.map(it=>`<li>${it}</li>`).join('')}</ul>
-    </div>
-  </div>`).join('');
-  // 홈 화면에 처음부터 펼침 상태로 (변경내역 상시 표시)
-  const cl=document.getElementById('lsChangelog');
-  const hd=cl?.querySelector('.ls-cl-hd');
-  if(hd) hd.classList.add('open');
-  if(body) body.style.display='block';
-  // 히어로 하단 버전 표기 — 배포 시각(document.lastModified)을 자동 사용 → 날짜 드리프트 없음
+    <ul class="ls-cl-items">${c.items.map(it=>`<li>${it}</li>`).join('')}</ul>
+  </div>`;
+  const recent=CHANGELOG.slice(0,3).map(entryHTML).join('');
+  const older=CHANGELOG.slice(3).map(entryHTML).join('');
+  body.innerHTML = recent + (older?`<div id="clOlder" style="display:none">${older}</div><button class="ls-cl-more" onclick="const o=document.getElementById('clOlder');const s=o.style.display==='none';o.style.display=s?'block':'none';this.textContent=s?'접기 ▲':'이전 버전 더보기 ▾'">이전 버전 더보기 ▾</button>`:'');
+  body.style.display='block';
+  // 히어로 하단 버전 표기 — 배포 시각(document.lastModified) 자동 사용
   const vEl=document.getElementById('lsVersion');
   if(vEl) vEl.textContent=`${APP_VERSION} · 최종 업데이트 ${lastModifiedDateStr()}`;
 }
@@ -1818,13 +1814,7 @@ function lastModifiedDateStr(){
   }catch(e){}
   return BUILD_TIME;
 }
-function toggleChangelog(){
-  const hd=document.querySelector('#lsChangelog .ls-cl-hd');
-  const bd=document.getElementById('lsClBody');
-  if(!hd||!bd) return;
-  hd.classList.toggle('open');
-  bd.style.display = hd.classList.contains('open')?'block':'none';
-}
+function toggleChangelog(){ /* v1.20.2: 변경 내역 항상 펼침 — 토글 불필요 */ }
 
 function startAnalysis(){
   const ls=document.getElementById('landingScreen');
