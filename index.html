@@ -315,9 +315,9 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-btn-secondary{background:rgba(255,255,255,.07);color:#d1d5db;border:1px solid rgba(255,255,255,.14);padding:14px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit;letter-spacing:.01em}
 .ls-btn-secondary:active{background:rgba(255,255,255,.12)}
 /* v1.19: 변경 내역 — 홈 항상 표시, 날짜 기준, 첫 항목 펼침 */
-.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(255,255,255,.04);border:1px solid rgba(0,212,139,.18);border-radius:14px;overflow:hidden}
-.ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;background:rgba(0,168,120,.10)}
-.ls-cl-hd-title{font-size:14px;font-weight:800;color:#9de8c8;letter-spacing:.04em;flex:1}
+.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(0,40,28,.55);border:1.5px solid #00d48b;border-radius:14px;overflow:hidden;min-height:200px}
+.ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;background:rgba(0,212,139,.18)}
+.ls-cl-hd-title{font-size:15px;font-weight:800;color:#9fffd4;letter-spacing:.04em;flex:1}
 .ls-cl-arrow{display:none}
 /* v1.20.2: 항상 펼쳐 보이게 — 아코디언 제거 */
 .ls-cl-body{padding:8px 16px 14px;max-height:300px;overflow-y:auto}
@@ -1372,7 +1372,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.20.2';
+const APP_VERSION='v1.20.3';
 const BUILD_TIME='2026-06-04';
 
 // ═══════════════════════════════════════════
@@ -1424,6 +1424,9 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.20.3', date:'2026-06-04', items:[
+    '🛠 변경 내역 박스가 안 보이던 문제 추가 보강 — DOMContentLoaded 트리거, 강한 배경/테두리, 최소 높이 확보',
+  ]},
   {ver:'v1.20.2', date:'2026-06-04', items:[
     '📋 홈 업데이트 내역 항상 펼쳐 표시 — 아코디언 제거, 최신 3개 바로 보이고 "이전 버전 더보기"로 추가 확인',
   ]},
@@ -1839,6 +1842,8 @@ function backToLandingConfirm(){
   window.scrollTo({top:0,behavior:'instant'});
 }
 
+// v1.20.3: 변경 내역은 load 기다리지 말고 DOM 준비되는 즉시 그림
+document.addEventListener('DOMContentLoaded', ()=>{ try{renderChangelog()}catch(e){} });
 window.addEventListener('load', () => {
   buildNav();
   buildPanels();
@@ -1851,6 +1856,9 @@ window.addEventListener('load', () => {
   const lsF=document.getElementById('lsFooter');
   if(lsF) lsF.textContent='Powered by WellnessMode';
   renderChangelog();
+  // v1.20.3: 안전 보강 — DOMContentLoaded와 즉시 추가 호출 (load 이전 노출 보장)
+  setTimeout(()=>{try{renderChangelog()}catch(e){}},0);
+  setTimeout(()=>{try{renderChangelog()}catch(e){}},200);
   // v1.12.2: 60초마다 새 버전 자동 체크 (앱 시작 5초 후 첫 체크)
   setTimeout(checkForUpdate,5000);
   setInterval(checkForUpdate,60000);
