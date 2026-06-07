@@ -314,8 +314,8 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-btn-primary:active{transform:scale(.97);box-shadow:0 6px 20px rgba(0,212,139,.4)}
 .ls-btn-secondary{background:rgba(255,255,255,.07);color:#d1d5db;border:1px solid rgba(255,255,255,.14);padding:14px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit;letter-spacing:.01em}
 .ls-btn-secondary:active{background:rgba(255,255,255,.12)}
-/* v1.19: 변경 내역 — 홈 항상 표시, 날짜 기준, 첫 항목 펼침 */
-.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(0,40,28,.55);border:1.5px solid #00d48b;border-radius:14px;overflow:hidden}
+/* v1.20.5: 변경 내역 — flex-shrink:0로 랜딩(flex column)에서 박스가 0높이로 찌부러지는 문제 방지 */
+.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(0,40,28,.55);border:1.5px solid #00d48b;border-radius:14px;overflow:hidden;flex-shrink:0}
 .ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;background:rgba(0,212,139,.18);cursor:pointer;user-select:none;-webkit-user-select:none}
 .ls-cl-hd:active{background:rgba(0,212,139,.28)}
 .ls-cl-hd-title{font-size:15px;font-weight:800;color:#9fffd4;letter-spacing:.04em;flex:1}
@@ -1376,7 +1376,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.20.4';
+const APP_VERSION='v1.20.5';
 const BUILD_TIME='2026-06-07';
 
 // ═══════════════════════════════════════════
@@ -1428,6 +1428,9 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.20.5', date:'2026-06-07', items:[
+    '🐛 홈 업데이트 내역 박스가 작은 화면에서 사라지던 문제 수정 — 랜딩(세로 flex)에서 박스가 0높이로 찌부러지던 것을 flex-shrink 고정으로 해결',
+  ]},
   {ver:'v1.20.4', date:'2026-06-07', items:[
     '📋 홈 업데이트 내역 박스 접힘/펼침 복원 — 기본은 제목줄만 보이고 탭하면 펼쳐짐(큰 박스로 자리 차지하지 않음)',
   ]},
