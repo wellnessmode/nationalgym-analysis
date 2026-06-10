@@ -271,6 +271,12 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cam-body{flex:1;position:relative;overflow:hidden}
 #camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
+/* v1.21.1: 촬영 정렬용 3×3 격자 — 홈의 격자 오버레이 토글과 연동 (촬영 중에도 정렬 가이드) */
+.cam-grid{position:absolute;inset:0;pointer-events:none;display:none;z-index:2}
+.cam-grid.on{display:block;background-image:linear-gradient(rgba(255,255,255,.34) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.34) 1px,transparent 1px);background-size:33.333% 33.333%;background-position:center}
+/* v1.21.1: SLR 가로 촬영 — 프리뷰+가이드를 90° 회전. 폰을 세로로 든 채 왼쪽으로 눕히면 화면이 정방향 가로가 됨(가로모드 토글 불필요). --cbw/--cbh = .cam-body 실측 크기(JS) */
+.cam-ov.cam-landscape-shot #camVid,
+.cam-ov.cam-landscape-shot .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
 /* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
 .gbox{position:absolute;border:2px solid rgba(0,212,139,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
 /* 안내문(경고) 자동 페이드아웃 — opacity는 openCam에서 인라인 제어 */
@@ -521,6 +527,7 @@ input[type=range]{accent-color:var(--green)}
   <div class="cam-body">
     <video id="camVid" autoplay playsinline muted></video>
     <div class="cam-guide" id="camGuideWrap">
+      <div class="cam-grid" id="camGrid"></div>
       <div class="gbox"></div>
       <!-- v1.19.2: 박스 거의 풀스크린 — 실루엣도 박스에 맞춰 확대 -->
       <div id="camGuideSvgWrap" style="position:absolute;top:3.5%;bottom:3.5%;left:3%;right:3%;pointer-events:none;overflow:hidden">
@@ -787,33 +794,29 @@ function buildSideSilhouette(opts){
 }
 // 누운 자세 (SLR) — viewBox 200×110, 들린 다리 강조
 function buildSupineSilhouette(side){
-  // side: 'l' (좌측 다리 거상) — SVG에선 왼쪽이 머리쪽으로 두기로 함
+  // v1.21.1: 회원 키/성별 반영 — 키(t)로 몸 길이(가로 스케일), 성별로 슬림 정도(세로 스케일)
+  const p=_silhouetteParams();
+  const sx=(1+p.t*0.05).toFixed(3);       // 큰 키일수록 몸 길게
+  const sy=(p.g==='F'?0.95:1).toFixed(3); // 여성 약간 슬림
   return `<defs><style>
     .bg-fill{fill:rgba(0,212,139,.14);stroke:#00d48b;stroke-width:1.1;stroke-dasharray:3.5,2.2;stroke-linejoin:round}
     .hi-fill{fill:rgba(255,200,0,.22);stroke:#ffc81e;stroke-width:1.3;stroke-dasharray:3.5,2.2;stroke-linejoin:round}
     .tn{fill:#7dd4b4;font-size:5px;font-family:sans-serif;font-weight:600}
     .ax{stroke:#ff6060;stroke-width:.6;stroke-dasharray:2.5,2;opacity:.6;fill:none}
   </style></defs>
-  <!-- 매트 라인 -->
+  <g transform="translate(100,80) scale(${sx},${sy}) translate(-100,-80)">
   <line x1="6" y1="80" x2="194" y2="80" class="ax"/>
-  <!-- 머리 -->
   <ellipse cx="22" cy="68" rx="11" ry="9" class="bg-fill"/>
-  <!-- 몸통 (누워있음) -->
   <path d="M 33 62 Q 60 60 90 61 L 92 68 Q 92 75 88 76 Q 60 77 33 76 Z" class="bg-fill"/>
-  <!-- 골반 -->
   <path d="M 86 62 Q 96 60 102 64 L 104 76 Q 95 78 88 76 Z" class="bg-fill"/>
-  <!-- 들린 다리 (강조) -->
   <path d="M 98 64 Q 118 50 135 32 Q 142 26 146 30 Q 149 34 144 38 L 120 56 Q 105 70 100 72 Z" class="hi-fill"/>
-  <!-- 들린 발 -->
   <ellipse cx="146" cy="30" rx="6" ry="4" transform="rotate(-32 146 30)" class="hi-fill"/>
-  <!-- 누운 다리 -->
   <path d="M 100 72 Q 130 73 165 73 Q 175 73 178 75 L 178 79 Q 175 80 165 79 Q 130 78 100 78 Z" class="bg-fill"/>
-  <!-- 누운 발 -->
   <path d="M 175 73 Q 185 73 187 76 Q 188 79 184 80 L 175 79 Z" class="bg-fill"/>
-  <!-- 각도 호 -->
   <path d="M 100 70 Q 110 65 117 56" fill="none" stroke="#ffc81e" stroke-width=".9" opacity=".9"/>
   <text x="118" y="48" class="tn" fill="#ffd700" font-weight="800">정상 70~85°</text>
-  <text x="100" y="13" text-anchor="middle" font-size="6" font-weight="800" fill="#ffd700">📱 휴대폰을 가로로 돌려 촬영</text>`;
+  </g>
+  <text x="100" y="13" text-anchor="middle" font-size="6" font-weight="800" fill="#ffd700">📱 폰을 왼쪽으로 눕혀 촬영 — 화면 자동 회전</text>`;
 }
 
 // ─── 검사별 가이드 정의 ───
@@ -864,18 +867,18 @@ const DEFAULT_GUIDE = {
   viewBox:'0 0 100 220',
   svg:''
 };
-// v1.20: 실사 PNG 가이드 매핑 — {b:파일베이스, m:좌우반전} (없는 검사는 SVG 폴백)
-// 좌/우 쌍은 동일 이미지를 mirror(scaleX -1)로 재사용
-const POSE_IMG = {
+// v1.21.1: 실사 PNG 가이드 비활성화 — 회원 키/성별에 따라 비율이 달라지는 SVG 실루엣을
+// 사용하기 위함. (실사 webp는 고정 비율이라 키/성별 반영이 화면에 안 나타났음 — 트레이너 피드백)
+// 실사로 되돌리려면 아래 주석 블록을 POSE_IMG에 복원.
+const POSE_IMG = {};
+/* 실사 매핑 보존(필요 시 복원):
   ant:{b:'ant'}, lat:{b:'lat'}, post:{b:'post'},
-  sh_flex_l:{b:'shf',m:1}, sh_flex_r:{b:'shf'},   // 후면 외전
-  sku:{b:'sku',m:1},       sku_r:{b:'sku'},       // 정면 무릎 들기
+  sh_flex_l:{b:'shf',m:1}, sh_flex_r:{b:'shf'},
+  sku:{b:'sku',m:1},       sku_r:{b:'sku'},
   ohs_b:{b:'ohs_b'}, ohs_l:{b:'ohs_l'},
   trunk_l:{b:'trunk_l'}, trunk_b:{b:'trunk_b'},
-  // v1.21: SLR 좌/우 동일 방향 — 우측 미러 제거. 머리 방향이 좌/우에서 바뀌지 않도록
-  // (트레이너가 같은 자리에서 좌/우 연속 촬영, 고객 재배치 불필요)
   slr_l:{b:'slr'}, slr_r:{b:'slr'},
-};
+*/
 
 function updateCamGuide(tid){
   const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
@@ -1375,7 +1378,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.21.0';
+const APP_VERSION='v1.21.1';
 const BUILD_TIME='2026-06-10';
 
 // ═══════════════════════════════════════════
@@ -1427,6 +1430,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.21.1', date:'2026-06-10', items:[
+    '▦ 격자 오버레이를 촬영 화면에도 표시 — 카메라 가이드에 3×3 정렬 격자(토글과 실시간 연동). 이전엔 찍은 사진에만 적용돼 촬영 중엔 안 보였음',
+    '🧍 키·성별 실루엣 복원 — 고정 실사 그림 대신 회원 키/성별에 따라 어깨·골반 폭·몸 길이가 달라지는 SVG 실루엣 사용 (실사 그림이 가변 실루엣을 덮고 있었음). SLR 누움 실루엣도 키/성별 반영',
+    '📱 SLR 가로 촬영 자동 회전 — 폰을 세로로 든 채 왼쪽으로 90° 눕히면 화면이 정방향 가로가 됨(가로모드 토글·회전 불필요). 저장 사진도 동일 방향으로 회전',
+  ]},
   {ver:'v1.21.0', date:'2026-06-10', items:[
     '📐 촬영 순서 재정렬 — 전면(3) → 측면(3) → 후면(5) → 누움(SLR 2) 방향별 그룹화: 전면/후면 왕복 제거, 방향 전환 7회→3회',
     '🛌 SLR 좌/우 가이드 미러 제거 — 머리 방향 동일, 같은 자리에서 좌/우 연속 촬영 (고객 재배치 불필요)',
@@ -2482,8 +2490,23 @@ function openCam(tid,slot){
   document.getElementById('camTip').textContent=t.tip||'전신이 가이드 안에';
   updateCamGuide(tid);
   // v1.18: SLR은 가로 촬영 — 수평계 계산을 가로 모드로 전환하는 플래그
-  document.getElementById('camOv').classList.toggle('cam-landscape-shot', tid==='slr_l'||tid==='slr_r');
-  document.getElementById('camOv').classList.add('show');
+  const camOv=document.getElementById('camOv');
+  const isSLR=(tid==='slr_l'||tid==='slr_r');
+  camOv.classList.toggle('cam-landscape-shot', isSLR);
+  camOv.classList.add('show');
+  // v1.21.1: 격자 오버레이를 촬영 가이드에도 반영
+  const _cg=document.getElementById('camGrid'); if(_cg) _cg.classList.toggle('on', GRID_ON);
+  // v1.21.1: SLR 90° 회전 — .cam-body 실측 크기를 CSS 변수로 (회전된 프리뷰가 화면을 꽉 채우도록)
+  const camBody=camOv.querySelector('.cam-body');
+  if(camBody){
+    if(isSLR){
+      void camBody.offsetHeight; // show 직후 레이아웃 강제 후 측정
+      camBody.style.setProperty('--cbw', camBody.clientWidth+'px');
+      camBody.style.setProperty('--cbh', camBody.clientHeight+'px');
+    }else{
+      camBody.style.removeProperty('--cbw'); camBody.style.removeProperty('--cbh');
+    }
+  }
   // v1.19.3: 안내문(경고) 5초 후 서서히 소멸 — 인라인 opacity로 직접 제어
   // (이전 버그: 인라인 opacity:1 이 CSS .hint-faded 클래스를 이겨서 안 사라짐)
   const wrn=document.getElementById('camWarning');
@@ -2558,21 +2581,46 @@ async function snap(){
   progressEl.remove();
   // ── 3단계: 최적 프레임 사용 ──
   // v1.12.3: 개별 저장 팝업 제거 — 일괄 저장 버튼으로만 저장
+  // v1.21.1: SLR 가로 촬영은 프리뷰가 90° 회전돼 있으므로 저장 이미지도 동일하게 회전
+  if(camTid==='slr_l'||camTid==='slr_r') bestFrame=await rotate90DataUrl(bestFrame);
   loadImg(camTid,camSlot,bestFrame);
   closeCam();
   toast((camSlot==='B'?'Before':'After')+` 촬영 완료 — 최적 프레임 선택 (${bestScore}점)`);
 }
 
 // 폴백: MediaPipe 미로딩 시 단일 프레임 캡처
-function snapSingle(){
+async function snapSingle(){
   const v=document.getElementById('camVid'),hc=document.getElementById('hc');
+  if(!v.videoWidth){toast('카메라 준비 안 됨');return}
   hc.width=v.videoWidth;hc.height=v.videoHeight;
   hc.getContext('2d').drawImage(v,0,0);
-  const snapData=hc.toDataURL('image/jpeg',.88);
+  let snapData=hc.toDataURL('image/jpeg',.88);
+  // v1.21.1: SLR 가로 촬영은 프리뷰가 90° 회전돼 있으므로 저장 이미지도 동일하게 회전
+  if(camTid==='slr_l'||camTid==='slr_r') snapData=await rotate90DataUrl(snapData);
   loadImg(camTid,camSlot,snapData);
   // v1.12.3: 개별 저장 팝업 제거
   closeCam();
   toast((camSlot==='B'?'Before':'After')+' 촬영 완료');
+}
+
+// v1.21.1: dataUrl을 시계방향 90° 회전 — SLR 가로 촬영의 화면 회전(rotate(90deg))과 동일 방향으로 저장
+function rotate90DataUrl(dataUrl){
+  return new Promise((res)=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const c=document.createElement('canvas');
+        c.width=img.height; c.height=img.width; // 가로/세로 스왑
+        const x=c.getContext('2d');
+        x.translate(c.width/2,c.height/2);
+        x.rotate(Math.PI/2);
+        x.drawImage(img,-img.width/2,-img.height/2);
+        res(c.toDataURL('image/jpeg',.9));
+      }catch(e){res(dataUrl)}
+    };
+    img.onerror=()=>res(dataUrl);
+    img.src=dataUrl;
+  });
 }
 
 // 촬영 사진을 기기에 저장: iOS에서는 Web Share로 Photos 저장 제안, 그 외는 다운로드
@@ -6513,6 +6561,8 @@ let GRID_ON=false;
 function toggleGrid(on){
   GRID_ON=!!on;
   autoSave();
+  // v1.21.1: 카메라 촬영 가이드의 격자도 즉시 반영
+  const cg=document.getElementById('camGrid'); if(cg) cg.classList.toggle('on',GRID_ON);
   TESTS.forEach(t=>{
     ['B','A'].forEach(slot=>{
       if(SHOTS[t.id]?.[slot]?.img) redrawSlot(t.id,slot);
