@@ -852,9 +852,9 @@ const POSE_GUIDES = {
   trunk_b: { label:'Trunk Flexion 후면 — 무릎 펴고 최대 전굴', warning:'발 어깨너비 · 최대한 아래로 숙이기', viewBox:'0 0 100 220',
           svg: ()=>buildSilhouette({facing:'back', arms:'down',
             extras:`<text x="50" y="216" text-anchor="middle" class="note">최대한 전굴 (수기 검사)</text>`}) },
-  slr_l: { label:'📱 가로 촬영 — Lt. SLR (정상 70~85°)', warning:'📱 휴대폰을 가로로 돌려서 촬영 · 무릎 완전히 펴기', viewBox:'0 0 200 110',
+  slr_l: { label:'📱 가로 촬영 — Lt. SLR (정상 70~85°)', warning:'📱 가로 촬영 · 무릎 펴기 · 좌/우 같은 자리에서 (머리 방향 동일)', viewBox:'0 0 200 110',
           svg: ()=>buildSupineSilhouette('l') },
-  slr_r: { label:'📱 가로 촬영 — Rt. SLR (정상 70~85°)', warning:'📱 휴대폰을 가로로 돌려서 촬영 · 무릎 완전히 펴기', viewBox:'0 0 200 110',
+  slr_r: { label:'📱 가로 촬영 — Rt. SLR (정상 70~85°)', warning:'📱 가로 촬영 · 무릎 펴기 · 좌/우 같은 자리에서 (머리 방향 동일)', viewBox:'0 0 200 110',
           svg: ()=>buildSupineSilhouette('r') },
 };
 
@@ -872,7 +872,9 @@ const POSE_IMG = {
   sku:{b:'sku',m:1},       sku_r:{b:'sku'},       // 정면 무릎 들기
   ohs_b:{b:'ohs_b'}, ohs_l:{b:'ohs_l'},
   trunk_l:{b:'trunk_l'}, trunk_b:{b:'trunk_b'},
-  slr_l:{b:'slr'}, slr_r:{b:'slr',m:1},
+  // v1.21: SLR 좌/우 동일 방향 — 우측 미러 제거. 머리 방향이 좌/우에서 바뀌지 않도록
+  // (트레이너가 같은 자리에서 좌/우 연속 촬영, 고객 재배치 불필요)
+  slr_l:{b:'slr'}, slr_r:{b:'slr'},
 };
 
 function updateCamGuide(tid){
@@ -1063,32 +1065,29 @@ async function deleteSession(id){
 // ═══════════════════════════════════════════
 // v1.10: 종이 양식(NPT)과 완전 일치. 수기 검사는 manual:true 플래그로 사진 없이 체크리스트만.
 // id는 그대로 유지 (저장된 데이터 호환). title/sub/tip만 변경.
-// v1.19: 검사 순서 재정렬 — 사용자 지정 흐름
-//   기립 전면(1) → 좌측면(2) → 후면(3)
-//   → 숄더 외전 좌(4)/우(5) → SKU 좌(6)/우(7)
-//   → OHS 후면(8) → OHS 좌측면(9)
-//   → 트렁크 좌측면(10) → 트렁크 후면(11)
-//   → SLR 좌(12)/우(13) → 수기검사
+// v1.21: 검사 순서 재정렬 — 촬영 방향별 그룹화 (전면→측면→후면→누움), 방향 전환 3회로 최소화 (전면/후면 왕복 제거)
+//   전면(1~3): 정적 전면 → SKU 좌/우
+//   측면(4~6): 정적 좌측면 → OHS 좌측면 → 트렁크 좌측면
+//   후면(7~11): 정적 후면 → 숄더 외전 좌/우 → OHS 후면 → 트렁크 후면(수기)
+//   누움(12~13): SLR 좌/우 → 수기검사
 const TESTS = [
-  // ─── 1) 기립 정적: 전면 → 좌측면 → 후면 ───
+  // ─── 1) 전면 (front) ───
   {id:'ant',       n:1,  sec:'front', title:'스탠딩 - 전면 (Anterior)',    sub:'어깨·골반·무릎 좌우 정렬',          tip:'전신 정면, 발 어깨너비'},
-  {id:'lat',       n:2,  sec:'side',  title:'스탠딩 - 좌측면 (Lateral)',   sub:'거북목·흉추후만·요추전만',           tip:'고객 좌측에서 촬영 (좌측면 카메라 쪽)'},
-  {id:'post',      n:3,  sec:'back',  title:'스탠딩 - 후면 (Posterior)',   sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
-  // ─── 2) 숄더 외전 좌·우 ───
-  {id:'sh_flex_l', n:4,  sec:'back',  title:'Shoulder Abduction — 좌측 (후면)',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 좌측 팔 옆으로 최대 거상'},
-  {id:'sh_flex_r', n:5,  sec:'back',  title:'Shoulder Abduction — 우측 (후면)',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 우측 팔 옆으로 최대 거상'},
-  // ─── 3) SKU 좌·우 ───
-  {id:'sku',       n:6,  sec:'front', title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 좌측 무릎 최대 거상'},
-  {id:'sku_r',     n:7,  sec:'front', title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 우측 무릎 최대 거상'},
-  // ─── 4) OHS 후면 → 좌측면 ───
-  {id:'ohs_b',     n:8,  sec:'back',  title:'Overhead Squat — 후면',       sub:'발목 내번 · 골반 회전 · 무릎 collapse', tip:'후면, OHS 최저점 유지'},
-  {id:'ohs_l',     n:9,  sec:'side',  title:'Overhead Squat — 좌측면',     sub:'상체 전방경사 · 흉추 가동성',           tip:'⚡ 고객 좌측 촬영, OHS 최저점'},
-  // ─── 5) 트렁크 좌측면 → 후면 ───
-  {id:'trunk_l',   n:10, sec:'side',  title:'Trunk Flexion — 좌측면',      sub:'전굴 ROM · 흉/요추 분리 · 정상 70°+', tip:'⚡ 허리~등 높이에서 고객 좌측 촬영'},
+  {id:'sku',       n:2,  sec:'front', title:'Standing Knee Up — 좌측',    sub:'Lt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 좌측 무릎 최대 거상'},
+  {id:'sku_r',     n:3,  sec:'front', title:'Standing Knee Up — 우측',    sub:'Rt. Glutes · Hip flexor · 정상 무릎 90°', tip:'정면 촬영, 우측 무릎 최대 거상'},
+  // ─── 2) 측면 (side) — 고객 좌측 ───
+  {id:'lat',       n:4,  sec:'side',  title:'스탠딩 - 좌측면 (Lateral)',   sub:'거북목·흉추후만·요추전만',           tip:'고객 좌측에서 촬영 (좌측면 카메라 쪽)'},
+  {id:'ohs_l',     n:5,  sec:'side',  title:'Overhead Squat — 좌측면',     sub:'상체 전방경사 · 흉추 가동성',           tip:'⚡ 고객 좌측 촬영, OHS 최저점'},
+  {id:'trunk_l',   n:6,  sec:'side',  title:'Trunk Flexion — 좌측면',      sub:'전굴 ROM · 흉/요추 분리 · 정상 70°+', tip:'⚡ 허리~등 높이에서 고객 좌측 촬영'},
+  // ─── 3) 후면 (back) ───
+  {id:'post',      n:7,  sec:'back',  title:'스탠딩 - 후면 (Posterior)',   sub:'척추측만·견갑골·골반 고저',          tip:'전신 후면, 발 어깨너비'},
+  {id:'sh_flex_l', n:8,  sec:'back',  title:'Shoulder Abduction — 좌측 (후면)',   sub:'좌측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 좌측 팔 옆으로 최대 거상'},
+  {id:'sh_flex_r', n:9,  sec:'back',  title:'Shoulder Abduction — 우측 (후면)',   sub:'우측 어깨 외전 · 견갑 리듬 · 상부승모근 보상', tip:'후면 촬영, 우측 팔 옆으로 최대 거상'},
+  {id:'ohs_b',     n:10, sec:'back',  title:'Overhead Squat — 후면',       sub:'발목 내번 · 골반 회전 · 무릎 collapse', tip:'후면, OHS 최저점 유지'},
   {id:'trunk_b',   n:11, sec:'back',  manual:true, title:'Trunk Flexion — 후면 (수기)', sub:'측만 in motion · 근긴장 비대칭', tip:'수기 검사 · 체크리스트 입력'},
-  // ─── 6) SLR (누워서, 가로 촬영) ───
-  {id:'slr_l',     n:12, sec:'supine',title:'S.L.R. — 좌측 (가로 촬영)',  sub:'Lt. Hamstring · 정상 70~85°', tip:'📱 휴대폰 가로로 돌려 촬영 · 고객 좌측'},
-  {id:'slr_r',     n:13, sec:'supine',title:'S.L.R. — 우측 (가로 촬영)',  sub:'Rt. Hamstring · 정상 70~85°', tip:'📱 휴대폰 가로로 돌려 촬영 · 고객 우측'},
+  // ─── 4) 누움 (supine) — SLR 가로 촬영 · 좌/우 같은 자리에서 연속 촬영 ───
+  {id:'slr_l',     n:12, sec:'supine',title:'S.L.R. — 좌측 (가로 촬영)',  sub:'Lt. Hamstring · 정상 70~85°', tip:'📱 가로 촬영 · 좌/우 같은 자리에서 연속 촬영 (자세 그대로 반대 다리만 거상)'},
+  {id:'slr_r',     n:13, sec:'supine',title:'S.L.R. — 우측 (가로 촬영)',  sub:'Rt. Hamstring · 정상 70~85°', tip:'📱 가로 촬영 · 좌/우 같은 자리에서 연속 촬영 (자세 그대로 반대 다리만 거상)'},
   // ─── 수기 검사 — 엎드림/누움 자세 (Prone) ───
   {id:'patrick',     n:14, sec:'prone', manual:true, title:'Patrick Test (FABER)',          sub:'고관절·천장관절 병변 평가',          tip:'수기 검사 · 체크리스트 입력'},
   {id:'prone_quad',  n:15, sec:'prone', manual:true, title:'Quadriceps — Prone',            sub:'대퇴사두근 단축/약화 (엎드린 자세)', tip:'수기 검사 · 체크리스트 입력'},
@@ -1376,8 +1375,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.20.5';
-const BUILD_TIME='2026-06-07';
+const APP_VERSION='v1.21.0';
+const BUILD_TIME='2026-06-10';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1428,6 +1427,14 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.21.0', date:'2026-06-10', items:[
+    '📐 촬영 순서 재정렬 — 전면(3) → 측면(3) → 후면(5) → 누움(SLR 2) 방향별 그룹화: 전면/후면 왕복 제거, 방향 전환 7회→3회',
+    '🛌 SLR 좌/우 가이드 미러 제거 — 머리 방향 동일, 같은 자리에서 좌/우 연속 촬영 (고객 재배치 불필요)',
+    '💾 스켈레톤 분석결과 영구 저장 — 재방문 시 사진과 함께 스켈레톤 자동 복원, 기존 세션도 백그라운드 자동 재분석으로 복구',
+    '🤸 Trunk Flexion·SLR 마크 정확도 개선 — 0°/90°/270° 회전 탐색 감지로 누움·전굴 자세 최적 방향 자동 채택',
+    '🐛 재촬영 시 이전 사진의 스켈레톤이 새 사진 위에 남던 문제 수정',
+    '📄 PDF 저장 신뢰성 — iOS는 새 탭 열기→"파일에 저장" 방식, 거짓 "다운로드 완료" 안내 제거, 고객 전송 버튼도 저장 다이얼로그 경유',
+  ]},
   {ver:'v1.20.5', date:'2026-06-07', items:[
     '🐛 홈 업데이트 내역 박스가 작은 화면에서 사라지던 문제 수정 — 랜딩(세로 flex)에서 박스가 0높이로 찌부러지던 것을 flex-shrink 고정으로 해결',
   ]},
@@ -1898,7 +1905,11 @@ window.addEventListener('load', () => {
     // Lowered minDetectionConfidence to 0.4 so partial landmark sets still render
     poseEng.setOptions({modelComplexity:2,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
     poseEng.onResults(()=>{});
-    poseEng.initialize().then(()=>{poseOk=true}).catch(()=>{});
+    poseEng.initialize().then(()=>{
+      poseOk=true;
+      // v1.21: 복원된 사진 중 pose 저장본이 없는 것(레거시 세션) 자동 재감지 (#2)
+      setTimeout(()=>{try{reposeRestoredShots()}catch(e){}},800);
+    }).catch(()=>{});
   }
 });
 
@@ -2144,21 +2155,10 @@ async function sendPDFToCustomer(){
     hideBuildingLoader();
     const pdfBlob = doc.output('blob');
     const pdfFile = new File([pdfBlob], filename, {type:'application/pdf'});
-    // 고객 연락처는 별도 입력 없음 → 공유 시트로 트레이너가 직접 선택
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[pdfFile]})){
-      try{
-        await navigator.share({title:'바디스캔 리포트',text:filename,files:[pdfFile]});
-        toast('공유 시트 열림 — 카카오톡/메시지 등으로 고객에게 전송');
-      }catch(e){
-        if(e.name!=='AbortError'){
-          doc.save(filename);
-          toast('공유 실패 — 다운로드됨');
-        }
-      }
-    } else {
-      doc.save(filename);
-      toast('PDF 다운로드 완료 — 다운로드 폴더에서 고객에게 전달');
-    }
+    // v1.21 (#5): 5~10초 PDF 빌드 후의 share()/save()는 user gesture가 만료되어
+    // iOS에서 조용히 실패하면서 "다운로드 완료" 거짓 안내가 뜨던 문제.
+    // → 저장 다이얼로그를 띄워 버튼 탭(새 gesture) 안에서 공유/저장 실행.
+    showPDFSaveDialog(doc, pdfFile, filename);
   }catch(e){
     hideBuildingLoader();
     toast('PDF 생성 실패: '+(e?.message||e));
@@ -2732,14 +2732,14 @@ async function loadImg(tid,slot,src,skipSave){
     const _s=SHOTS[_tid]?.[_slot];
     if(!_s?.img){toast('사진을 먼저 업로드하세요'); return;}
     raBtn.disabled=true; raBtn.textContent='분석 중...';
-    const poseR=await runPose(_s.img);
+    const poseR=await runPoseRobust(_s.img,_tid); // v1.21: 회전 탐색 — SLR·전굴 재분석 정확도 (#3,#4)
     raBtn.disabled=false;
     raBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> 스켈레톤 재분석';
     if(poseR?.landmarks){
       _s.pose=poseR.landmarks;
-      // v1.15.1: 재분석 = 사용자 편집 폐기
+      // v1.15.1: 재분석 = 사용자 편집 폐기 / v1.21: 새 결과를 자동 pose로 저장 (#2)
       _s.poseEdited=false;
-      try{localStorage.removeItem(`${LS}_pose_${_tid}_${_slot}`)}catch(e){}
+      savePose(_tid,_slot,false);
       // 편집 모드가 켜져 있었다면 종료
       if(editPose&&editPose.tid===_tid&&editPose.slot===_slot){
         editPose=null;
@@ -2789,8 +2789,14 @@ async function loadImg(tid,slot,src,skipSave){
     if(!saved.markers)saved.markers=[];
     if(!saved.lines)saved.lines=[];
     if(!saved.guides)saved.guides=[];
-    // v1.15.1: 저장된 편집 pose 복원 + 드래그 핸들러 부착 (트레이너 피드백 #2)
-    restorePose(tid,slot);
+    // v1.21: pose 복원은 세션 복원(skipSave)일 때만. 새로 찍은/올린 사진은 이전 pose를
+    // 폐기하고 재감지 (재촬영 시 옛 스켈레톤이 새 사진 위에 남던 문제 방지)
+    if(skipSave){
+      restorePose(tid,slot);
+    }else{
+      SHOTS[tid][slot].pose=null;SHOTS[tid][slot].poseEdited=false;
+      try{localStorage.removeItem(`${LS}_pose_${tid}_${slot}`)}catch(e){}
+    }
     attachPoseDrag(canvas,tid,slot);
     redrawSlot(tid,slot);
     // no click handler for auto-markers - removed
@@ -2804,33 +2810,17 @@ async function loadImg(tid,slot,src,skipSave){
     if(!skipSave)saveImg(tid,slot,src);
     updateCompareCta();
     // v1.15.1: 사용자가 수동 편집한 pose가 복원되어 있으면 자동 재감지 건너뛰기
-    if(poseOk && !SHOTS[tid][slot].poseEdited){
+    // v1.21: 복원된 자동 감지 pose가 있어도 건너뛰기 (!pose 조건)
+    if(poseOk && !SHOTS[tid][slot].poseEdited && !SHOTS[tid][slot].pose){
       const loader=document.createElement('div');loader.className='pload';
       loader.innerHTML='<div class="spin"></div><p>AI 포즈 감지 중...</p>';
       zone.appendChild(loader);
-      // v1.11: 자동 반복 감지 — MediaPipe는 동일 이미지에서도 반복 시도 시
-      // 점진적으로 랜드마크 감지율이 향상되는 특성이 있음. 최대 8회 시도.
-      let poseResult=null;
-      let bestResult=null;
-      let bestVisibleCount=0;
-      for(let attempt=0;attempt<8;attempt++){
-        const r=await runPose(useImg);
-        if(r?.landmarks){
-          // 가장 많은 landmark가 visible한 결과를 선택
-          const visCount=r.landmarks.filter(l=>l&&l.visibility>.4).length;
-          if(visCount>bestVisibleCount){
-            bestVisibleCount=visCount;
-            bestResult=r;
-          }
-          // 주요 랜드마크(어깨+골반+무릎) 20+ visible 이면 충분
-          if(visCount>=20) break;
-        }
-        if(attempt<7) await new Promise(r=>setTimeout(r,80));
-      }
-      poseResult=bestResult;
+      // v1.21: 반복 감지 + 회전 탐색 — SLR(누움)·전굴은 0°/90°/270° 중 최적 방향 자동 채택 (#3,#4)
+      const poseResult=await runPoseRobust(useImg,tid);
       loader.remove();
       if(poseResult?.landmarks){
         SHOTS[tid][slot].pose=poseResult.landmarks;
+        savePose(tid,slot,false); // v1.21: 자동 감지 pose 저장 — 재방문 시 복원 (#2)
         // Save segmentation mask (Safari 메모리 보호: 긴변 800px로 다운샘플)
         if(poseResult.segMask){
           const mc=document.createElement('canvas');
@@ -3690,9 +3680,12 @@ function updateSlotBadge(tid,slot){
   const b=document.getElementById(`tcb_${tid}_${slot}`);if(b){b.textContent='완료';b.className='tc-badge done'}
 }
 
-async function runPose(imgEl){
-  if(!poseOk||!poseEng)return null;
-  return new Promise(res=>{
+// v1.21: 전 호출 직렬화 — poseEng.onResults는 전역 핸들러라 동시 호출 시 결과가 엉킴
+// (복원 후 일괄 재감지 + 업로드 감지가 겹쳐도 안전)
+let _poseQueue=Promise.resolve();
+function runPose(imgEl){
+  const job=()=>new Promise(res=>{
+    if(!poseOk||!poseEng)return res(null);
     poseEng.onResults(r=>{
       res({
         landmarks: r.poseLandmarks||null,
@@ -3701,6 +3694,105 @@ async function runPose(imgEl){
     });
     poseEng.send({image:imgEl}).catch(()=>res(null));
   });
+  const p=_poseQueue.then(job,job);
+  _poseQueue=p.then(()=>{},()=>{});
+  return p;
+}
+
+// ═══ v1.21: 회전 탐색 포즈 감지 (#3 트렁크 전굴 · #4 SLR) ═══
+// MediaPipe Pose는 기립 자세 위주로 학습되어 누운 자세(SLR)·깊은 전굴에서
+// 랜드마크가 뒤섞이거나 감지 실패가 잦음. 이미지를 0°/90°/270°(/180°)로
+// 회전해 각각 감지한 뒤 핵심 랜드마크(어깨·골반·무릎·발목) 가시성이 가장
+// 높은 방향을 채택하고, 좌표를 원본 방향으로 역변환한다.
+const POSE_ORIENTS = {
+  slr_l:[90,270,0,180], slr_r:[90,270,0,180],   // 가로 촬영(인물 누움) — 회전본이 기립처럼 보여 감지율 급상승
+  trunk_l:[0,90,270]                             // 깊은 전굴 — 회전본이 더 잘 잡히는 경우 많음
+};
+function rotateForPose(img,deg){
+  const W=img.width,H=img.height;
+  const c=document.createElement('canvas');
+  if(deg===180){c.width=W;c.height=H}else{c.width=H;c.height=W}
+  const x=c.getContext('2d');
+  if(deg===90){x.translate(H,0);x.rotate(Math.PI/2)}
+  else if(deg===270){x.translate(0,W);x.rotate(-Math.PI/2)}
+  else if(deg===180){x.translate(W,H);x.rotate(Math.PI)}
+  x.drawImage(img,0,0);
+  return c;
+}
+function unrotateLandmarks(lm,deg){
+  if(!lm||deg===0)return lm;
+  return lm.map(p=>{
+    if(!p)return p;
+    let x=p.x,y=p.y;
+    if(deg===90){x=p.y;y=1-p.x}
+    else if(deg===270){x=1-p.y;y=p.x}
+    else if(deg===180){x=1-p.x;y=1-p.y}
+    return Object.assign({},p,{x,y});
+  });
+}
+function unrotateMask(mask,deg,W,H){
+  if(!mask)return null;
+  if(deg===0)return mask;
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');
+  if(deg===90){x.translate(0,H);x.rotate(-Math.PI/2)}
+  else if(deg===270){x.translate(W,0);x.rotate(Math.PI/2)}
+  else if(deg===180){x.translate(W,H);x.rotate(Math.PI)}
+  x.drawImage(mask,0,0);
+  return c;
+}
+async function runPoseRobust(imgEl,tid){
+  const orients=POSE_ORIENTS[tid]||[0];
+  const CORE=[11,12,23,24,25,26,27,28]; // 어깨·골반·무릎·발목
+  // 회전 탐색 시 방향당 2회(속도), 단일 방향은 기존처럼 8회 반복(반복 시 감지율 향상 특성)
+  const tries=orients.length>1?2:8;
+  let best=null,bestScore=-1;
+  for(const deg of orients){
+    const src=deg===0?imgEl:rotateForPose(imgEl,deg);
+    for(let a=0;a<tries;a++){
+      const r=await runPose(src);
+      if(r?.landmarks){
+        const lms=r.landmarks;
+        const coreVis=CORE.filter(i=>lms[i]&&lms[i].visibility>.5).length;
+        const visCount=lms.filter(l=>l&&l.visibility>.4).length;
+        const coreAvg=CORE.reduce((s,i)=>s+(lms[i]?.visibility||0),0)/CORE.length;
+        const score=coreVis*100+visCount+coreAvg*40;
+        if(score>bestScore){bestScore=score;best={r,deg}}
+      }
+      if(a<tries-1)await new Promise(rs=>setTimeout(rs,80));
+    }
+    if(bestScore>=820)break; // 핵심 8/8 + 전신 20개 이상 → 충분, 다음 방향 생략
+  }
+  if(!best)return null;
+  const {r,deg}=best;
+  if(deg===0)return {landmarks:r.landmarks,segMask:r.segMask,deg:0};
+  return {
+    landmarks:unrotateLandmarks(r.landmarks,deg),
+    segMask:unrotateMask(r.segMask,deg,imgEl.width,imgEl.height),
+    deg
+  };
+}
+
+// v1.21: 세션 복원 직후, pose 저장본이 없는 사진(레거시 세션)을 일괄 재감지 (#2)
+// MediaPipe 초기화 완료 후 호출 — 재방문 시 스켈레톤·측정값 자동 복구
+async function reposeRestoredShots(){
+  for(const t of TESTS){
+    if(t.manual)continue;
+    for(const slot of ['B','A']){
+      const s=SHOTS[t.id]?.[slot];
+      if(!s?.img||s.pose||s.poseEdited)continue;
+      try{
+        const r=await runPoseRobust(s.img,t.id);
+        const cur=SHOTS[t.id]?.[slot];
+        if(r?.landmarks&&cur?.img&&!cur.poseEdited&&!cur.pose){
+          cur.pose=r.landmarks;
+          savePose(t.id,slot,false);
+          redrawSlot(t.id,slot);
+        }
+      }catch(e){}
+      await new Promise(rs=>setTimeout(rs,150));
+    }
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -4685,23 +4777,27 @@ function attachPoseDrag(canvas,tid,slot){
   canvas.addEventListener('pointercancel',endDrag);
 }
 
-function savePose(tid,slot){
+// v1.21: 자동 감지 pose도 저장 (#2 — 재방문 시 스켈레톤 사라짐 수정).
+// edited=true: 수동 점편집(레거시 배열 포맷과 동등) / false: 자동 감지 결과
+function savePose(tid,slot,edited=true){
   const s=SHOTS[tid]?.[slot];if(!s?.pose)return;
   try{
     const compact=s.pose.map(lm=>lm?{x:+lm.x.toFixed(4),y:+lm.y.toFixed(4),z:+(lm.z||0).toFixed(4),visibility:+(lm.visibility||0).toFixed(2)}:null);
-    localStorage.setItem(`${LS}_pose_${tid}_${slot}`,JSON.stringify(compact));
-    s.poseEdited=true;
+    localStorage.setItem(`${LS}_pose_${tid}_${slot}`,JSON.stringify({v:2,edited:!!edited,lm:compact}));
+    s.poseEdited=!!edited;
   }catch(e){}
 }
 
 function restorePose(tid,slot){
-  const s=SHOTS[tid]?.[slot];if(!s)return;
+  const s=SHOTS[tid]?.[slot];if(!s)return false;
   try{
     const raw=localStorage.getItem(`${LS}_pose_${tid}_${slot}`);
-    if(!raw)return;
-    const arr=JSON.parse(raw);
-    if(Array.isArray(arr)){s.pose=arr;s.poseEdited=true}
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    if(Array.isArray(d)){s.pose=d;s.poseEdited=true;return true} // 레거시 포맷 = 수동 편집본
+    if(d&&Array.isArray(d.lm)){s.pose=d.lm;s.poseEdited=!!d.edited;return true}
   }catch(e){}
+  return false;
 }
 
 // v1.15: 오버랩 / 좌우 비교 뷰 토글 (트레이너 피드백 #1)
@@ -6654,8 +6750,8 @@ function showPDFSaveDialog(doc, pdfFile, filename){
       <button class="pdfopt" data-mode="download">
         <div class="pdfopt-ic">⬇️</div>
         <div class="pdfopt-txt">
-          <div class="pdfopt-t">브라우저 다운로드</div>
-          <div class="pdfopt-s">Safari 다운로드 → 파일 앱 → 다운로드 폴더</div>
+          <div class="pdfopt-t">새 탭에서 열기 → 파일에 저장</div>
+          <div class="pdfopt-s">PDF가 화면에 열림 → 공유(↑) → "파일에 저장"</div>
         </div>
       </button>`;
   } else if(isAndroid && canShare){
@@ -6711,28 +6807,42 @@ function showPDFSaveDialog(doc, pdfFile, filename){
           toast('공유 완료');
         }catch(e){
           if(e.name!=='AbortError'){
-            toast('공유 실패 — 다운로드로 대체');
-            doc.save(filename);
             m.remove();
+            pdfFallbackSave(doc,filename);
           }
         }
       } else {
-        doc.save(filename);
         m.remove();
-        const isIOS2=/iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isAndroid2=/Android/.test(navigator.userAgent);
-        let locHint='';
-        if(isIOS2) locHint='Safari 다운로드 → 파일 앱 → 다운로드 폴더';
-        else if(isAndroid2) locHint='내 파일 → Download 폴더';
-        else locHint='브라우저 다운로드 폴더';
-        showPDFSavedModal(filename,locHint);
+        pdfFallbackSave(doc,filename);
       }
     };
   });
 }
 
+// v1.21 (#5): 신뢰 가능한 PDF 저장 폴백.
+// iOS Safari의 a[download]는 조건에 따라 조용히 실패(특히 gesture 만료·홈화면 PWA)
+// → iOS는 blob URL을 새 탭에 열어 사용자가 직접 공유(↑)→"파일에 저장" (실패가 눈에 보임).
+// 새 탭이 막힌 경우에만 a[download] 시도 + 정직한 "요청됨" 안내 (완료 단정 금지).
+function pdfFallbackSave(doc,filename){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid=/Android/.test(navigator.userAgent);
+  if(isIOS){
+    let w=null;
+    try{w=window.open(doc.output('bloburl'),'_blank')}catch(e){}
+    if(w){
+      showPDFSavedModal(filename,'열린 PDF 화면에서 공유(↑) → "파일에 저장" 선택','PDF가 새 탭에 열렸습니다');
+      return;
+    }
+  }
+  doc.save(filename);
+  if(isIOS) showPDFSavedModal(filename,'Safari 주소창 옆 ↓(다운로드) 아이콘 → 파일 앱 → 다운로드 폴더','다운로드 요청됨');
+  else if(isAndroid) showPDFSavedModal(filename,'내 파일 → Download 폴더','다운로드 요청됨');
+  else showPDFSavedModal(filename,'브라우저 다운로드 폴더');
+}
+
 // PDF 저장 완료 시 위치 안내 모달 (Web Share 미지원 환경용 폴백)
-function showPDFSavedModal(filename,locHint){
+function showPDFSavedModal(filename,locHint,title){
+  title=title||'PDF 저장 완료';
   const existing=document.getElementById('pdfSavedModal');if(existing)existing.remove();
   const m=document.createElement('div');m.id='pdfSavedModal';
   m.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
@@ -6741,11 +6851,11 @@ function showPDFSavedModal(filename,locHint){
       <div style="width:36px;height:36px;border-radius:50%;background:#e6f7f2;display:flex;align-items:center;justify-content:center">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a878" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div style="font-size:16px;font-weight:700;color:#111">PDF 저장 완료</div>
+      <div style="font-size:16px;font-weight:700;color:#111">${title}</div>
     </div>
     <div style="font-size:12px;color:#666;margin-bottom:6px">파일명</div>
     <div style="font-size:13px;color:#111;font-weight:600;padding:8px 10px;background:#f3f1ea;border-radius:8px;margin-bottom:12px;word-break:break-all">${filename}</div>
-    <div style="font-size:12px;color:#666;margin-bottom:6px">저장 위치</div>
+    <div style="font-size:12px;color:#666;margin-bottom:6px">저장 위치 · 확인 방법</div>
     <div style="font-size:13px;color:#111;font-weight:600;padding:8px 10px;background:#f3f1ea;border-radius:8px;margin-bottom:16px">${locHint}</div>
     <button onclick="document.getElementById('pdfSavedModal').remove()" style="width:100%;padding:12px;background:#00a878;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">확인</button>
   </div>`;
