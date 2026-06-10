@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- v1.12.2: 캐시 방지 — Safari가 구버전 HTML 캐시 사용하지 않도록 -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -31,7 +31,7 @@ body{font-family:var(--font-ko)}
 }
 html,body{background:var(--bg);color:var(--tx);font-family:var(--font-ko);min-height:100%;font-size:15px;overscroll-behavior-y:none}
 button,input,select,textarea{font-family:inherit}
-.hdr{position:sticky;top:0;z-index:300;background:#0d0d0d;height:54px;display:flex;align-items:center;padding:0 12px;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hdr{position:sticky;top:0;z-index:300;background:#0d0d0d;height:54px;display:flex;align-items:center;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .hdr::-webkit-scrollbar{display:none}
 .hdr .logo{flex-shrink:0}
 .logo{font-size:16px;font-weight:700;letter-spacing:.04em;color:#fff}.logo em{color:var(--green);font-style:normal}
@@ -49,9 +49,12 @@ button,input,select,textarea{font-family:inherit}
 .wrap{padding:16px;max-width:740px;margin:0 auto;padding-bottom:90px}
 .phase{display:none}.phase.on{display:block}
 .meta-card{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);padding:16px;margin-bottom:16px;box-shadow:var(--sh)}
-.mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* v1.22: 회원정보 그리드 — 폰 2열(좁은 화면에서 이메일/날짜 잘림 방지), 560px+ 3열 */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (min-width:560px){.mgrid{grid-template-columns:1fr 1fr 1fr}}
+.f{min-width:0}
 .f label{display:block;font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase}
-.f input,.f select{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:14px;appearance:none;-webkit-appearance:none;transition:border-color .15s}
+.f input,.f select{width:100%;min-width:0;padding:9px 12px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);color:var(--tx);font-size:14px;appearance:none;-webkit-appearance:none;transition:border-color .15s}
 .f input:focus,.f select:focus{outline:none;border-color:var(--green)}
 .f input::placeholder{color:var(--tx3)}
 .f select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
@@ -274,9 +277,12 @@ canvas.main-oc{display:block;width:100%;height:auto}
 /* v1.21.1: 촬영 정렬용 3×3 격자 — 홈의 격자 오버레이 토글과 연동 (촬영 중에도 정렬 가이드) */
 .cam-grid{position:absolute;inset:0;pointer-events:none;display:none;z-index:2}
 .cam-grid.on{display:block;background-image:linear-gradient(rgba(255,255,255,.34) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.34) 1px,transparent 1px);background-size:33.333% 33.333%;background-position:center}
-/* v1.21.1: SLR 가로 촬영 — 프리뷰+가이드를 90° 회전. 폰을 세로로 든 채 왼쪽으로 눕히면 화면이 정방향 가로가 됨(가로모드 토글 불필요). --cbw/--cbh = .cam-body 실측 크기(JS) */
-.cam-ov.cam-landscape-shot #camVid,
-.cam-ov.cam-landscape-shot .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
+/* v1.21.1: SLR 가로 촬영 — 프리뷰+가이드를 90° 회전. 폰을 세로로 든 채 왼쪽으로 눕히면 화면이 정방향 가로가 됨(가로모드 토글 불필요). --cbw/--cbh = .cam-body 실측 크기(JS)
+   v1.22: 세로 화면에서만 회전 — 아이패드/태블릿을 이미 가로로 든 경우 이중 회전 방지 (전 기기 시뮬레이션 결과) */
+@media (orientation:portrait){
+  .cam-ov.cam-landscape-shot #camVid,
+  .cam-ov.cam-landscape-shot .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
+}
 /* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
 .gbox{position:absolute;border:2px solid rgba(0,212,139,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
 /* 안내문(경고) 자동 페이드아웃 — opacity는 openCam에서 인라인 제어 */
@@ -285,7 +291,8 @@ canvas.main-oc{display:block;width:100%;height:auto}
 /* 박스 안의 중앙 십자선/격자 제거 — 시각 노이즈 줄이고 실루엣만 부각 */
 .gcv{display:none}
 .gch{display:none}
-.cam-bar{background:rgba(5,5,5,.92);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.08)}
+.cam-bar{background:rgba(5,5,5,.92);padding:16px 20px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.08)}
+.cam-bar>div:first-child{min-width:0}
 .ct-name{color:#fff;font-size:14px;font-weight:700}
 .ct-sub{color:#7dd4b4;font-size:11px;margin-top:2px}
 .ct-slot{color:#fcd34d;font-size:11px;margin-top:2px;font-weight:700}
@@ -300,7 +307,7 @@ canvas.main-oc{display:block;width:100%;height:auto}
 canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .fs-ctrl{background:#0d0d0d;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.08)}
 /* v1.19: 엔터프라이즈급 랜딩 리뉴얼 — 큰 글씨·2×2 그리드·홈에 상시 변경내역 */
-#landingScreen{position:fixed;inset:0;z-index:9000;background:radial-gradient(120% 80% at 50% -10%, #0e2b22 0%, #061611 55%, #030806 100%);display:flex;flex-direction:column;color:#fff;overflow-y:auto;padding:32px 20px 40px;-webkit-font-smoothing:antialiased}
+#landingScreen{position:fixed;inset:0;z-index:9000;background:radial-gradient(120% 80% at 50% -10%, #0e2b22 0%, #061611 55%, #030806 100%);display:flex;flex-direction:column;color:#fff;overflow-y:auto;padding:calc(32px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-left,0px)) calc(40px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
 #landingScreen.hidden{display:none}
 .ls-hero{text-align:center;margin-top:14px;margin-bottom:26px;max-width:520px;margin-left:auto;margin-right:auto}
 .ls-brand{font-size:13px;letter-spacing:.32em;color:#7dd4b4;font-weight:700;margin-bottom:8px}
@@ -321,7 +328,7 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .ls-btn-secondary{background:rgba(255,255,255,.07);color:#d1d5db;border:1px solid rgba(255,255,255,.14);padding:14px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;font-family:inherit;letter-spacing:.01em}
 .ls-btn-secondary:active{background:rgba(255,255,255,.12)}
 /* v1.20.5: 변경 내역 — flex-shrink:0로 랜딩(flex column)에서 박스가 0높이로 찌부러지는 문제 방지 */
-.ls-changelog{max-width:520px;margin:24px auto 0;background:rgba(0,40,28,.55);border:1.5px solid #00d48b;border-radius:14px;overflow:hidden;flex-shrink:0}
+.ls-changelog{width:min(520px,100%);margin:24px auto 0;background:rgba(0,40,28,.55);border:1.5px solid #00d48b;border-radius:14px;overflow:hidden;flex-shrink:0}
 .ls-cl-hd{padding:14px 18px;display:flex;align-items:center;gap:12px;background:rgba(0,212,139,.18);cursor:pointer;user-select:none;-webkit-user-select:none}
 .ls-cl-hd:active{background:rgba(0,212,139,.28)}
 .ls-cl-hd-title{font-size:15px;font-weight:800;color:#9fffd4;letter-spacing:.04em;flex:1}
@@ -366,15 +373,95 @@ canvas#fsCanvas{max-width:100%;max-height:100%;display:block}
 .pload p{font-size:12px;color:var(--tx2);font-weight:500}
 .spin{width:28px;height:28px;border:2.5px solid var(--brd2);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-.next-phase-btn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:250;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(0,168,120,.5);display:flex;align-items:center;gap:10px;border:none;white-space:nowrap;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
+.next-phase-btn{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(80px);z-index:250;background:var(--green);color:#fff;padding:14px 28px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(0,168,120,.5);display:flex;align-items:center;gap:10px;border:none;white-space:nowrap;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none}
 .next-phase-btn.visible{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 .next-phase-btn:active{transform:translateX(-50%) scale(.94)}
 .cam-guide-svg{position:absolute;top:6%;bottom:4%;left:16%;right:16%;pointer-events:none;overflow:visible}
 .cam-warning{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);background:rgba(180,30,30,.82);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:10px;white-space:nowrap;pointer-events:none;text-align:center;line-height:1.5}
 .cam-pose-label{position:absolute;top:8%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#9de8c8;font-size:11px;font-weight:600;padding:4px 14px;border-radius:10px;white-space:nowrap;pointer-events:none}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:92vw;text-align:center}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 input[type=range]{accent-color:var(--green)}
+
+/* ═══════ v1.22: 전 기기 반응형 재구성 ═══════
+   시뮬레이션 매트릭스: 아이폰15(393)·SE(375)·갤럭시(360)·폴드 커버(344)·폴드 펼침(690)
+   ·아이패드(768/1024)·갤럭시탭(800/1280)·데스크탑(1440/1920) — 4화면(랜딩/메인/카메라/SLR) */
+
+/* ── 초소형: 갤럭시 Z Fold 커버(344) 등 ≤374px — 밀도 축소 ── */
+@media (max-width:374px){
+  html,body{font-size:14px}
+  .wrap{padding:12px;padding-bottom:90px}
+  .pnav{padding:12px 11px;font-size:12px}
+  .hdr{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  .cam-bar{padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .shutter{width:58px;height:58px}
+  .rep-actions{grid-template-columns:1fr}
+  .ls-title{font-size:42px}
+}
+/* 구형 폴드 커버(280) 안전망 */
+@media (max-width:330px){
+  .ls-features{grid-template-columns:1fr}
+  .ls-feat{min-height:0}
+  .mgrid{grid-template-columns:1fr}
+}
+
+/* ── 태블릿 세로·폴드 펼침 ≥700px — 랜딩 스케일 1단계 ── */
+@media (min-width:700px){
+  .ls-title{font-size:64px}
+  .ls-subtitle{font-size:18px}
+  .ls-tagline{font-size:15px;max-width:460px}
+  .ls-features{max-width:640px;gap:14px}
+  .ls-cta{max-width:560px}
+  .ls-changelog{width:min(560px,100%)}
+}
+
+/* ── 태블릿/폴드 펼침 ≥720px — 본문 와이드 + 검사 카드 2열 ── */
+@media (min-width:720px){
+  .wrap{max-width:980px}
+  #phase_before.on,#phase_after.on{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  :is(#phase_before,#phase_after).on>:not(.test-card){grid-column:1/-1}
+  :is(#phase_before,#phase_after).on .test-card{margin-bottom:0}
+}
+
+/* ── 데스크탑·태블릿 가로 ≥1100px — 와이드 마감 + 랜딩 스케일 2단계 ── */
+@media (min-width:1100px){
+  .wrap{max-width:1180px;padding-top:24px}
+  #phase_before.on,#phase_after.on{gap:18px}
+  #landingScreen{padding-top:calc(48px + env(safe-area-inset-top,0px))}
+  .ls-hero{max-width:640px}
+  .ls-brand{font-size:15px}
+  .ls-title{font-size:76px}
+  .ls-subtitle{font-size:20px}
+  .ls-tagline{font-size:16px;max-width:520px}
+  .ls-features{max-width:920px;grid-template-columns:repeat(4,1fr)}
+  .ls-feat{min-height:128px;padding:22px 18px}
+  .ls-feat-t{font-size:16px}
+  .ls-feat-s{font-size:12.5px}
+  .ls-cta{max-width:600px}
+  .ls-btn-primary{padding:24px;font-size:20px}
+  .ls-changelog{width:min(600px,100%)}
+}
+
+/* ── SLR 가이드 안내문 — 화면 방향별 분기 (세로=눕혀 촬영 / 가로=그대로) ── */
+.slr-tip-l{display:none}
+@media (orientation:landscape){
+  .slr-tip-p{display:none}
+  .slr-tip-l{display:block}
+}
+
+/* ── 데스크탑 포인터 — 호버 피드백 (터치 기기엔 영향 없음) ── */
+@media (hover:hover) and (pointer:fine){
+  .pnav:hover{color:var(--tx);background:var(--bg3)}
+  .abtn:hover{filter:brightness(1.12)}
+  .ract:hover{border-color:var(--green);box-shadow:var(--sh2)}
+  .photo-retake:hover{background:rgba(0,0,0,.85)}
+  .shutter:hover{transform:scale(1.05)}
+  .cclose:hover{background:rgba(255,255,255,.1);color:#fff}
+  .ls-btn-primary:hover{filter:brightness(1.07)}
+  .ls-btn-secondary:hover{background:rgba(255,255,255,.12)}
+  .ls-cl-hd:hover{background:rgba(0,212,139,.26)}
+  .ls-cl-more:hover{background:rgba(255,255,255,.1)}
+}
 </style>
 </head>
 <body>
@@ -816,7 +903,8 @@ function buildSupineSilhouette(side){
   <path d="M 100 70 Q 110 65 117 56" fill="none" stroke="#ffc81e" stroke-width=".9" opacity=".9"/>
   <text x="118" y="48" class="tn" fill="#ffd700" font-weight="800">정상 70~85°</text>
   </g>
-  <text x="100" y="13" text-anchor="middle" font-size="6" font-weight="800" fill="#ffd700">📱 폰을 왼쪽으로 눕혀 촬영 — 화면 자동 회전</text>`;
+  <text x="100" y="13" text-anchor="middle" font-size="6" font-weight="800" fill="#ffd700" class="slr-tip-p">📱 폰을 왼쪽으로 눕혀 촬영 — 화면 자동 회전</text>
+  <text x="100" y="13" text-anchor="middle" font-size="6" font-weight="800" fill="#ffd700" class="slr-tip-l">📱 가로 화면 — 그대로 촬영하세요</text>`;
 }
 
 // ─── 검사별 가이드 정의 ───
@@ -1378,7 +1466,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.21.1';
+const APP_VERSION='v1.22.0';
 const BUILD_TIME='2026-06-10';
 
 // ═══════════════════════════════════════════
@@ -1430,6 +1518,14 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.22.0', date:'2026-06-10', items:[
+    '📱 전 기기 반응형 재구성 — 아이폰·갤럭시·갤럭시 폴드(커버/펼침)·아이패드·갤럭시탭·데스크탑 11종 프로필 × 4화면 실브라우저 시뮬레이션 기반',
+    '🗂 태블릿·데스크탑: 본문 와이드(980/1180px) + 검사 카드 2열 그리드, 데스크탑 호버 피드백',
+    '🛌 SLR 자동 회전을 세로 화면에서만 적용 — 아이패드/태블릿을 가로로 들면 회전 없이 그대로 (이중 회전 제거), 저장 사진 방향도 동기화',
+    '📐 좁은 화면(폴드 커버 등): 회원정보 2열(이메일·날짜 잘림 해소), 컴팩트 밀도',
+    '🖥 데스크탑 랜딩 스케일업 — 히어로 확대, 기능 카드 4열',
+    '📲 아이폰 노치/홈바 세이프에어리어 대응 (카메라 바·하단 버튼·토스트)',
+  ]},
   {ver:'v1.21.1', date:'2026-06-10', items:[
     '▦ 격자 오버레이를 촬영 화면에도 표시 — 카메라 가이드에 3×3 정렬 격자(토글과 실시간 연동). 이전엔 찍은 사진에만 적용돼 촬영 중엔 안 보였음',
     '🧍 키·성별 실루엣 복원 — 고정 실사 그림 대신 회원 키/성별에 따라 어깨·골반 폭·몸 길이가 달라지는 SVG 실루엣 사용 (실사 그림이 가변 실루엣을 덮고 있었음). SLR 누움 실루엣도 키/성별 반영',
@@ -2582,7 +2678,8 @@ async function snap(){
   // ── 3단계: 최적 프레임 사용 ──
   // v1.12.3: 개별 저장 팝업 제거 — 일괄 저장 버튼으로만 저장
   // v1.21.1: SLR 가로 촬영은 프리뷰가 90° 회전돼 있으므로 저장 이미지도 동일하게 회전
-  if(camTid==='slr_l'||camTid==='slr_r') bestFrame=await rotate90DataUrl(bestFrame);
+  // v1.22: 프리뷰가 실제 회전된 경우만 (세로 화면 한정 — 가로 태블릿/데스크탑은 회전 없음)
+  if(slrPreviewRotated()) bestFrame=await rotate90DataUrl(bestFrame);
   loadImg(camTid,camSlot,bestFrame);
   closeCam();
   toast((camSlot==='B'?'Before':'After')+` 촬영 완료 — 최적 프레임 선택 (${bestScore}점)`);
@@ -2595,13 +2692,27 @@ async function snapSingle(){
   hc.width=v.videoWidth;hc.height=v.videoHeight;
   hc.getContext('2d').drawImage(v,0,0);
   let snapData=hc.toDataURL('image/jpeg',.88);
-  // v1.21.1: SLR 가로 촬영은 프리뷰가 90° 회전돼 있으므로 저장 이미지도 동일하게 회전
-  if(camTid==='slr_l'||camTid==='slr_r') snapData=await rotate90DataUrl(snapData);
+  // v1.22: 프리뷰가 실제 회전된 경우만 저장 이미지 회전 (세로 화면 한정)
+  if(slrPreviewRotated()) snapData=await rotate90DataUrl(snapData);
   loadImg(camTid,camSlot,snapData);
   // v1.12.3: 개별 저장 팝업 제거
   closeCam();
   toast((camSlot==='B'?'Before':'After')+' 촬영 완료');
 }
+
+// v1.22: SLR 프리뷰가 실제로 90° 회전 표시 중인지 — CSS @media (orientation:portrait) 조건과 동일해야 함
+function slrPreviewRotated(){
+  const ov=document.getElementById('camOv');
+  return !!ov && ov.classList.contains('cam-landscape-shot')
+      && window.matchMedia('(orientation: portrait)').matches;
+}
+// v1.22: 촬영 중 기기 회전/리사이즈 시 회전 프리뷰 치수(--cbw/--cbh) 재측정
+window.addEventListener('resize',()=>{
+  const ov=document.getElementById('camOv');
+  if(!ov||!ov.classList.contains('show')||!ov.classList.contains('cam-landscape-shot'))return;
+  const cb=ov.querySelector('.cam-body');
+  if(cb){cb.style.setProperty('--cbw',cb.clientWidth+'px');cb.style.setProperty('--cbh',cb.clientHeight+'px')}
+});
 
 // v1.21.1: dataUrl을 시계방향 90° 회전 — SLR 가로 촬영의 화면 회전(rotate(90deg))과 동일 방향으로 저장
 function rotate90DataUrl(dataUrl){
