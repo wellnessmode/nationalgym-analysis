@@ -442,13 +442,6 @@ input[type=range]{accent-color:var(--green)}
   .ls-changelog{width:min(600px,100%)}
 }
 
-/* ── SLR 가이드 안내문 — 화면 방향별 분기 (세로=눕혀 촬영 / 가로=그대로) ── */
-.slr-tip-l{display:none}
-@media (orientation:landscape){
-  .slr-tip-p{display:none}
-  .slr-tip-l{display:block}
-}
-
 /* ── 데스크탑 포인터 — 호버 피드백 (터치 기기엔 영향 없음) ── */
 @media (hover:hover) and (pointer:fine){
   .pnav:hover{color:var(--tx);background:var(--bg3)}
@@ -955,18 +948,16 @@ const DEFAULT_GUIDE = {
   viewBox:'0 0 100 220',
   svg:''
 };
-// v1.21.1: 실사 PNG 가이드 비활성화 — 회원 키/성별에 따라 비율이 달라지는 SVG 실루엣을
-// 사용하기 위함. (실사 webp는 고정 비율이라 키/성별 반영이 화면에 안 나타났음 — 트레이너 피드백)
-// 실사로 되돌리려면 아래 주석 블록을 POSE_IMG에 복원.
-const POSE_IMG = {};
-/* 실사 매핑 보존(필요 시 복원):
+// v1.22.1: 실사 가이드 그림 복원 — 키/성별 보정은 "그림 자체를 늘리고 줄여서" 적용.
+// 점선 SVG 실루엣은 절대 사용하지 않음 (사용자 지시).
+const POSE_IMG = {
   ant:{b:'ant'}, lat:{b:'lat'}, post:{b:'post'},
-  sh_flex_l:{b:'shf',m:1}, sh_flex_r:{b:'shf'},
-  sku:{b:'sku',m:1},       sku_r:{b:'sku'},
+  sh_flex_l:{b:'shf',m:1}, sh_flex_r:{b:'shf'},   // 후면 외전 — 좌/우 미러 재사용
+  sku:{b:'sku',m:1},       sku_r:{b:'sku'},       // 정면 무릎 들기
   ohs_b:{b:'ohs_b'}, ohs_l:{b:'ohs_l'},
   trunk_l:{b:'trunk_l'}, trunk_b:{b:'trunk_b'},
-  slr_l:{b:'slr'}, slr_r:{b:'slr'},
-*/
+  slr_l:{b:'slr'}, slr_r:{b:'slr'},               // v1.21: SLR 좌/우 동일 방향 (미러 없음 — 머리 방향 일관)
+};
 
 function updateCamGuide(tid){
   const g=POSE_GUIDES[tid]||DEFAULT_GUIDE;
@@ -976,21 +967,30 @@ function updateCamGuide(tid){
   const warnEl=document.getElementById('camWarning');
   const tipEl=document.getElementById('camTip');
   const pi=(typeof POSE_IMG!=='undefined')?POSE_IMG[tid]:null;
+  // v1.22.1: 점선 SVG 실루엣 절대 사용 금지 — 실사 가이드(webp)만 사용.
+  // 키/성별 보정은 실사 그림 자체를 늘리고 줄여서(scale) 적용.
+  if(svgEl){svgEl.style.display='none';svgEl.innerHTML='';}
   if(pi && imgEl){
-    imgEl.onerror=()=>{ imgEl.style.display='none'; if(svgEl) svgEl.style.display='block'; };
+    imgEl.onerror=()=>{ imgEl.style.display='none'; }; // 로드 실패 시 가이드 박스만 (SVG 폴백 금지)
     imgEl.src=`poses/${pi.b}.webp`;
-    imgEl.style.transform = pi.m ? 'scaleX(-1)' : 'none';
+    const sp=_silhouetteParams();
+    const len=1+sp.t*0.06;                        // 키 → 길이 (170cm 기준 약 ±6%)
+    const wid=(sp.g==='F'?0.92:1)*(1-sp.t*0.04);  // 성별·키 → 폭 (여성 슬림, 큰 키 약간 슬림)
+    const sup=(tid==='slr_l'||tid==='slr_r');     // 누운 가이드는 몸 길이가 가로축
+    const sx=(sup?len:wid)*(pi.m?-1:1);
+    const sy=sup?wid:len;
+    imgEl.style.transformOrigin='center bottom';  // 발/매트 고정 — 위로 늘고 줆
+    imgEl.style.transform=`scale(${sx.toFixed(3)},${sy.toFixed(3)})`;
     imgEl.style.display='block';
-    if(svgEl) svgEl.style.display='none';
-  }else{
-    if(imgEl) imgEl.style.display='none';
-    if(svgEl){
-      svgEl.style.display='block';
-      svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
-      svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
-    }
+  }else if(imgEl){
+    imgEl.style.display='none';
   }
-  if(labelEl) labelEl.textContent=g.label||'';
+  if(labelEl){
+    let _lbl=g.label||'';
+    // v1.22.1: SVG 안내문 제거에 따라 SLR 회전 힌트를 라벨로 이동 (세로 화면에서만)
+    if((tid==='slr_l'||tid==='slr_r') && window.matchMedia('(orientation: portrait)').matches) _lbl+=' · 폰을 왼쪽으로 눕히면 화면 자동 회전';
+    labelEl.textContent=_lbl;
+  }
   if(warnEl) warnEl.textContent='⚠️ '+g.warning;
   if(tipEl) tipEl.style.display='none';
 }
@@ -1466,7 +1466,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.22.0';
+const APP_VERSION='v1.22.1';
 const BUILD_TIME='2026-06-10';
 
 // ═══════════════════════════════════════════
@@ -1518,6 +1518,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.22.1', date:'2026-06-10', items:[
+    '🧍 가이드 그림 원복 — 점선 SVG 실루엣 완전 제거 (다시 사용 안 함). 원래 실사 가이드 그림을 키/성별에 따라 그림 자체를 늘리고 줄여서 표시',
+    '↕️ 스케일 방식: 키 → 길이 ±6% (발/매트 고정, 위로 늘어남) · 성별/키 → 폭 (여성 슬림). 누운 SLR은 길이가 가로 방향으로 적용',
+    '🛌 SLR 회전 안내문을 가이드 라벨로 이동 (세로 화면에서만 표시)',
+  ]},
   {ver:'v1.22.0', date:'2026-06-10', items:[
     '📱 전 기기 반응형 재구성 — 아이폰·갤럭시·갤럭시 폴드(커버/펼침)·아이패드·갤럭시탭·데스크탑 11종 프로필 × 4화면 실브라우저 시뮬레이션 기반',
     '🗂 태블릿·데스크탑: 본문 와이드(980/1180px) + 검사 카드 2열 그리드, 데스크탑 호버 피드백',
@@ -3244,21 +3249,30 @@ function updateCamGuide(tid){
   const warnEl=document.getElementById('camWarning');
   const tipEl=document.getElementById('camTip');
   const pi=(typeof POSE_IMG!=='undefined')?POSE_IMG[tid]:null;
+  // v1.22.1: 점선 SVG 실루엣 절대 사용 금지 — 실사 가이드(webp)만 사용.
+  // 키/성별 보정은 실사 그림 자체를 늘리고 줄여서(scale) 적용.
+  if(svgEl){svgEl.style.display='none';svgEl.innerHTML='';}
   if(pi && imgEl){
-    imgEl.onerror=()=>{ imgEl.style.display='none'; if(svgEl) svgEl.style.display='block'; };
+    imgEl.onerror=()=>{ imgEl.style.display='none'; }; // 로드 실패 시 가이드 박스만 (SVG 폴백 금지)
     imgEl.src=`poses/${pi.b}.webp`;
-    imgEl.style.transform = pi.m ? 'scaleX(-1)' : 'none';
+    const sp=_silhouetteParams();
+    const len=1+sp.t*0.06;                        // 키 → 길이 (170cm 기준 약 ±6%)
+    const wid=(sp.g==='F'?0.92:1)*(1-sp.t*0.04);  // 성별·키 → 폭 (여성 슬림, 큰 키 약간 슬림)
+    const sup=(tid==='slr_l'||tid==='slr_r');     // 누운 가이드는 몸 길이가 가로축
+    const sx=(sup?len:wid)*(pi.m?-1:1);
+    const sy=sup?wid:len;
+    imgEl.style.transformOrigin='center bottom';  // 발/매트 고정 — 위로 늘고 줆
+    imgEl.style.transform=`scale(${sx.toFixed(3)},${sy.toFixed(3)})`;
     imgEl.style.display='block';
-    if(svgEl) svgEl.style.display='none';
-  }else{
-    if(imgEl) imgEl.style.display='none';
-    if(svgEl){
-      svgEl.style.display='block';
-      svgEl.setAttribute('viewBox', g.viewBox||'0 0 100 200');
-      svgEl.innerHTML=(typeof g.svg==='function'?g.svg():(g.svg||''));
-    }
+  }else if(imgEl){
+    imgEl.style.display='none';
   }
-  if(labelEl) labelEl.textContent=g.label||'';
+  if(labelEl){
+    let _lbl=g.label||'';
+    // v1.22.1: SVG 안내문 제거에 따라 SLR 회전 힌트를 라벨로 이동 (세로 화면에서만)
+    if((tid==='slr_l'||tid==='slr_r') && window.matchMedia('(orientation: portrait)').matches) _lbl+=' · 폰을 왼쪽으로 눕히면 화면 자동 회전';
+    labelEl.textContent=_lbl;
+  }
   if(warnEl) warnEl.textContent='⚠️ '+g.warning;
   if(tipEl) tipEl.style.display='none';
   // v1.17.1: SLR 등 가로(landscape) 가이드 — 박스를 JS로 직접 가로 형태 적용 (인라인 스타일 충돌 회피, 트레이너 피드백 #14)
