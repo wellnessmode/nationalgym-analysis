@@ -275,12 +275,6 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cam-body{flex:1;position:relative;overflow:hidden}
 #camVid{width:100%;height:100%;object-fit:cover;display:block}
 .cam-guide{position:absolute;inset:0;pointer-events:none}
-/* v1.23: 라이브 추적 스켈레톤 오버레이 + 자동 캡처 카운트다운 */
-.cam-live-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
-.cam-countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:110px;font-weight:900;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.65);display:none;pointer-events:none;font-variant-numeric:tabular-nums}
-.cam-live-badge{position:absolute;top:5%;left:50%;transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.7);color:#9de8c8;font-size:12px;font-weight:700;padding:6px 14px;border-radius:14px;white-space:nowrap;pointer-events:none;display:none}
-.cam-live-badge.on{display:block}
-.cam-live-badge.ready{background:rgba(0,200,120,.92);color:#fff}
 /* v1.21.1: 촬영 정렬용 3×3 격자 — 홈의 격자 오버레이 토글과 연동 (촬영 중에도 정렬 가이드) */
 .cam-grid{position:absolute;inset:0;pointer-events:none;display:none;z-index:2}
 .cam-grid.on{display:block;background-image:linear-gradient(rgba(255,255,255,.34) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.34) 1px,transparent 1px);background-size:33.333% 33.333%;background-position:center}
@@ -613,9 +607,6 @@ input[type=range]{accent-color:var(--green)}
 <div class="cam-ov" id="camOv">
   <div class="cam-body">
     <video id="camVid" autoplay playsinline muted></video>
-    <canvas id="camLiveCv" class="cam-live-cv"></canvas>
-    <div id="camLiveBadge" class="cam-live-badge"></div>
-    <div id="camCountdown" class="cam-countdown"></div>
     <div class="cam-guide" id="camGuideWrap">
       <div class="cam-grid" id="camGrid"></div>
       <div class="gbox"></div>
@@ -646,7 +637,7 @@ input[type=range]{accent-color:var(--green)}
       <div class="ct-sub" id="ctSub"></div>
       <div class="ct-slot" id="ctSlot"></div>
     </div>
-    <button class="shutter" onclick="armCapture()"></button>
+    <button class="shutter" onclick="snap()"></button>
     <button class="cclose" onclick="closeCam()">닫기</button>
   </div>
 </div>
@@ -1480,7 +1471,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.23.1';
+const APP_VERSION='v1.22.3';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -1532,14 +1523,6 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
-  {ver:'v1.23.1', date:'2026-06-17', items:[
-    '🛑 자동 즉시촬영 제거 — 가이드에 들어가는 순간 준비 전 찍히던 문제 수정. 실시간 스켈레톤·안정 표시는 유지하되, 촬영 버튼을 누르면 3·2·1 준비 후 촬영',
-  ]},
-  {ver:'v1.23.0', date:'2026-06-17', items:[
-    '🎥 모션 인식 전면 도입 — 감지 엔진을 MediaPipe Tasks PoseLandmarker로 교체. 정지 사진 1장이 아니라 실시간 영상 추적으로 포인트 안정성 향상',
-    '🤖 자동 촬영 — 촬영 화면에 실시간 스켈레톤을 표시하고, 자세가 안정되고 가이드 안에 들어오면 카운트다운 후 자동 촬영(최근 프레임 좌표 평균 저장). 셔터 수동 촬영도 유지',
-    '🛟 안전장치 — 신엔진 로드/호환 실패 시 기존 엔진으로 자동 폴백(앱 중단 방지). 측정·비교·점편집·저장은 좌표 형식이 동일해 그대로 동작',
-  ]},
   {ver:'v1.22.3', date:'2026-06-17', items:[
     '🩹 포인트 감지 안정화 — 감지 큐에 타임아웃 추가(한 번 멈추면 이후 After·SLR 사진이 전부 감지 안 되던 문제) + 복원 시 백그라운드 일괄 재감지 제거(촬영과 경쟁 해소)',
     '🛌 SLR 포인트 — 캡처 시 강제 회전 저장 제거(원본 저장 후 방향 자동 탐색). 이중 회전으로 SLR 포인트가 안 찍히던 문제 해결',
@@ -1938,9 +1921,6 @@ let fsTestId=null;
 let dragTid=null, dragTx=0, dragTy=0, dragScale=1, dragAlpha=0.5;
 let dragPointers={};
 let poseEng=null,poseOk=false;
-// v1.23: 모션 인식 엔진 — MediaPipe Tasks PoseLandmarker. poseEngKind='tasks'면 라이브/동기 감지,
-// 'solutions'면 구형 Pose 0.5 폴백. poseLM=정지(IMAGE), poseLMVideo=라이브(VIDEO).
-let poseEngKind=null,poseLM=null,poseLMVideo=null,_TasksVision=null;
 
 // ═══════════════════════════════════════════
 // INIT
@@ -2044,8 +2024,19 @@ window.addEventListener('load', () => {
       } else {btn.classList.remove('visible')}
     },150);
   },{passive:true});
-  // v1.23: Tasks PoseLandmarker 우선 초기화, 실패 시 Pose 0.5 폴백 (initPoseEngine 내부)
-  initPoseEngine();
+  if(typeof Pose!=='undefined'){
+    poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
+    // modelComplexity:2(heavy) for better accuracy on side/back views & unusual angles
+    // Lowered minDetectionConfidence to 0.4 so partial landmark sets still render
+    poseEng.setOptions({modelComplexity:2,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
+    poseEng.onResults(()=>{});
+    poseEng.initialize().then(()=>{
+      poseOk=true;
+      // v1.22.3: 백그라운드 일괄 재감지 제거 — 감지 큐를 40여 작업으로 점유해
+      // 사용자가 막 촬영한 사진(특히 After·SLR)의 감지와 경쟁/지연시키던 문제.
+      // 저장된 pose는 restorePose로 즉시 복원되므로 불필요. 레거시 세션은 "재분석" 버튼으로.
+    }).catch(()=>{});
+  }
 });
 
 function tickTS(){
@@ -2641,112 +2632,14 @@ function openCam(tid,slot){
   clearTimeout(window._hintFadeTimer);
   window._hintFadeTimer=setTimeout(()=>{ if(wrn) wrn.style.opacity='0'; },5000);
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
-    .then(s=>{camStream=s;const vv=document.getElementById('camVid');vv.srcObject=s;startLiveTracking();})
+    .then(s=>{camStream=s;document.getElementById('camVid').srcObject=s})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
   startDeviceLevel();
 }
 // v1.12: 영상 캡처 모드 — 1.5초 동안 여러 프레임 캡처해서 MediaPipe로
 // 각 프레임 분석 후 가장 많은 landmark가 감지된 프레임을 최종 사진으로 사용.
 // 정지 사진 1장보다 훨씬 안정적인 스켈레톤 감지.
-// ═══ v1.23: 라이브 추적 + 자동 캡처 (Tasks VIDEO 모드) ═══
-// 프리뷰에 실시간 스켈레톤을 그리고, 포즈가 안정 + 가이드 안에 들면 카운트다운 후 자동 촬영.
-// Tasks 미로딩(폴백)이면 동작 안 하고 기존 수동 셔터(snap)만 사용.
-let _liveRAF=null,_liveHist=[],_capturing=false,_cdTimer=null,_lastStable=false;
-function startLiveTracking(){
-  _liveHist=[];_capturing=false;_lastStable=false;_cancelCountdown();clearLiveOverlay();
-  const badge=document.getElementById('camLiveBadge');
-  if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); return; }
-  if(badge){badge.className='cam-live-badge on';badge.textContent='실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요';}
-  const v=document.getElementById('camVid');
-  let lastT=-1;
-  const loop=()=>{
-    const ov=document.getElementById('camOv');
-    if(!ov||!ov.classList.contains('show')){_liveRAF=null;return;}
-    if(!_capturing && v.readyState>=2 && v.videoWidth){
-      if(v.currentTime!==lastT){
-        lastT=v.currentTime;
-        let r=null; try{ r=poseLMVideo.detectForVideo(v,performance.now()); }catch(e){}
-        if(r&&r.landmarks&&r.landmarks[0]){ const lm=_normLM(r.landmarks[0]); drawLiveOverlay(lm); checkAutoCapture(lm); }
-        else { clearLiveOverlay(); _lastStable=false; _cancelCountdown(); }
-      }
-    }
-    _liveRAF=requestAnimationFrame(loop);
-  };
-  _liveRAF=requestAnimationFrame(loop);
-}
-function stopLiveTracking(){ if(_liveRAF)cancelAnimationFrame(_liveRAF);_liveRAF=null;_cancelCountdown();_liveHist=[];_capturing=false;_lastStable=false;clearLiveOverlay(); const b=document.getElementById('camLiveBadge');if(b)b.classList.remove('on'); }
-function _liveMap(cv,v){
-  const rect=v.getBoundingClientRect();
-  const dw=Math.max(1,Math.round(rect.width)),dh=Math.max(1,Math.round(rect.height));
-  if(cv.width!==dw)cv.width=dw; if(cv.height!==dh)cv.height=dh;
-  const vw=v.videoWidth,vh=v.videoHeight,s=Math.max(dw/vw,dh/vh),ox=(dw-vw*s)/2,oy=(dh-vh*s)/2;
-  return {dw,dh,fx:p=>p.x*vw*s+ox,fy:p=>p.y*vh*s+oy};
-}
-function clearLiveOverlay(){ const cv=document.getElementById('camLiveCv'); if(cv)cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }
-function drawLiveOverlay(lm){
-  const cv=document.getElementById('camLiveCv'),v=document.getElementById('camVid'); if(!cv||!v||!v.videoWidth)return;
-  const M=_liveMap(cv,v),ctx=cv.getContext('2d'); ctx.clearRect(0,0,M.dw,M.dh);
-  const keys=(typeof TEST_KEY!=='undefined'&&TEST_KEY[camTid])?TEST_KEY[camTid]:KEY, ks=new Set(keys);
-  const col=_lastStable?'rgba(0,230,140,.95)':'rgba(120,200,255,.9)';
-  ctx.strokeStyle=col;ctx.lineWidth=Math.max(3,M.dw*.006);ctx.setLineDash([]);
-  CONN.forEach(([a,b])=>{ if(!ks.has(a)||!ks.has(b))return; if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return; ctx.beginPath();ctx.moveTo(M.fx(lm[a]),M.fy(lm[a]));ctx.lineTo(M.fx(lm[b]),M.fy(lm[b]));ctx.stroke(); });
-  const pr=Math.max(5,M.dw*.011);
-  keys.forEach(i=>{ const p=lm[i]; if(!p||p.visibility<.4)return; ctx.beginPath();ctx.arc(M.fx(p),M.fy(p),pr,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke(); });
-}
-function _inFrame(lm){
-  const need=(camTid==='slr_l'||camTid==='slr_r')?[23,24,25,26]:[0,11,12,27,28];
-  return need.every(i=>lm[i]&&lm[i].visibility>.5&&lm[i].x>0.04&&lm[i].x<0.96&&lm[i].y>0.02&&lm[i].y<0.98);
-}
-function _poseStable(lm){
-  const CORE=[11,12,23,24,25,26,27,28];
-  _liveHist.push(lm); if(_liveHist.length>8)_liveHist.shift();
-  if(_liveHist.length<6)return false;
-  let mv=0,c=0;
-  for(let f=1;f<_liveHist.length;f++)CORE.forEach(i=>{const a=_liveHist[f-1][i],b=_liveHist[f][i];if(a&&b&&a.visibility>.5&&b.visibility>.5){mv+=Math.hypot(a.x-b.x,a.y-b.y);c++}});
-  return c>0&&(mv/c)<0.006;
-}
-// v1.23.1: 자동 즉시촬영 제거 — 안정/프레임 여부는 '표시만'. 실제 촬영은 트레이너가
-// 촬영 버튼(armCapture)으로 시작 → 3초 준비 카운트다운 → 촬영. (준비 전 찍힘 버그 해결)
-function checkAutoCapture(lm){
-  _lastStable=_inFrame(lm)&&_poseStable(lm);
-  const badge=document.getElementById('camLiveBadge');
-  if(!badge||!badge.classList.contains('on')||_cdTimer)return;
-  if(_lastStable){ badge.className='cam-live-badge on ready'; badge.textContent='✓ 자세 안정 — 촬영 버튼을 누르세요'; }
-  else { badge.className='cam-live-badge on'; badge.textContent='실시간 추적 — 자세를 가이드에 맞추세요'; }
-}
-// 촬영 버튼 → 3초 준비 카운트다운 후 캡처 (라이브 평균 또는 폴백 snap)
-function armCapture(){
-  if(_capturing||_cdTimer)return;
-  const cb=(poseEngKind==='tasks'&&poseLMVideo)?captureLive:snap;
-  _startCountdown(3,cb);
-}
-function _startCountdown(sec,cb){
-  _cancelCountdown(); let n=sec||3; const cd=document.getElementById('camCountdown');
-  if(cd){cd.style.display='block';cd.textContent=n;}
-  _cdTimer=setInterval(()=>{ n--; if(n<=0){clearInterval(_cdTimer);_cdTimer=null;if(cd)cd.style.display='none';if(typeof cb==='function')cb();} else if(cd){cd.textContent=n;} },1000);
-}
-function _cancelCountdown(){ if(_cdTimer){clearInterval(_cdTimer);_cdTimer=null;} const cd=document.getElementById('camCountdown'); if(cd)cd.style.display='none'; }
-function _avgRecentPose(){
-  const hist=_liveHist.slice(-5); if(!hist.length)return null;
-  const out=[];
-  for(let i=0;i<33;i++){ let sx=0,sy=0,sz=0,sv=0,c=0; hist.forEach(f=>{const p=f[i];if(p){sx+=p.x;sy+=p.y;sz+=p.z||0;sv+=p.visibility||0;c++}}); out[i]=c?{x:sx/c,y:sy/c,z:sz/c,visibility:sv/c}:null; }
-  return out;
-}
-function captureLive(){
-  if(_capturing)return; _capturing=true;
-  const v=document.getElementById('camVid'),hc=document.getElementById('hc');
-  if(!v||!v.videoWidth){_capturing=false;return;}
-  hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0);
-  const dataUrl=hc.toDataURL('image/jpeg',.9);
-  const avg=_avgRecentPose();
-  const tid=camTid,slot=camSlot;
-  closeCam();
-  loadImg(tid,slot,dataUrl,false,avg);
-  toast((slot==='B'?'Before':'After')+' 자동 촬영 완료');
-}
-
 async function snap(){
-  stopLiveTracking(); // v1.23: 수동 셔터 시 라이브 자동촬영 루프 중단 (경쟁 방지)
   if(!poseOk){
     // MediaPipe 로딩 안 됨 → 일반 단일 프레임 캡처
     return snapSingle();
@@ -2972,7 +2865,7 @@ function autoSaveToGallery(dataUrl, filename){
     setTimeout(()=>document.body.removeChild(a),500);
   }catch(e){console.warn('갤러리 저장 실패',e)}
 }
-function closeCam(){stopLiveTracking();if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show');stopDeviceLevel()}
+function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show');stopDeviceLevel()}
 function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';const _sy=window.scrollY;f.click();setTimeout(()=>window.scrollTo(0,_sy),100)}
 document.getElementById('fi').addEventListener('click',function(e){e.stopPropagation()},{capture:true});
 document.getElementById('fi').addEventListener('change',function(e){
@@ -2989,7 +2882,7 @@ document.getElementById('fi').addEventListener('change',function(e){
 // ═══════════════════════════════════════════
 // LOAD IMAGE
 // ═══════════════════════════════════════════
-async function loadImg(tid,slot,src,skipSave,injectPose){
+async function loadImg(tid,slot,src,skipSave){
   if(!SHOTS[tid])SHOTS[tid]={B:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]},A:{img:null,canvas:null,ctx:null,pose:null,markers:[],lines:[],guides:[]}};
   ['B','A'].forEach(s=>{
     if(!SHOTS[tid][s]||!SHOTS[tid][s].markers){
@@ -3076,12 +2969,9 @@ async function loadImg(tid,slot,src,skipSave,injectPose){
     if(!saved.markers)saved.markers=[];
     if(!saved.lines)saved.lines=[];
     if(!saved.guides)saved.guides=[];
-    // v1.23: 라이브 자동촬영이 좌표를 주입하면(injectPose) 재감지 없이 그 좌표 사용.
-    // v1.21: pose 복원은 세션 복원(skipSave)일 때만. 새로 찍은/올린 사진은 이전 pose를 폐기하고 재감지.
-    if(injectPose && Array.isArray(injectPose)){
-      SHOTS[tid][slot].pose=injectPose;SHOTS[tid][slot].poseEdited=false;
-      try{savePose(tid,slot,false)}catch(e){}
-    }else if(skipSave){
+    // v1.21: pose 복원은 세션 복원(skipSave)일 때만. 새로 찍은/올린 사진은 이전 pose를
+    // 폐기하고 재감지 (재촬영 시 옛 스켈레톤이 새 사진 위에 남던 문제 방지)
+    if(skipSave){
       restorePose(tid,slot);
     }else{
       SHOTS[tid][slot].pose=null;SHOTS[tid][slot].poseEdited=false;
@@ -3986,73 +3876,16 @@ function updateSlotBadge(tid,slot){
 // v1.21: 전 호출 직렬화 — poseEng.onResults는 전역 핸들러라 동시 호출 시 결과가 엉킴
 // (복원 후 일괄 재감지 + 업로드 감지가 겹쳐도 안전)
 let _poseQueue=Promise.resolve();
-
-// ═══ v1.23: MediaPipe Tasks PoseLandmarker 초기화 (모션 인식 엔진) ═══
-// 좌표 형식(정규화 33점 {x,y,z,visibility})이 Pose 0.5와 동일 → 측정·저장·점편집 무수정 호환.
-// Tasks 로드/호환 실패 시 자동으로 Pose 0.5 폴백 (앱 중단 방지 — 직원 운영 안전장치).
-const TASKS_VER='0.10.18';
-const POSE_MODEL='https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task';
-async function initPoseEngine(){
-  // 1) Tasks 우선
-  try{
-    const vision=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VER}`);
-    const fileset=await vision.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VER}/wasm`);
-    const mk=(mode,delegate)=>vision.PoseLandmarker.createFromOptions(fileset,{
-      baseOptions:{modelAssetPath:POSE_MODEL,delegate},
-      runningMode:mode,numPoses:1,
-      minPoseDetectionConfidence:0.4,minPosePresenceConfidence:0.4,minTrackingConfidence:0.4,
-      outputSegmentationMasks:true
-    });
-    let delegate='GPU';
-    try{ poseLM=await mk('IMAGE',delegate); }
-    catch(e){ delegate='CPU'; poseLM=await mk('IMAGE',delegate); } // GPU 미지원 기기 → CPU
-    try{ poseLMVideo=await mk('VIDEO',delegate); }catch(e){ poseLMVideo=null; } // 라이브용(없어도 정지감지는 동작)
-    _TasksVision=vision; poseEng=poseLM; poseEngKind='tasks'; poseOk=true;
-    return;
-  }catch(e){ /* Tasks 실패 → 폴백 */ }
-  // 2) Pose 0.5 폴백
-  try{
-    if(typeof Pose!=='undefined'){
-      poseEng=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${f}`});
-      poseEng.setOptions({modelComplexity:2,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
-      poseEng.onResults(()=>{});
-      await poseEng.initialize();
-      poseEngKind='solutions'; poseOk=true;
-    }
-  }catch(e2){}
-}
-
-// 정규화 랜드마크 배열 복사 (드래그 in-place 수정 안전 + visibility/presence 정규화)
-function _normLM(arr){ return arr.map(p=>({x:p.x,y:p.y,z:p.z||0,visibility:(typeof p.visibility==='number'?p.visibility:(typeof p.presence==='number'?p.presence:1))})); }
-// Tasks MPMask → grayscale canvas (applySegMask의 'R채널=person' 가정에 맞춤)
-function _mpMaskToCanvas(mp){
-  const w=mp.width,h=mp.height; let arr;
-  try{ arr=mp.getAsFloat32Array(); }catch(e){ return null; }
-  const c=document.createElement('canvas');c.width=w;c.height=h;
-  const ctx=c.getContext('2d');const id=ctx.createImageData(w,h);
-  for(let i=0;i<w*h;i++){ const v=arr[i]<=1?Math.round(arr[i]*255):arr[i]; id.data[i*4]=v;id.data[i*4+1]=v;id.data[i*4+2]=v;id.data[i*4+3]=255; }
-  ctx.putImageData(id,0,0);return c;
-}
-function _tasksResult(r){
-  if(!r||!r.landmarks||!r.landmarks[0]) return {landmarks:null,segMask:null};
-  let segMask=null;
-  const mp=r.segmentationMasks&&r.segmentationMasks[0];
-  if(mp){ try{segMask=_mpMaskToCanvas(mp)}catch(e){} try{mp.close&&mp.close()}catch(e){} }
-  return {landmarks:_normLM(r.landmarks[0]), segMask};
-}
-// 정지 이미지 감지 — Tasks(동기 detect) 우선, Solutions 폴백(직렬 큐+타임아웃)
 function runPose(imgEl){
-  if(poseEngKind==='tasks'&&poseLM){
-    try{ return Promise.resolve(_tasksResult(poseLM.detect(imgEl))); }
-    catch(e){ return Promise.resolve(null); }
-  }
   const job=()=>new Promise(res=>{
-    if(!poseOk||!poseEng||poseEngKind!=='solutions')return res(null);
+    if(!poseOk||!poseEng)return res(null);
+    // v1.22.3: hang 방지 — onResults가 안 불리면 직렬 큐가 영구 정지해
+    // 이후 모든 감지(After·SLR)가 멈추던 문제. done 가드 + 6초 타임아웃.
     let done=false;
     const finish=v=>{ if(done)return; done=true; res(v); };
     try{
       poseEng.onResults(r=>finish({
-        landmarks: r.poseLandmarks?_normLM(r.poseLandmarks):null,
+        landmarks: r.poseLandmarks||null,
         segMask: r.segmentationMask||null
       }));
       Promise.resolve(poseEng.send({image:imgEl})).catch(()=>finish(null));
