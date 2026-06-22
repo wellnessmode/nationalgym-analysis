@@ -305,6 +305,11 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .ct-slot{color:#fcd34d;font-size:11px;margin-top:2px;font-weight:700}
 .shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.25);cursor:pointer;flex-shrink:0}
 .shutter:active{transform:scale(.88)}
+/* v1.24: 동적 검사 녹화 중 셔터 — 빨강 펄스 */
+.shutter.recording{background:#e23b3b;border-color:rgba(226,59,59,.45)}
+.shutter.recording::after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:4px;top:50%;left:50%;transform:translate(-50%,-50%)}
+@keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(226,59,59,.55)}50%{box-shadow:0 0 0 14px rgba(226,59,59,0)}}
+.shutter.recording{animation:recpulse 1.1s infinite;position:relative}
 .cclose{padding:9px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#ccc;font-size:13px;cursor:pointer}
 #fsView{display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#000}
 #fsView.show{display:flex}
@@ -1480,7 +1485,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.23.1';
+const APP_VERSION='v1.24.0';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -1532,6 +1537,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.24.0', date:'2026-06-17', items:[
+    '🎥 동적 검사 영상(녹화) 전환 — SLR·트렁크 전굴·OHS·숄더 외전·SKU(9종)는 녹화 버튼을 누르고 동작을 수행하면, 동작 전체를 추적해 최대 ROM(극점) 프레임을 자동으로 잡아 저장',
+    '📷 정적 검사(전면·측면·후면 3종)는 사진 유지 — 촬영 버튼 → 3·2·1 준비 후 1장',
+    '🎯 극점 자동 추출: SLR=다리 최대 거상각 · 전굴=최대 숙임 · OHS=스쿼트 최저점 · 외전=팔 최대각 · SKU=무릎 최고점. 트레이너가 타이밍을 손으로 맞출 필요 없음',
+  ]},
   {ver:'v1.23.1', date:'2026-06-17', items:[
     '🛑 자동 즉시촬영 제거 — 가이드에 들어가는 순간 준비 전 찍히던 문제 수정. 실시간 스켈레톤·안정 표시는 유지하되, 촬영 버튼을 누르면 3·2·1 준비 후 촬영',
   ]},
@@ -2656,7 +2666,7 @@ function startLiveTracking(){
   _liveHist=[];_capturing=false;_lastStable=false;_cancelCountdown();clearLiveOverlay();
   const badge=document.getElementById('camLiveBadge');
   if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); return; }
-  if(badge){badge.className='cam-live-badge on';badge.textContent='실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요';}
+  if(badge){badge.className='cam-live-badge on';badge.textContent=isDynamicTest(camTid)?'실시간 추적 — 녹화 버튼을 누르고 동작을 수행하세요':'실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요';}
   const v=document.getElementById('camVid');
   let lastT=-1;
   const loop=()=>{
@@ -2666,7 +2676,7 @@ function startLiveTracking(){
       if(v.currentTime!==lastT){
         lastT=v.currentTime;
         let r=null; try{ r=poseLMVideo.detectForVideo(v,performance.now()); }catch(e){}
-        if(r&&r.landmarks&&r.landmarks[0]){ const lm=_normLM(r.landmarks[0]); drawLiveOverlay(lm); checkAutoCapture(lm); }
+        if(r&&r.landmarks&&r.landmarks[0]){ const lm=_normLM(r.landmarks[0]); drawLiveOverlay(lm); if(_recording)_recTrack(lm); else checkAutoCapture(lm); }
         else { clearLiveOverlay(); _lastStable=false; _cancelCountdown(); }
       }
     }
@@ -2716,6 +2726,8 @@ function checkAutoCapture(lm){
 }
 // 촬영 버튼 → 3초 준비 카운트다운 후 캡처 (라이브 평균 또는 폴백 snap)
 function armCapture(){
+  // v1.24: 동적 검사 = 녹화 토글(영상→극점 프레임), 정적 = 3초 카운트다운 사진
+  if(isDynamicTest(camTid) && poseEngKind==='tasks' && poseLMVideo){ toggleRecord(); return; }
   if(_capturing||_cdTimer)return;
   const cb=(poseEngKind==='tasks'&&poseLMVideo)?captureLive:snap;
   _startCountdown(3,cb);
@@ -2742,7 +2754,50 @@ function captureLive(){
   const tid=camTid,slot=camSlot;
   closeCam();
   loadImg(tid,slot,dataUrl,false,avg);
-  toast((slot==='B'?'Before':'After')+' 자동 촬영 완료');
+  toast((slot==='B'?'Before':'After')+' 촬영 완료');
+}
+
+// ═══ v1.24: 동적 검사 영상(녹화) 모드 — 동작 추적 후 극점(최대 ROM) 프레임 자동 추출 ═══
+// 정적(전면·측면·후면)은 사진(카운트다운), 동적은 녹화 버튼→동작→완료→극점 프레임 저장.
+const DYNAMIC_PEAK={ slr_l:1,slr_r:1,trunk_l:1,sh_flex_l:1,sh_flex_r:1,ohs_l:1,ohs_b:1,sku:1,sku_r:1 };
+function isDynamicTest(tid){ return !!DYNAMIC_PEAK[tid]; }
+let _recording=false,_recBest=null,_recCount=0,_recAutoStop=null;
+function _abducV(lm,sh,wr){ const A=lm[sh],B=lm[wr]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(B.x-A.x),(B.y-A.y))*180/Math.PI; }
+function _thighAngle(lm,h,k){ const A=lm[h],B=lm[k]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(A.y-B.y),Math.abs(A.x-B.x))*180/Math.PI; }
+// 검사별 "동작 진행 정도" 스칼라 — 클수록 동작 정점(최대 ROM)
+function _peakScore(tid,lm){
+  if(tid==='slr_l'||tid==='slr_r'){ const l=_thighAngle(lm,23,25),r=_thighAngle(lm,24,26); return Math.max(l||0,r||0); } // 들린 다리 허벅지각 max
+  if(tid==='trunk_l'){ if(!lm[11]||!lm[12]||!lm[23]||!lm[24])return 0; const sx=(lm[11].x+lm[12].x)/2,sy=(lm[11].y+lm[12].y)/2,hx=(lm[23].x+lm[24].x)/2,hy=(lm[23].y+lm[24].y)/2; return Math.atan2(Math.abs(sx-hx),Math.abs(sy-hy))*180/Math.PI; } // 체간 수직대비 = 전굴 ROM
+  if(tid==='sh_flex_l'){ return _abducV(lm,11,15)||0; } // 외전각 max
+  if(tid==='sh_flex_r'){ return _abducV(lm,12,16)||0; }
+  if(tid==='ohs_l'||tid==='ohs_b'){ const a=lm[23],b=lm[24]; return ((a?.y||0)+(b?.y||0))/2; } // 골반 y 최대 = 스쿼트 최저점
+  if(tid==='sku'||tid==='sku_r'){ const lk=lm[25]?.y??1,rk=lm[26]?.y??1; return -Math.min(lk,rk); } // 든 무릎 최고(y 최소)
+  return 0;
+}
+function _clonePose(lm){ return lm.map(p=>p?{x:p.x,y:p.y,z:p.z||0,visibility:p.visibility||0}:null); }
+function _grabFrame(){ const v=document.getElementById('camVid'),hc=document.getElementById('hc'); if(!v||!v.videoWidth)return null; hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0); return hc.toDataURL('image/jpeg',.9); }
+// 녹화 중 매 프레임: 극점 갱신 시에만 그 프레임 이미지 1장 보관(메모리 절약)
+function _recTrack(lm){
+  if(!_inFrame(lm))return;
+  _recCount++;
+  const sc=_peakScore(camTid,lm);
+  if(!_recBest||sc>_recBest.score){ const img=_grabFrame(); if(img)_recBest={score:sc,lm:_clonePose(lm),img}; }
+}
+function toggleRecord(){ if(_recording)stopRecord(); else startRecord(); }
+function startRecord(){
+  _recording=true;_recBest=null;_recCount=0;
+  const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.add('recording');
+  const badge=document.getElementById('camLiveBadge'); if(badge){badge.className='cam-live-badge on ready';badge.textContent='● 녹화 중 — 동작을 천천히 끝까지 (다시 누르면 완료)';}
+  clearTimeout(_recAutoStop); _recAutoStop=setTimeout(()=>{ if(_recording)stopRecord(); },12000); // 안전 자동 종료
+}
+function stopRecord(){
+  if(!_recording)return; _recording=false; clearTimeout(_recAutoStop);
+  const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.remove('recording');
+  if(!_recBest||!_recBest.img||_recCount<3){ toast('동작 인식 부족 — 전신이 보이게 다시 시도'); const badge=document.getElementById('camLiveBadge'); if(badge)badge.textContent='실시간 추적 — 자세를 맞추고 녹화 버튼을 누르세요'; return; }
+  const tid=camTid,slot=camSlot,lm=_recBest.lm,img=_recBest.img;
+  closeCam();
+  loadImg(tid,slot,img,false,lm);
+  toast((slot==='B'?'Before':'After')+' 동작 분석 완료 — 최대 지점 캡처');
 }
 
 async function snap(){
