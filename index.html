@@ -646,7 +646,7 @@ input[type=range]{accent-color:var(--green)}
       <div class="ct-sub" id="ctSub"></div>
       <div class="ct-slot" id="ctSlot"></div>
     </div>
-    <button class="shutter" onclick="snap()"></button>
+    <button class="shutter" onclick="armCapture()"></button>
     <button class="cclose" onclick="closeCam()">닫기</button>
   </div>
 </div>
@@ -1480,7 +1480,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.23.0';
+const APP_VERSION='v1.23.1';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -1532,6 +1532,9 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.23.1', date:'2026-06-17', items:[
+    '🛑 자동 즉시촬영 제거 — 가이드에 들어가는 순간 준비 전 찍히던 문제 수정. 실시간 스켈레톤·안정 표시는 유지하되, 촬영 버튼을 누르면 3·2·1 준비 후 촬영',
+  ]},
   {ver:'v1.23.0', date:'2026-06-17', items:[
     '🎥 모션 인식 전면 도입 — 감지 엔진을 MediaPipe Tasks PoseLandmarker로 교체. 정지 사진 1장이 아니라 실시간 영상 추적으로 포인트 안정성 향상',
     '🤖 자동 촬영 — 촬영 화면에 실시간 스켈레톤을 표시하고, 자세가 안정되고 가이드 안에 들어오면 카운트다운 후 자동 촬영(최근 프레임 좌표 평균 저장). 셔터 수동 촬영도 유지',
@@ -2653,7 +2656,7 @@ function startLiveTracking(){
   _liveHist=[];_capturing=false;_lastStable=false;_cancelCountdown();clearLiveOverlay();
   const badge=document.getElementById('camLiveBadge');
   if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); return; }
-  if(badge){badge.className='cam-live-badge on';badge.textContent='실시간 추적 — 가이드에 맞추면 자동 촬영';}
+  if(badge){badge.className='cam-live-badge on';badge.textContent='실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요';}
   const v=document.getElementById('camVid');
   let lastT=-1;
   const loop=()=>{
@@ -2702,17 +2705,25 @@ function _poseStable(lm){
   for(let f=1;f<_liveHist.length;f++)CORE.forEach(i=>{const a=_liveHist[f-1][i],b=_liveHist[f][i];if(a&&b&&a.visibility>.5&&b.visibility>.5){mv+=Math.hypot(a.x-b.x,a.y-b.y);c++}});
   return c>0&&(mv/c)<0.006;
 }
+// v1.23.1: 자동 즉시촬영 제거 — 안정/프레임 여부는 '표시만'. 실제 촬영은 트레이너가
+// 촬영 버튼(armCapture)으로 시작 → 3초 준비 카운트다운 → 촬영. (준비 전 찍힘 버그 해결)
 function checkAutoCapture(lm){
-  const ok=_inFrame(lm)&&_poseStable(lm);
-  _lastStable=ok;
+  _lastStable=_inFrame(lm)&&_poseStable(lm);
   const badge=document.getElementById('camLiveBadge');
-  if(ok){ if(badge){badge.className='cam-live-badge on ready';badge.textContent='자세 고정 — 촬영 중...';} if(!_cdTimer)_startCountdown(); }
-  else { if(badge&&badge.classList.contains('on')){badge.className='cam-live-badge on';badge.textContent='실시간 추적 — 가이드에 맞추면 자동 촬영';} _cancelCountdown(); }
+  if(!badge||!badge.classList.contains('on')||_cdTimer)return;
+  if(_lastStable){ badge.className='cam-live-badge on ready'; badge.textContent='✓ 자세 안정 — 촬영 버튼을 누르세요'; }
+  else { badge.className='cam-live-badge on'; badge.textContent='실시간 추적 — 자세를 가이드에 맞추세요'; }
 }
-function _startCountdown(){
-  _cancelCountdown(); let n=2; const cd=document.getElementById('camCountdown');
+// 촬영 버튼 → 3초 준비 카운트다운 후 캡처 (라이브 평균 또는 폴백 snap)
+function armCapture(){
+  if(_capturing||_cdTimer)return;
+  const cb=(poseEngKind==='tasks'&&poseLMVideo)?captureLive:snap;
+  _startCountdown(3,cb);
+}
+function _startCountdown(sec,cb){
+  _cancelCountdown(); let n=sec||3; const cd=document.getElementById('camCountdown');
   if(cd){cd.style.display='block';cd.textContent=n;}
-  _cdTimer=setInterval(()=>{ n--; if(n<=0){clearInterval(_cdTimer);_cdTimer=null;if(cd)cd.style.display='none';captureLive();} else if(cd){cd.textContent=n;} },650);
+  _cdTimer=setInterval(()=>{ n--; if(n<=0){clearInterval(_cdTimer);_cdTimer=null;if(cd)cd.style.display='none';if(typeof cb==='function')cb();} else if(cd){cd.textContent=n;} },1000);
 }
 function _cancelCountdown(){ if(_cdTimer){clearInterval(_cdTimer);_cdTimer=null;} const cd=document.getElementById('camCountdown'); if(cd)cd.style.display='none'; }
 function _avgRecentPose(){
