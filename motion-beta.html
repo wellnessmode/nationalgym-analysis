@@ -476,6 +476,32 @@ input[type=range]{accent-color:var(--green)}
   .ls-cl-hd:hover{background:rgba(0,212,139,.26)}
   .ls-cl-more:hover{background:rgba(255,255,255,.1)}
 }
+/* ═══ v1.28.2: 시작 메뉴 밝은 엔터프라이즈 라이트 테마 (어두운 기본값 오버라이드) ═══ */
+#landingScreen{background:linear-gradient(180deg,#ffffff 0%,#eef6f1 58%,#e1efe8 100%);color:#0d1b16}
+.ls-brand{color:#00a878}
+.ls-title{color:#0d1b16}
+.ls-title em{color:#00a878}
+.ls-subtitle{color:#0a5a3c}
+.ls-divider{background:#00a878}
+.ls-tagline{color:#4b5563}
+.ls-version{color:#00a878}
+.ls-feat{background:#fff;border:1px solid #dfe7e3;box-shadow:0 3px 14px rgba(13,40,30,.07)}
+.ls-feat-t{color:#0d1b16}
+.ls-feat-s{color:#6b7280}
+.ls-btn-primary{box-shadow:0 12px 32px rgba(0,168,120,.30)}
+.ls-btn-secondary{background:#ffffff;color:#0a5a3c;border:1.5px solid #bfe0d2}
+.ls-btn-secondary:active{background:#eef7f2}
+.ls-changelog{background:#ffffff;border:1.5px solid #cfe6dc}
+.ls-cl-hd{background:#eaf6f0}
+.ls-cl-hd-title{color:#0a5a3c}
+.ls-cl-arrow{color:#0a5a3c}
+.ls-cl-entry-date{color:#00a878}
+.ls-cl-entry-ver{color:#6b7280;background:#eef2f0}
+.ls-cl-items{color:#374151}
+.ls-cl-items li::before{color:#00a878}
+.ls-cl-more{background:#eef6f1;color:#0a5a3c}
+.ls-footer{color:#94a39b}
+@media (hover:hover){ .ls-btn-secondary:hover{background:#eef7f2} .ls-cl-hd:hover{background:#e0f1ea} .ls-cl-more:hover{background:#e4f0ea} }
 </style>
 </head>
 <body>
@@ -1496,7 +1522,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.28.0-beta';
+const APP_VERSION='v1.28.2-beta';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -3964,8 +3990,11 @@ ${metrics.join('\n')||'(측정 실패 — 전신 가시성 낮음)'}
       });
     }
     if(!res.ok){
-      const errText=await res.text().catch(()=>res.statusText);
-      hist.results.push({text:`HTTP ${res.status}: ${errText.slice(0,120)}`,ts:Date.now(),model:'error'});
+      await res.text().catch(()=>'');
+      let msg;
+      if(res.status===401||res.status===403) msg='AI 서버 인증 실패(403) — 접속 비밀번호가 틀렸거나 서버 키가 만료됐습니다. 아래 "비밀번호 재설정" 후 다시 시도하세요. (위 📊 즉시 분석은 AI 없이도 제공됩니다)';
+      else msg=`AI 서버 오류(HTTP ${res.status}) — 잠시 후 다시 시도하세요. (📊 즉시 분석은 정상 제공)`;
+      hist.results.push({text:msg,ts:Date.now(),model:'error'});
       hist.active=hist.results.length-1;
       renderNarrativeBox(tid,false);
       return;
@@ -3980,6 +4009,27 @@ ${metrics.join('\n')||'(측정 실패 — 전신 가시성 낮음)'}
     hist.active=hist.results.length-1;
     renderNarrativeBox(tid,false);
   }
+}
+
+// v1.28.1: 즉시 분석 — 촬영 직후 측정 기반 소견(ROM·보상)을 검사 카드에 바로 표시 (AI 호출 불필요).
+// 라이브에서 본 경고(무릎 내전 등)가 끝나고도 결과에 남도록.
+function renderLocalAnalysis(tid){
+  const host=document.getElementById(`zone_${tid}_B`)?.parentElement; if(!host)return;
+  const slot=SHOTS[tid]?.B?.pose?'B':(SHOTS[tid]?.A?.pose?'A':null);
+  let box=document.getElementById(`la_${tid}`);
+  const s=slot?SHOTS[tid][slot]:null;
+  if(!s?.pose||!s?.canvas){ if(box)box.remove(); return; }
+  if(!box){ box=document.createElement('div'); box.id=`la_${tid}`;
+    box.style.cssText='margin:10px 14px;padding:11px 13px;background:#fff;border:1px solid var(--brd);border-left:3px solid #00a878;border-radius:10px;box-shadow:var(--sh)';
+    const nb=document.getElementById(`narr_${tid}`), chk=host.querySelector('.chk-inline');
+    host.insertBefore(box, nb||chk||null);
+  }
+  const W=s.canvas.width,H=s.canvas.height; let mm={}; try{mm=calcM(s.pose,W,H);}catch(e){}
+  const chip=(txt,col,bg)=>`<span style="display:inline-block;font-size:11px;font-weight:700;color:${col};background:${bg||'#f8f8f6'};border:1px solid ${col}44;border-radius:8px;padding:3px 9px;margin:2px 4px 2px 0;white-space:nowrap">${txt}</span>`;
+  let chips='';
+  (metricsForTest(tid)||[]).forEach(k=>{ const v=mm[k]; if(typeof v!=='number'||isNaN(v))return; const sv=severity(k,v); const col=sv.level==='bad'?'#dc2626':sv.level==='warn'?'#d97706':'#059669'; const u=(NORMS[k]&&NORMS[k].unit)||''; const val=((NORMS[k]&&NORMS[k].signed)?(v>=0?'+':'−'):'')+Math.abs(v).toFixed(Math.abs(v)>=10?0:1)+u; chips+=chip(`${PB_LABEL[k]||k} ${val}`,col); });
+  ((typeof analyzeComp==='function')?analyzeComp(tid,s.pose,W,H):[]).forEach(c=>{ const col=c.level==='bad'?'#dc2626':c.level==='warn'?'#d97706':'#059669'; const bg=c.level==='bad'?'#fef2f2':c.level==='warn'?'#fffbeb':'#f0fdf4'; chips+=chip(c.label,col,bg); });
+  box.innerHTML=`<div style="font-size:11.5px;font-weight:800;color:#0a5a3c;margin-bottom:6px">📊 즉시 분석 (측정 기반 · AI 불필요)</div>${chips||'<span style="font-size:11px;color:var(--tx3)">측정값 분석 불가 — 점 편집으로 보정하거나 재촬영하세요.</span>'}`;
 }
 
 // narrative 박스를 현재 AI_HISTORY 상태로 렌더링 (로딩 + 결과 + 네비게이션)
@@ -4021,6 +4071,9 @@ function renderNarrativeBox(tid, loading){
     bodyHtml=`<div class="narr-body"><div class="spin" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>Sonnet 4.5 분석 중...</div>`;
   } else if(attempts===0){
     bodyHtml=`<div class="narr-body narr-empty">AI 자세 분석 버튼을 누르면 이 검사의 주요 문제점을 요약합니다. (검사당 최대 ${AI_MAX_ATTEMPTS}회 분석 가능)</div>`;
+  } else if(active && active.model==='error'){
+    bodyHtml=`<div class="narr-body" style="color:#b45309">${renderMD(active.text)}</div>
+      <div style="margin-top:8px"><button onclick="localStorage.removeItem('ng_app_pw');var v=prompt('AI 접속 비밀번호 재입력:');if(v){localStorage.setItem('ng_app_pw',v.trim());toast('비밀번호 저장됨 — 다시 분석하세요')}" class="abtn" style="font-size:11px;padding:6px 12px;background:#fff;border:1.5px solid #b45309;color:#b45309">🔑 비밀번호 재설정</button></div>`;
   } else {
     bodyHtml=`<div class="narr-body">${renderMD(active.text)}</div>`;
   }
@@ -4523,27 +4576,21 @@ function redrawSlot(tid,slot){
     const lm=getDisplayLM(s.pose);
     // ─ 임상 기준선 오버레이 (Plumb line + 수평 기준선 + 각도 라벨) ─
     drawClinicalReferences(c,lm,W,H,tid,slot);
-    const lw2=Math.max(3,W*.005);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);
-    // v1.16.1: 검사별 의미 있는 랜드마크만 표시 (트레이너 피드백 #3)
+    const lw2=Math.max(2.5,W*.0045);c.strokeStyle=skelCol;c.lineWidth=lw2;c.setLineDash([]);c.lineCap='round';c.lineJoin='round';
+    // v1.28.1: 결과에도 전신 스켈레톤 전체 표시 (라이브와 동일 — iPOSTURE식). 편집 핸들은 주요 관절만.
+    const FULL=(typeof LIVE_CONN!=='undefined')?LIVE_CONN:CONN;
+    FULL.forEach(([a,b])=>{ if(!lm[a]||!lm[b]||lm[a].visibility<.35||lm[b].visibility<.35)return; c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke(); });
+    const big=(typeof LIVE_BIG!=='undefined')?LIVE_BIG:new Set(KEY);
+    const baseR=Math.max(3,W*.0045), bigR=Math.max(6,W*.008);
+    for(let i=0;i<33;i++){ const pt=lm[i]; if(!pt||pt.visibility<.35)continue; const r=i<=10?baseR*0.85:(big.has(i)?bigR:baseR);
+      c.beginPath();c.arc(pt.x*W,pt.y*H,r,0,Math.PI*2);c.fillStyle=ptCol;c.fill(); if(big.has(i)){c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1.6;c.stroke();} }
+    // 편집 모드: 주요 관절만 드래그 핸들 강조
     const activeKeys=TEST_KEY[tid]||KEY;
-    const keySet=new Set(activeKeys);
-    CONN.forEach(([a,b])=>{
-      if(!keySet.has(a)||!keySet.has(b))return;
-      if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return;
-      c.beginPath();c.moveTo(lm[a].x*W,lm[a].y*H);c.lineTo(lm[b].x*W,lm[b].y*H);c.stroke();
-    });
-    // v1.17: 편집 모드 핸들 크기 축소 (트레이너 피드백 #2) — 14→9, 외곽 ring +5→+3
     const isEditing=editPose&&editPose.tid===tid&&editPose.slot===slot;
-    const pr=isEditing?Math.max(9,W*.012):Math.max(7,W*.009);
-    activeKeys.forEach(i=>{
-      const pt=lm[i];if(!pt||pt.visibility<.4)return;
-      const x=pt.x*W,y=pt.y*H;
-      if(isEditing){
-        c.beginPath();c.arc(x,y,pr+3,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.9)';c.lineWidth=2;c.setLineDash([3,2]);c.stroke();c.setLineDash([]);
-      }
-      c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle=isEditing?'rgba(245,158,11,.9)':ptCol;c.fill();
-      c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=isEditing?2:2;c.stroke();
-    });
+    if(isEditing){ const pr=Math.max(9,W*.012);
+      activeKeys.forEach(i=>{ const pt=lm[i];if(!pt||pt.visibility<.4)return; const x=pt.x*W,y=pt.y*H;
+        c.beginPath();c.arc(x,y,pr+3,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.95)';c.lineWidth=2;c.setLineDash([3,2]);c.stroke();c.setLineDash([]);
+        c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle='rgba(245,158,11,.95)';c.fill();c.strokeStyle='#fff';c.lineWidth=2;c.stroke(); }); }
   }
   s.guides.forEach(g=>{c.beginPath();c.moveTo(g.x1,g.y1);c.lineTo(g.x2,g.y2);c.strokeStyle='rgba(170,110,0,.9)';c.lineWidth=Math.max(3,W*.004);c.setLineDash([]);c.stroke();[[g.x1,g.y1],[g.x2,g.y2]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,6,0,Math.PI*2);c.fillStyle='rgba(190,120,0,.9)';c.fill()})});
   s.lines.forEach(l=>{
@@ -4561,6 +4608,8 @@ function redrawSlot(tid,slot){
     c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
     c.font=`bold ${Math.max(12,W*.016)}px -apple-system,sans-serif`;c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';c.fillText(m.label,m.x,m.y);c.textBaseline='alphabetic';
   });
+  // v1.28.1: 즉시 분석 갱신 (촬영·편집·재분석 후 결과 화면에 소견 표시)
+  if(slot==='B'){ try{ renderLocalAnalysis(tid); }catch(e){} }
   // v1.15: 좌우 뷰 자동 동기화 (트레이너 피드백 #1)
   const sxs=document.getElementById('sxs_'+tid);
   if(sxs&&sxs.classList.contains('show')) renderSxs(tid);
