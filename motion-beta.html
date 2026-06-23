@@ -1485,7 +1485,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.24.0-beta';
+const APP_VERSION='v1.24.1-beta';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -2695,15 +2695,35 @@ function _liveMap(cv,v){
   return {dw,dh,fx:p=>p.x*vw*s+ox,fy:p=>p.y*vh*s+oy};
 }
 function clearLiveOverlay(){ const cv=document.getElementById('camLiveCv'); if(cv)cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }
+// v1.24.1-beta: 라이브 프리뷰는 iPOSTURE처럼 전신 33점 스켈레톤 전체(얼굴·팔·손·다리·발)를
+// 밝은 초록으로 항상 표시 — 검사 필터 없이. 동작이 잘 잡히는지 한눈에 보이게.
+const LIVE_CONN=[
+  // 얼굴 (코-눈-귀, 입)
+  [0,1],[1,2],[2,3],[3,7],[0,4],[4,5],[5,6],[6,8],[9,10],
+  // 어깨·몸통
+  [11,12],[11,23],[12,24],[23,24],
+  // 왼팔+손
+  [11,13],[13,15],[15,17],[15,19],[15,21],[17,19],
+  // 오른팔+손
+  [12,14],[14,16],[16,18],[16,20],[16,22],[18,20],
+  // 다리
+  [23,25],[25,27],[24,26],[26,28],
+  // 발
+  [27,29],[27,31],[29,31],[28,30],[28,32],[30,32]
+];
+const LIVE_BIG=new Set([11,12,13,14,15,16,23,24,25,26,27,28]); // 주요 관절(큰 점)
 function drawLiveOverlay(lm){
   const cv=document.getElementById('camLiveCv'),v=document.getElementById('camVid'); if(!cv||!v||!v.videoWidth)return;
   const M=_liveMap(cv,v),ctx=cv.getContext('2d'); ctx.clearRect(0,0,M.dw,M.dh);
-  const keys=(typeof TEST_KEY!=='undefined'&&TEST_KEY[camTid])?TEST_KEY[camTid]:KEY, ks=new Set(keys);
-  const col=_lastStable?'rgba(0,230,140,.95)':'rgba(120,200,255,.9)';
-  ctx.strokeStyle=col;ctx.lineWidth=Math.max(3,M.dw*.006);ctx.setLineDash([]);
-  CONN.forEach(([a,b])=>{ if(!ks.has(a)||!ks.has(b))return; if(!lm[a]||!lm[b]||lm[a].visibility<.4||lm[b].visibility<.4)return; ctx.beginPath();ctx.moveTo(M.fx(lm[a]),M.fy(lm[a]));ctx.lineTo(M.fx(lm[b]),M.fy(lm[b]));ctx.stroke(); });
-  const pr=Math.max(5,M.dw*.011);
-  keys.forEach(i=>{ const p=lm[i]; if(!p||p.visibility<.4)return; ctx.beginPath();ctx.arc(M.fx(p),M.fy(p),pr,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke(); });
+  const line=_lastStable?'rgba(40,255,150,.95)':'rgba(60,235,135,.9)';
+  const node=_lastStable?'#2bff90':'#3ce886';
+  ctx.lineWidth=Math.max(2.5,M.dw*.0052);ctx.setLineDash([]);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=line;
+  LIVE_CONN.forEach(([a,b])=>{ if(!lm[a]||!lm[b]||lm[a].visibility<.35||lm[b].visibility<.35)return; ctx.beginPath();ctx.moveTo(M.fx(lm[a]),M.fy(lm[a]));ctx.lineTo(M.fx(lm[b]),M.fy(lm[b]));ctx.stroke(); });
+  const bigR=Math.max(4,M.dw*.0088), faceR=Math.max(2,M.dw*.0042);
+  for(let i=0;i<33;i++){ const p=lm[i]; if(!p||p.visibility<.35)continue; const isFace=i<=10; const r=isFace?faceR:(LIVE_BIG.has(i)?bigR:faceR*1.4);
+    ctx.beginPath();ctx.arc(M.fx(p),M.fy(p),r,0,Math.PI*2);ctx.fillStyle=node;ctx.fill();
+    if(LIVE_BIG.has(i)){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.2;ctx.stroke();}
+  }
 }
 function _inFrame(lm){
   const need=(camTid==='slr_l'||camTid==='slr_r')?[23,24,25,26]:[0,11,12,27,28];
