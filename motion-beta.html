@@ -1485,7 +1485,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.24.1-beta';
+const APP_VERSION='v1.25.0-beta';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -2256,6 +2256,7 @@ function buildComparePhase(){
 function buildReportPhase(){
   // v1.9: 이 화면은 트레이너 전용 편집 모드 (고객 화면 아님)
   return `<div class="report-hero" style="background:linear-gradient(135deg,#1e3a8a,#1e40af)"><div class="rh-name" id="rHeroName" style="display:flex;align-items:center;gap:8px">🔧 트레이너 편집 모드</div><div class="rh-sub" id="rHeroSub">AI 초안을 검수·수정한 뒤 고객에게 PDF 전송</div><div class="rh-stats"><div class="rs"><div class="n" id="rDone">0</div><div class="l">완료</div></div><div class="rs"><div class="n" id="rPend">0</div><div class="l">미촬영</div></div><div class="rs"><div class="n" id="rChk">0</div><div class="l">체크항목</div></div></div></div>
+  <div class="rep-sec"><div class="rep-sec-hd">📸 멀티포즈 종합 보드</div><div id="poseBoardBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">촬영을 완료하면 모든 포즈가 여기 한눈에 모입니다.</p></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">검사 현황</div><div id="repTestList"></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트 (고객 리포트에 포함)</div>
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="고객에게 전달할 종합 소견을 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
@@ -6281,6 +6282,46 @@ function navReport(dir){
 // ═══════════════════════════════════════════
 // REPORT
 // ═══════════════════════════════════════════
+// v1.25-beta: 멀티포즈 종합 보드 — iPOSTURE처럼 촬영한 모든 포즈를 스켈레톤 썸네일 + 핵심 수치로 한 보드에
+const PB_LABEL={shoulderTilt:'어깨',hipTilt:'골반',headTilt:'머리',spineAngle:'체간',shoulderHipAlign:'어깨-골반',headOffsetAngle:'두부전방',thoracicKyphosis:'흉추',shoulderAbductionL:'외전L',shoulderAbductionR:'외전R',slrAngle:'SLR',trunkFlex:'전굴 ROM',potsi:'POTSI',atsi:'ATSI',trunkLeanLat:'상체경사'};
+function renderPoseBoard(){
+  const host=document.getElementById('poseBoardBody'); if(!host)return;
+  const cards=[];
+  TESTS.forEach(t=>{
+    if(t.manual)return;
+    const s=SHOTS[t.id]?.B;
+    if(!s?.canvas||!s?.img)return;
+    let thumb=''; try{ thumb=compress(s.canvas,300); }catch(e){}
+    let metric='<span style="color:var(--tx3)">측정 대기</span>';
+    if(s.pose){
+      try{
+        const mm=calcM(s.pose,s.canvas.width,s.canvas.height);
+        const k=(metricsForTest(t.id)||[])[0];
+        if(k && typeof mm[k]==='number' && !isNaN(mm[k])){
+          const sv=severity(k,mm[k]), u=(typeof NORMS!=='undefined'&&NORMS[k]?.unit)||'';
+          const col=sv.level==='bad'?'#dc2626':sv.level==='warn'?'#d97706':'#059669';
+          const val=Math.abs(mm[k])>=10?mm[k].toFixed(0):mm[k].toFixed(1);
+          metric=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${col};margin-right:5px;vertical-align:middle"></span>${PB_LABEL[k]||k} ${val}${u}`;
+        }
+      }catch(e){}
+    }
+    const dyn=(typeof isDynamicTest==='function')&&isDynamicTest(t.id);
+    cards.push(`<div style="background:#fff;border:1px solid var(--brd);border-radius:12px;overflow:hidden;box-shadow:var(--sh)">
+      <div style="position:relative;background:#0d0d0d;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center">
+        ${thumb?`<img src="${thumb}" alt="" style="width:100%;height:100%;object-fit:cover">`:''}
+        <span style="position:absolute;top:6px;left:6px;font-size:10px;background:rgba(0,0,0,.62);color:#fff;padding:2px 7px;border-radius:8px">${dyn?'🎥 동적':'📷 정적'}</span>
+      </div>
+      <div style="padding:8px 10px">
+        <div style="font-size:11.5px;font-weight:700;color:var(--tx);line-height:1.3;margin-bottom:3px">${t.title}</div>
+        <div style="font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums">${metric}</div>
+      </div>
+    </div>`);
+  });
+  host.innerHTML = cards.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:10px">${cards.join('')}</div>`
+    : '<p style="font-size:12px;color:var(--tx3)">촬영을 완료하면 모든 포즈가 여기 한눈에 모입니다.</p>';
+}
+
 function updateReport(){
   // v1.13: 모든 DOM 참조에 null check 추가
   const name=document.getElementById('cName')?.value||'회원';
@@ -6311,6 +6352,7 @@ function updateReport(){
   }
   // 세션 히스토리 갱신 (이름 있을 때만)
   renderSessionHistory().catch(()=>{});
+  try{ renderPoseBoard(); }catch(e){} // v1.25-beta: 멀티포즈 종합 보드
   const list=document.getElementById('repTestList');
   if(list)list.innerHTML=TESTS.map(t=>{
     const ok=SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img;
