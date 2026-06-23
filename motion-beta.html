@@ -279,6 +279,15 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .cam-live-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
 .cam-countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:110px;font-weight:900;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.65);display:none;pointer-events:none;font-variant-numeric:tabular-nums}
 .cam-live-badge{position:absolute;top:5%;left:50%;transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.7);color:#9de8c8;font-size:12px;font-weight:700;padding:6px 14px;border-radius:14px;white-space:nowrap;pointer-events:none;display:none}
+/* v1.27-beta: 녹화 중 실시간 HUD — 현재 ROM·반복 횟수·폼 큐 */
+.cam-rec-hud{position:absolute;top:12%;left:50%;transform:translateX(-50%);z-index:4;display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none;text-align:center;width:92%}
+.cam-rec-hud.on{display:flex}
+.cam-rec-hud .crh-val{font-size:30px;font-weight:900;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7);font-variant-numeric:tabular-nums;line-height:1}
+.cam-rec-hud .crh-rep{font-size:13px;font-weight:800;color:#ffd700;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.cam-rec-hud .crh-cue{font-size:13px;font-weight:800;padding:5px 14px;border-radius:14px;white-space:nowrap;max-width:96%}
+.cam-rec-hud .crh-cue.ok{background:rgba(0,200,120,.92);color:#fff}
+.cam-rec-hud .crh-cue.go{background:rgba(30,110,255,.92);color:#fff}
+.cam-rec-hud .crh-cue.warn{background:rgba(226,90,30,.94);color:#fff}
 .cam-live-badge.on{display:block}
 .cam-live-badge.ready{background:rgba(0,200,120,.92);color:#fff}
 /* v1.21.1: 촬영 정렬용 3×3 격자 — 홈의 격자 오버레이 토글과 연동 (촬영 중에도 정렬 가이드) */
@@ -621,6 +630,7 @@ input[type=range]{accent-color:var(--green)}
     <video id="camVid" autoplay playsinline muted></video>
     <canvas id="camLiveCv" class="cam-live-cv"></canvas>
     <div id="camLiveBadge" class="cam-live-badge"></div>
+    <div id="camRecHud" class="cam-rec-hud"></div>
     <div id="camCountdown" class="cam-countdown"></div>
     <div class="cam-guide" id="camGuideWrap">
       <div class="cam-grid" id="camGrid"></div>
@@ -1486,7 +1496,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.26.0-beta';
+const APP_VERSION='v1.27.0-beta';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -2787,7 +2797,7 @@ function captureLive(){
 // 정적(전면·측면·후면)은 사진(카운트다운), 동적은 녹화 버튼→동작→완료→극점 프레임 저장.
 const DYNAMIC_PEAK={ slr_l:1,slr_r:1,trunk_l:1,sh_flex_l:1,sh_flex_r:1,ohs_l:1,ohs_b:1,sku:1,sku_r:1 };
 function isDynamicTest(tid){ return !!DYNAMIC_PEAK[tid]; }
-let _recording=false,_recBest=null,_recCount=0,_recAutoStop=null;
+let _recording=false,_recBest=null,_recCount=0,_recAutoStop=null,_recReps=0,_recPhase='low',_recScores=[];
 function _abducV(lm,sh,wr){ const A=lm[sh],B=lm[wr]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(B.x-A.x),(B.y-A.y))*180/Math.PI; }
 function _thighAngle(lm,h,k){ const A=lm[h],B=lm[k]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(A.y-B.y),Math.abs(A.x-B.x))*180/Math.PI; }
 // 검사별 "동작 진행 정도" 스칼라 — 클수록 동작 정점(최대 ROM)
@@ -2803,27 +2813,53 @@ function _peakScore(tid,lm){
 function _clonePose(lm){ return lm.map(p=>p?{x:p.x,y:p.y,z:p.z||0,visibility:p.visibility||0}:null); }
 function _grabFrame(){ const v=document.getElementById('camVid'),hc=document.getElementById('hc'); if(!v||!v.videoWidth)return null; hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0); return hc.toDataURL('image/jpeg',.9); }
 // 녹화 중 매 프레임: 극점 갱신 시에만 그 프레임 이미지 1장 보관(메모리 절약)
+// v1.27-beta: 녹화 중 현재 ROM 값 + 폼 큐 (실시간 피드백). analyzeComp로 보상 경고도 라이브로.
+function _liveReadout(tid,lm){
+  const comp=analyzeComp(tid,lm,1,1); const warn=comp.find(c=>c.level==='bad')||comp.find(c=>c.level==='warn');
+  const ang=(a,b)=>{const A=lm[a],B=lm[b];if(!A||!B||A.visibility<.4||B.visibility<.4)return null;return Math.atan2(Math.abs(A.y-B.y),Math.abs(A.x-B.x))*180/Math.PI;};
+  let valTxt='',cueTxt='',cueCls='go';
+  if(tid==='slr_l'||tid==='slr_r'){ const a=Math.max(ang(23,25)||0,ang(24,26)||0); valTxt=a.toFixed(0)+'°'; if(a>=70){cueTxt='좋습니다 · 정상 ROM';cueCls='ok';}else{cueTxt='다리를 더 올리세요';cueCls='go';} }
+  else if(tid==='trunk_l'){ const a=_peakScore('trunk_l',lm); valTxt=a.toFixed(0)+'°'; if(a>=70){cueTxt='좋습니다 · 충분히 숙임';cueCls='ok';}else{cueTxt='상체를 더 숙이세요';cueCls='go';} }
+  else if(tid==='sh_flex_l'||tid==='sh_flex_r'){ const a=_peakScore(tid,lm); valTxt=a.toFixed(0)+'°'; if(a>=160){cueTxt='좋습니다 · 완전 외전';cueCls='ok';}else{cueTxt='팔을 더 올리세요';cueCls='go';} }
+  else if(tid==='ohs_b'||tid==='ohs_l'){ valTxt='스쿼트'; cueTxt='최저점까지 천천히';cueCls='go'; }
+  else if(tid==='sku'||tid==='sku_r'){ valTxt='무릎 들기'; cueTxt='골반 수평 유지';cueCls='go'; }
+  if(warn){ cueTxt=warn.label; cueCls='warn'; }
+  return {valTxt,cueTxt,cueCls};
+}
 function _recTrack(lm){
   if(!_inFrame(lm))return;
   _recCount++;
   const sc=_peakScore(camTid,lm);
   if(!_recBest||sc>_recBest.score){ const img=_grabFrame(); if(img)_recBest={score:sc,lm:_clonePose(lm),img}; }
+  // 반복(rep) 카운트 — 관찰 범위 정규화 + 진폭 게이트 + 히스테리시스 상태머신
+  _recScores.push(sc); if(_recScores.length>50)_recScores.shift();
+  const mn=Math.min(..._recScores),mx=Math.max(..._recScores),amp=mx-mn;
+  const yBased=(camTid==='ohs_b'||camTid==='ohs_l'||camTid==='sku'||camTid==='sku_r');
+  if(amp>(yBased?0.05:12)){ const norm=(sc-mn)/(amp||1);
+    if(_recPhase==='low'&&norm>0.72)_recPhase='high';
+    else if(_recPhase==='high'&&norm<0.30){_recPhase='low';_recReps++;} }
+  // HUD
+  const hud=document.getElementById('camRecHud');
+  if(hud){ const rd=_liveReadout(camTid,lm);
+    hud.innerHTML=`<div class="crh-val">${rd.valTxt}</div>${_recReps>0?`<div class="crh-rep">${_recReps}회</div>`:''}<div class="crh-cue ${rd.cueCls}">${rd.cueTxt}</div>`; }
 }
 function toggleRecord(){ if(_recording)stopRecord(); else startRecord(); }
 function startRecord(){
-  _recording=true;_recBest=null;_recCount=0;
+  _recording=true;_recBest=null;_recCount=0;_recReps=0;_recPhase='low';_recScores=[];
   const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.add('recording');
+  const hud=document.getElementById('camRecHud'); if(hud){hud.className='cam-rec-hud on';hud.innerHTML='';}
   const badge=document.getElementById('camLiveBadge'); if(badge){badge.className='cam-live-badge on ready';badge.textContent='● 녹화 중 — 동작을 천천히 끝까지 (다시 누르면 완료)';}
-  clearTimeout(_recAutoStop); _recAutoStop=setTimeout(()=>{ if(_recording)stopRecord(); },12000); // 안전 자동 종료
+  clearTimeout(_recAutoStop); _recAutoStop=setTimeout(()=>{ if(_recording)stopRecord(); },15000); // 안전 자동 종료
 }
 function stopRecord(){
   if(!_recording)return; _recording=false; clearTimeout(_recAutoStop);
   const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.remove('recording');
+  const hud=document.getElementById('camRecHud'); if(hud)hud.className='cam-rec-hud';
   if(!_recBest||!_recBest.img||_recCount<3){ toast('동작 인식 부족 — 전신이 보이게 다시 시도'); const badge=document.getElementById('camLiveBadge'); if(badge)badge.textContent='실시간 추적 — 자세를 맞추고 녹화 버튼을 누르세요'; return; }
-  const tid=camTid,slot=camSlot,lm=_recBest.lm,img=_recBest.img;
+  const tid=camTid,slot=camSlot,lm=_recBest.lm,img=_recBest.img,reps=_recReps;
   closeCam();
   loadImg(tid,slot,img,false,lm);
-  toast((slot==='B'?'Before':'After')+' 동작 분석 완료 — 최대 지점 캡처');
+  toast((slot==='B'?'Before':'After')+' 동작 분석 완료 — 최대 지점 캡처'+(reps>0?` · ${reps}회 감지`:''));
 }
 
 async function snap(){
