@@ -528,6 +528,7 @@ input[type=range]{accent-color:var(--green)}
         <select id="cGender" onchange="autoSave()"><option value="M">남</option><option value="F">여</option></select>
       </div>
       <div class="f"><label>키 (cm)</label><input id="cHeight" type="number" inputmode="numeric" min="100" max="230" placeholder="예: 175" oninput="autoSave()" style="font-variant-numeric:tabular-nums"></div>
+      <div class="f"><label>나이</label><input id="cAge" type="number" inputmode="numeric" min="5" max="100" placeholder="예: 35" oninput="autoSave();try{updateReport()}catch(e){}" style="font-variant-numeric:tabular-nums"></div>
       <div class="f"><label>검사 일시</label><div class="ts-val" id="tsDispFull">—</div></div>
       <div class="f"><label>트레이너 이메일</label><input id="cTrEmail" type="email" placeholder="trainer@nationalgym.co.kr" oninput="autoSave()"></div>
       <div class="f"><label>트레이너 전화</label><input id="cTrPhone" type="tel" inputmode="tel" placeholder="010-0000-0000" oninput="autoSave()"></div>
@@ -1485,7 +1486,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.25.0-beta';
+const APP_VERSION='v1.26.0-beta';
 const BUILD_TIME='2026-06-17';
 
 // ═══════════════════════════════════════════
@@ -2257,6 +2258,8 @@ function buildReportPhase(){
   // v1.9: 이 화면은 트레이너 전용 편집 모드 (고객 화면 아님)
   return `<div class="report-hero" style="background:linear-gradient(135deg,#1e3a8a,#1e40af)"><div class="rh-name" id="rHeroName" style="display:flex;align-items:center;gap:8px">🔧 트레이너 편집 모드</div><div class="rh-sub" id="rHeroSub">AI 초안을 검수·수정한 뒤 고객에게 PDF 전송</div><div class="rh-stats"><div class="rs"><div class="n" id="rDone">0</div><div class="l">완료</div></div><div class="rs"><div class="n" id="rPend">0</div><div class="l">미촬영</div></div><div class="rs"><div class="n" id="rChk">0</div><div class="l">체크항목</div></div></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">📸 멀티포즈 종합 보드</div><div id="poseBoardBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">촬영을 완료하면 모든 포즈가 여기 한눈에 모입니다.</p></div></div>
+  <div class="rep-sec"><div class="rep-sec-hd">📏 ROM·정렬 정상범위 게이지</div><div id="romGaugeBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">측정 후 각 항목이 정상범위 대비 어디에 있는지 게이지로 표시됩니다.</p></div></div>
+  <div class="rep-sec"><div class="rep-sec-hd">🔎 동작 보상 분석</div><div id="compBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">동적 검사(스쿼트·SLR·외전 등) 촬영 후 보상 패턴이 자동 분석됩니다.</p></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">검사 현황</div><div id="repTestList"></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트 (고객 리포트에 포함)</div>
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="고객에게 전달할 종합 소견을 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
@@ -6284,6 +6287,86 @@ function navReport(dir){
 // ═══════════════════════════════════════════
 // v1.25-beta: 멀티포즈 종합 보드 — iPOSTURE처럼 촬영한 모든 포즈를 스켈레톤 썸네일 + 핵심 수치로 한 보드에
 const PB_LABEL={shoulderTilt:'어깨',hipTilt:'골반',headTilt:'머리',spineAngle:'체간',shoulderHipAlign:'어깨-골반',headOffsetAngle:'두부전방',thoracicKyphosis:'흉추',shoulderAbductionL:'외전L',shoulderAbductionR:'외전R',slrAngle:'SLR',trunkFlex:'전굴 ROM',potsi:'POTSI',atsi:'ATSI',trunkLeanLat:'상체경사'};
+// v1.26-beta: ROM·정렬 정상범위 게이지 (PostureScreen/Kinetisense식) + 연령 보정
+// 연령↑ 시 ROM 정상 하한을 소폭 완화(가동범위는 나이와 함께 감소 — 정상치 논문 근거).
+function _ageRomAdj(){ const a=parseInt(document.getElementById('cAge')?.value||'')||0; if(a>=60)return -10; if(a>=45)return -5; return 0; }
+function gaugeGeom(key,val){
+  const n=NORMS[key]; const v=n.signed?Math.abs(val):val;
+  const sev=severity(key,val).level;
+  let scaleMax,nL,nW;
+  if(n.min!==undefined && n.max!==undefined){ scaleMax=n.max*1.25; nL=n.min/scaleMax*100; nW=(n.max-n.min)/scaleMax*100; }
+  else if(n.min!==undefined){ const mn=Math.max(0,n.min+_ageRomAdj()); scaleMax=Math.max(mn*1.45,v*1.1,mn+30); nL=mn/scaleMax*100; nW=100-nL; }
+  else { scaleMax=Math.max(n.max*2.4,v*1.15); nL=0; nW=n.max/scaleMax*100; }
+  return {scaleMax,nL,nW,markerPct:Math.max(0,Math.min(100,v/scaleMax*100)),level:sev};
+}
+const ROM_ORDER=['shoulderTilt','hipTilt','headTilt','spineAngle','shoulderHipAlign','headOffsetAngle','thoracicKyphosis','potsi','atsi','shoulderAbductionL','shoulderAbductionR','slrAngle','trunkFlex'];
+function renderRomGauges(){
+  const host=document.getElementById('romGaugeBody'); if(!host)return;
+  const agg=aggregateRelevant('B'); const rows=[];
+  ROM_ORDER.forEach(k=>{
+    const val=agg[k]; if(typeof val!=='number'||isNaN(val))return;
+    const n=NORMS[k], g=gaugeGeom(k,val);
+    const col=g.level==='bad'?'#dc2626':g.level==='warn'?'#d97706':'#059669';
+    const disp=(n.signed?(val>=0?'+':'−'):'')+Math.abs(val).toFixed(Math.abs(val)>=10?0:1)+n.unit;
+    rows.push(`<div style="margin-bottom:13px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="font-weight:700;color:var(--tx)">${PB_LABEL[k]||k}</span>
+        <span style="font-weight:800;color:${col};font-variant-numeric:tabular-nums">${disp}</span>
+      </div>
+      <div style="position:relative;height:10px;background:#eef0f2;border-radius:6px;overflow:hidden">
+        <div style="position:absolute;top:0;bottom:0;left:${g.nL.toFixed(1)}%;width:${g.nW.toFixed(1)}%;background:rgba(5,150,105,.22)"></div>
+        <div style="position:absolute;top:-2px;bottom:-2px;left:${g.markerPct.toFixed(1)}%;width:3px;background:${col};border-radius:2px"></div>
+      </div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">${n.lbl}</div>
+    </div>`);
+  });
+  const ageNote=_ageRomAdj()?'<div style="font-size:10px;color:var(--tx3);margin-top:4px">※ 연령 반영: ROM 정상 하한 완화 적용</div>':'';
+  host.innerHTML = rows.length? rows.join('')+ageNote : '<p style="font-size:12px;color:var(--tx3)">측정 후 정상범위 게이지가 표시됩니다.</p>';
+}
+
+// v1.26-beta: 동작 보상 자동 분석 (NASM OHS / Kinetisense KAMS 패턴)
+function _cv(lm,i){return lm&&lm[i]&&lm[i].visibility>.4?lm[i]:null;}
+function analyzeComp(tid,lm,W,H){
+  const out=[]; if(!lm)return out; const L=i=>_cv(lm,i);
+  if(tid==='ohs_b'){
+    const ka=L(25),kb=L(26),aa=L(27),ab=L(28);
+    if(ka&&kb&&aa&&ab){ const kneeW=Math.abs(ka.x-kb.x),ankW=Math.abs(aa.x-ab.x);
+      if(ankW>0.02){ if(kneeW<ankW*0.85)out.push({label:'무릎 모임(내측 collapse·Knee Valgus)',level:'bad'});
+        else if(kneeW>ankW*1.22)out.push({label:'무릎 벌어짐(Varus 경향)',level:'warn'});
+        else out.push({label:'무릎 정렬 양호',level:'ok'}); } }
+    const ha=L(23),hb=L(24);
+    if(ha&&hb){ const tilt=Math.atan2(Math.abs(ha.y-hb.y),Math.abs(ha.x-hb.x))*180/Math.PI; if(tilt>6)out.push({label:'골반 좌우 비대칭(회전·shift)',level:'warn'}); }
+  } else if(tid==='ohs_l'){
+    const s=L(11)||L(12), h=L(23)||L(24);
+    if(s&&h){ const lean=Math.atan2(Math.abs(s.x-h.x),Math.abs(s.y-h.y))*180/Math.PI;
+      if(lean>45)out.push({label:'과도한 상체 전방 경사',level:'bad'}); else if(lean>32)out.push({label:'상체 전방 경사 경계',level:'warn'}); else out.push({label:'상체 정렬 양호',level:'ok'}); }
+    const w=L(15)||L(16), sh=L(11)||L(12);
+    if(w&&sh&&w.y>sh.y+0.13)out.push({label:'팔 전방 낙하(광배·대흉근 단축 의심)',level:'warn'});
+  } else if(tid==='sku'||tid==='sku_r'){
+    const ha=L(23),hb=L(24);
+    if(ha&&hb){ const tilt=Math.atan2(Math.abs(ha.y-hb.y),Math.abs(ha.x-hb.x))*180/Math.PI;
+      if(tilt>7)out.push({label:'골반 하강(Trendelenburg·중둔근 약화)',level:'bad'}); else if(tilt>4)out.push({label:'경미한 골반 비대칭',level:'warn'}); else out.push({label:'골반 안정',level:'ok'}); }
+  } else if(tid==='slr_l'||tid==='slr_r'){
+    try{ const a=calcM(lm,W||1,H||1).slrAngle; if(typeof a==='number'){ if(a<70)out.push({label:`햄스트링 단축 (${a.toFixed(0)}° <70°)`,level:'bad'}); else if(a>85)out.push({label:`과가동 (${a.toFixed(0)}° >85°)`,level:'warn'}); else out.push({label:`정상 ROM (${a.toFixed(0)}°)`,level:'ok'}); } }catch(e){}
+  } else if(tid==='trunk_l'){
+    try{ const a=calcM(lm,W||1,H||1).trunkFlex; if(typeof a==='number'){ if(a<70)out.push({label:`전굴 ROM 제한 (${a.toFixed(0)}° <70°)`,level:'warn'}); else out.push({label:`전굴 ROM 양호 (${a.toFixed(0)}°)`,level:'ok'}); } }catch(e){}
+  }
+  return out;
+}
+function renderCompensations(){
+  const host=document.getElementById('compBody'); if(!host)return;
+  const blocks=[];
+  TESTS.forEach(t=>{
+    if(!isDynamicTest(t.id))return;
+    const s=SHOTS[t.id]?.B; if(!s?.pose||!s?.canvas)return;
+    const comps=analyzeComp(t.id,s.pose,s.canvas.width,s.canvas.height);
+    if(!comps.length)return;
+    const badges=comps.map(c=>{const col=c.level==='bad'?'#dc2626':c.level==='warn'?'#d97706':'#059669';const bg=c.level==='bad'?'#fef2f2':c.level==='warn'?'#fffbeb':'#f0fdf4';return `<span style="display:inline-block;font-size:11px;font-weight:600;color:${col};background:${bg};border:1px solid ${col}33;border-radius:8px;padding:3px 9px;margin:2px 4px 2px 0">${c.label}</span>`;}).join('');
+    blocks.push(`<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--tx);margin-bottom:4px">${t.title}</div><div>${badges}</div></div>`);
+  });
+  host.innerHTML = blocks.length? blocks.join(''): '<p style="font-size:12px;color:var(--tx3)">동적 검사 촬영 후 보상 패턴이 표시됩니다.</p>';
+}
+
 function renderPoseBoard(){
   const host=document.getElementById('poseBoardBody'); if(!host)return;
   const cards=[];
@@ -6353,6 +6436,8 @@ function updateReport(){
   // 세션 히스토리 갱신 (이름 있을 때만)
   renderSessionHistory().catch(()=>{});
   try{ renderPoseBoard(); }catch(e){} // v1.25-beta: 멀티포즈 종합 보드
+  try{ renderRomGauges(); }catch(e){} // v1.26-beta: ROM 정상범위 게이지
+  try{ renderCompensations(); }catch(e){} // v1.26-beta: 동작 보상 분석
   const list=document.getElementById('repTestList');
   if(list)list.innerHTML=TESTS.map(t=>{
     const ok=SHOTS[t.id]?.B?.img&&SHOTS[t.id]?.A?.img;
@@ -6486,6 +6571,7 @@ function autoSave(){
           name:document.getElementById('cName')?.value||'',
           trainer:document.getElementById('cTrainer')?.value||'',
           height:document.getElementById('cHeight')?.value||'',
+          age:document.getElementById('cAge')?.value||'',
           trEmail:document.getElementById('cTrEmail')?.value||'',
           trPhone:document.getElementById('cTrPhone')?.value||''
         },
@@ -6920,6 +7006,7 @@ async function restoreAll(){
       const ne=document.getElementById('cName');if(ne&&m.name)ne.value=m.name;
       const te=document.getElementById('cTrainer');if(te&&m.trainer)te.value=m.trainer;
       const he=document.getElementById('cHeight');if(he&&m.height)he.value=m.height;
+      const ag=document.getElementById('cAge');if(ag&&m.age)ag.value=m.age;
       const em=document.getElementById('cTrEmail');if(em&&m.trEmail)em.value=m.trEmail;
       const ph=document.getElementById('cTrPhone');if(ph&&m.trPhone)ph.value=m.trPhone;
       if(m.faceBlur){FACE_BLUR_ON=true;const fbEl=document.getElementById('cFaceBlur');if(fbEl)fbEl.checked=true;}
