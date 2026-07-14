@@ -2,20 +2,20 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <title>측정값 항목 축소안 — 목업 비교</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f8f8f6;--bg2:#fff;--bg3:#f0f1ee;--brd:#e5e5e0;--brd2:#d4d4cf;
-  --tx:#111;--tx2:#3a3a3a;--tx3:#777;--green:#00a878;--g2:#0a5a3c;--g3:#d4f4e6;
+  --bg:#f8f8f6;--bg2:#fff;--bg3:#f0f1f4;--brd:#e5e5e0;--brd2:#d4d4cf;
+  --tx:#111;--tx2:#3a3a3a;--tx3:#777;--brand:#0b64d8;--g2:#0d4491;--g3:#dceafa;
   --red:#dc2626;--r3:#fee2e2;--blue:#1e40af;--r:8px;--r2:12px;
   --sh:0 1px 3px rgba(0,0,0,.04)
 }
 body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;background:var(--bg);color:var(--tx);padding:14px 8px 32px;font-size:13px;-webkit-font-smoothing:antialiased}
-.hero{max-width:880px;margin:0 auto 18px;padding:18px 16px;background:linear-gradient(135deg,#071a10,#0b2a1c);border-radius:var(--r2);color:#fff}
+.hero{max-width:880px;margin:0 auto 18px;padding:18px 16px;background:linear-gradient(135deg,#071224,#0b1d33);border-radius:var(--r2);color:#fff}
 .hero h1{font-size:18px;font-weight:800;margin-bottom:4px}
-.hero p{font-size:12px;color:#9de8c8;line-height:1.6}
+.hero p{font-size:12px;color:#a9cdf3;line-height:1.6}
 .legend{max-width:880px;margin:0 auto 14px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px}
 .legend .lg{padding:5px 10px;border-radius:6px;font-weight:700}
 .legend .lg.cur{background:#fff;border:1px solid var(--brd)}
@@ -26,11 +26,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;ba
 .col{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
 .col-hd{padding:12px 16px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--brd)}
 .col-hd.now{background:#fef3c7;color:#78350f;border-bottom-color:#fde68a}
-.col-hd.new{background:#d4f4e6;color:#0a5a3c;border-bottom-color:#a7e8c9}
+.col-hd.new{background:#d8f4fb;color:#155e75;border-bottom-color:#a5dcef}
 .col-hd small{display:block;font-size:10px;font-weight:600;text-transform:none;letter-spacing:0;margin-top:3px;opacity:.85}
 .cb{padding:14px 16px}
 .cb-title{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.cb-title::before{content:'';width:3px;height:11px;background:var(--green);border-radius:2px}
+.cb-title::before{content:'';width:3px;height:11px;background:var(--brand);border-radius:2px}
 
 .fr-grid{display:grid;grid-template-columns:1.5fr 56px 56px 54px;gap:6px;align-items:center}
 .fr-head{display:contents}
@@ -241,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;ba
       <tr><td style="color:#991b1b;font-weight:700">제거</td><td>골반 높이 차 (px)</td><td>"골반 기울기(°)"와 의미 중복</td></tr>
       <tr><td style="color:#991b1b;font-weight:700">제거</td><td>어깨-골반 편차 (%)</td><td>일반인이 이해하기 어려움 · "ATSI 종합 지수"에 이미 반영됨</td></tr>
       <tr><td style="color:#1e40af;font-weight:700">병합</td><td>Q-angle 좌+우 → 평균 1개</td><td>좌우 차이가 임상적으로 의미 있는 경우는 드물어 평균값으로 충분 (큰 좌우차 시 ⓘ에 표시)</td></tr>
-      <tr style="background:#f0faf5"><td style="color:#0a5a3c;font-weight:700;border-bottom:none">결과</td><td style="border-bottom:none"><b>11개 → 7개 (-36%)</b></td><td style="border-bottom:none">시인성 향상 + 일반인 이해도 향상 · 임상 정밀도는 큰 손실 없음</td></tr>
+      <tr style="background:#f0f6fd"><td style="color:#0d4491;font-weight:700;border-bottom:none">결과</td><td style="border-bottom:none"><b>11개 → 7개 (-36%)</b></td><td style="border-bottom:none">시인성 향상 + 일반인 이해도 향상 · 임상 정밀도는 큰 손실 없음</td></tr>
     </tbody>
   </table>
 </div>
@@ -256,7 +256,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;ba
       <tr><td>스탠딩 - 후면 (Posterior)</td><td class="n">6</td><td class="n">4</td><td>높이 차 px 2개 제거</td></tr>
       <tr><td>스탠딩 - 좌측면 (Lateral)</td><td class="n">9</td><td class="n">5</td><td>플럼라인 4항목(귀·어깨·대전자·무릎) → "평균 편차" 1개로 축약</td></tr>
       <tr><td>OHS / SLR / SKU 등 단일 항목</td><td class="n">2~3</td><td class="n">2</td><td>높이 차 px 제거</td></tr>
-      <tr style="background:#f0faf5"><td style="border-bottom:none"><b>전체 합계 (12개 검사)</b></td><td class="n" style="border-bottom:none"><b>~58</b></td><td class="n" style="border-bottom:none"><b>~38</b></td><td style="border-bottom:none">-34% 항목 감소</td></tr>
+      <tr style="background:#f0f6fd"><td style="border-bottom:none"><b>전체 합계 (12개 검사)</b></td><td class="n" style="border-bottom:none"><b>~58</b></td><td class="n" style="border-bottom:none"><b>~38</b></td><td style="border-bottom:none">-34% 항목 감소</td></tr>
     </tbody>
   </table>
 </div>
