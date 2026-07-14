@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <!-- v1.12.2: 캐시 방지 — Safari가 구버전 HTML 캐시 사용하지 않도록 -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -297,7 +297,14 @@ canvas.main-oc{display:block;width:100%;height:auto}
    v1.22: 세로 화면에서만 회전 — 아이패드/태블릿을 이미 가로로 든 경우 이중 회전 방지 (전 기기 시뮬레이션 결과) */
 @media (orientation:portrait){
   .cam-ov.cam-landscape-shot #camVid,
+  .cam-ov.cam-landscape-shot .cam-live-cv,
   .cam-ov.cam-landscape-shot .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
+  /* v1.29-beta: 라이브 스켈레톤 캔버스도 동일 회전 — SLR 세로화면에서 90° 어긋나던 버그 수정 */
+}
+/* v1.29-beta: 전면 카메라 미러 프리뷰 (저장 사진은 비미러 원본) */
+#camVid.mirror{transform:scaleX(-1)}
+@media (orientation:portrait){
+  .cam-ov.cam-landscape-shot #camVid.mirror{transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)}
 }
 /* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
 .gbox{position:absolute;border:2px solid rgba(46,159,255,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
@@ -502,6 +509,41 @@ input[type=range]{accent-color:var(--brand)}
 .ls-cl-more{background:#eef3fa;color:#0d4491}
 .ls-footer{color:#94a39b}
 @media (hover:hover){ .ls-btn-secondary:hover{background:#eef4fb} .ls-cl-hd:hover{background:#e0e9f5} .ls-cl-more:hover{background:#e4eaf4} }
+
+/* ═══ v1.29: 태블릿 우선(키오스크) + 소형 폰 대응 강화 ═══
+   업계 표준(체형분석 기기 대부분 태블릿 디폴트)에 맞춰 768~1280px 태블릿을 1급 시민으로:
+   3열 카드·비교뷰 나란히 배치·카메라 가로 레이아웃. 360~430px 폰도 표·터치타깃 보정으로 유지. */
+/* 소형 폰(<400px): 측정표 고정 칼럼 축소 — 지표명 줄바꿈 완화 */
+@media (max-width:399px){
+  .fr-grid{grid-template-columns:1.5fr 46px 46px 44px;gap:4px}
+  .sev-row{grid-template-columns:1.2fr 1fr auto 1fr;font-size:11px}
+}
+/* 터치 기기: 44px 접근성 가이드에 맞춘 최소 터치 타깃 */
+@media (pointer:coarse){
+  .photo-retake{min-height:38px;padding:9px 12px}
+  .fr-info{width:24px;height:24px;line-height:24px}
+  .oc-vt-btn,.mbt{min-height:34px;padding:7px 12px}
+  .ci-pill{min-height:34px;padding:7px 12px}
+  .narr-nav-btn{min-width:38px;min-height:32px}
+}
+/* 태블릿·데스크탑(≥1100px): 검사 카드 3열 + 측정표 여유 칼럼 */
+@media (min-width:1100px){
+  #phase_before.on,#phase_after.on{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .fr-grid{grid-template-columns:2fr 84px 84px 72px;gap:8px}
+  .fr-grid .fv{font-size:13px}
+}
+/* 태블릿 가로(≥900px landscape) 카메라: 세로 3:4 가이드 중앙 + 우측 컨트롤 레일 */
+@media (min-width:900px) and (orientation:landscape){
+  .cam-ov{flex-direction:row}
+  .cam-bar{flex-direction:column;justify-content:center;width:150px;border-top:none;border-left:1px solid rgba(255,255,255,.08);padding:20px 12px;gap:16px}
+  .cam-bar>div:first-child{text-align:center}
+  .gbox{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+  #camGuideSvgWrap{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+}
+/* 라이브 배지·HUD: 소형 폰에서 잘리지 않게 줄바꿈 허용 */
+.cam-live-badge{white-space:normal;max-width:94%;text-align:center;line-height:1.4}
+.cam-rec-hud .crh-cue{white-space:normal;line-height:1.4}
+@media (max-width:374px){ .cam-rec-hud .crh-val{font-size:24px} }
 </style>
 </head>
 <body>
@@ -525,7 +567,7 @@ input[type=range]{accent-color:var(--brand)}
   </div>
   <div class="ls-features">
     <div class="ls-feat"><div class="ls-feat-ic">📸</div><div class="ls-feat-t">전문 검사</div><div class="ls-feat-s">정적 자세 · 어깨 외전<br>OHS · SLR · 전굴</div></div>
-    <div class="ls-feat"><div class="ls-feat-ic">🧠</div><div class="ls-feat-t">AI 자세 분석</div><div class="ls-feat-s">불균형 진단<br>맞춤 교정운동 처방</div></div>
+    <div class="ls-feat"><div class="ls-feat-ic">🧠</div><div class="ls-feat-t">AI 자세 분석</div><div class="ls-feat-s">불균형 분석<br>맞춤 교정운동 추천</div></div>
     <div class="ls-feat"><div class="ls-feat-ic">📊</div><div class="ls-feat-t">정밀 수치</div><div class="ls-feat-s">어깨·골반·체간 각도<br>자동 측정 · 비교</div></div>
     <div class="ls-feat"><div class="ls-feat-ic">☁️</div><div class="ls-feat-t">세션 보관</div><div class="ls-feat-s">자동 백업<br>클라우드 동기화</div></div>
   </div>
@@ -688,6 +730,9 @@ input[type=range]{accent-color:var(--brand)}
       <div class="ct-sub" id="ctSub"></div>
       <div class="ct-slot" id="ctSlot"></div>
     </div>
+    <!-- v1.29-beta: 전면/후면 전환(태블릿 키오스크) + 자동촬영 토글 -->
+    <button class="cclose" id="camFlipBtn" onclick="flipCamera()" title="전면/후면 전환">전환</button>
+    <button class="cclose" id="autoCapBtn" onclick="toggleAutoCap()">자동촬영</button>
     <button class="shutter" onclick="armCapture()"></button>
     <button class="cclose" onclick="closeCam()">닫기</button>
   </div>
@@ -719,7 +764,7 @@ function getAppPw(){
 // ─ POSE GUIDE SILHOUETTES (v1.19) ─
 // 인체 비례(7.5두신) 기반 부드러운 윤곽. 회원 성별(M/F)·키(cm)에 따라 어깨/골반 폭 보정.
 // 모든 정적 가이드는 viewBox 100×220, 누운 자세(SLR)는 200×110.
-// 색 톤: 본체=세미투명 그린, 강조 동작 부위=골드.
+// 색 톤: 본체=세미투명 블루, 강조 동작 부위=골드.
 function _silhouetteParams(){
   // ng_meta에 캐시된 성별·키 우선, 없으면 폼에서 읽음
   let g='M', h=170;
@@ -1393,21 +1438,25 @@ const TEST_KEY={
   slr_r:[23,24,25,26,27,28],
 };
 // v1.18: 각도 중심. signed=부호로 방향 표시. Q-angle·무릎비율 제거(트레이너 #3,#8).
+// v1.29-beta: 임상 문헌 근거 명시(src) + 의료주장 리스크 명칭 정비.
+// - '측만 지수' → '몸통 대칭 지수(간이)': 앱의 산식은 원저 POTSI 6요소의 간이 3요소 버전 (진단 아님)
+// - thoracicKyphosis: 척추 만곡(Cobb)이 아닌 어깨 전방 돌출 지표(proxy)로 명칭 정정
+// - SLR 상한(85°) 경고 제거: 상회는 다수(특히 여성)에서 정상 — 하한만 스크리닝 (Youdas 2005)
 const NORMS = {
-  shoulderTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평)',w:10,signed:true},
-  hipTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평)',w:10,signed:true},
-  headTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평)',w:8,signed:true},
-  spineAngle:{max:5,unit:'°',lbl:'정상 5° 이하 (수직 기준)',w:10,signed:true},
-  shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하 (어깨-골반 정렬)',w:8,signed:true},
-  headOffsetAngle:{max:10,unit:'°',lbl:'정상 10° 이하 · +전방(FHP)/−후방',w:8,signed:true},
-  shoulderAbductionL:{min:160,unit:'°',lbl:'정상 160° 이상 (완전 외전 180°)',w:8},
-  shoulderAbductionR:{min:160,unit:'°',lbl:'정상 160° 이상 (완전 외전 180°)',w:8},
-  potsi:{max:27,unit:'',lbl:'정상 27 이하 (POTSI 측만 지수)',w:8},
-  atsi:{max:27,unit:'',lbl:'정상 27 이하 (ATSI 전면 대칭)',w:8},
-  thoracicKyphosis:{max:10,unit:'°',lbl:'정상 ±10° 이내 · +어깨앞으로(라운드숄더)',w:7,signed:true},
-  trunkLeanLat:{max:40,unit:'°',lbl:'OHS 상체 전방 경사 · +전방/−후방 (참고용)',w:0,signed:true},
-  slrAngle:{min:70,max:85,unit:'°',lbl:'정상 70~85° (들린 다리 허벅지-바닥 각도)',w:6},
-  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준)',w:6},
+  shoulderTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평)',w:10,signed:true,src:'Ferreira 2010 (SAPO) · Kendall 2005'},
+  hipTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평) · 골반 좌우 높이 지표',w:10,signed:true,src:'Kendall 2005 · Gurney 2002'},
+  headTilt:{max:3,unit:'°',lbl:'정상 3° 이하 (좌우 수평)',w:8,signed:true,src:'Ferreira 2010 (SAPO) · Singla 2017'},
+  spineAngle:{max:5,unit:'°',lbl:'정상 5° 이하 · 체간 좌우 기울기 지표',w:10,signed:true,src:'Penha 2005 · Ferreira 2010'},
+  shoulderHipAlign:{max:3,unit:'%',lbl:'정상 3% 이하 (어깨-골반 정렬 · 참고 지표)',w:8,signed:true,src:'앱 내부 지표 (POTSI 개념 참고)'},
+  headOffsetAngle:{max:10,unit:'°',lbl:'정상 10° 이하 · +전방(FHP 경향)/−후방 · 플럼라인 지표',w:8,signed:true,src:'Kendall 2005 플럼라인 · Yip 2008 (CVA 개념)'},
+  shoulderAbductionL:{min:160,unit:'°',lbl:'정상 160° 이상 (완전 외전 180° · 팔꿈치 편 상태)',w:8,src:'AAOS 1965 · AMA Guides 5판 · Barnes 2001'},
+  shoulderAbductionR:{min:160,unit:'°',lbl:'정상 160° 이상 (완전 외전 180° · 팔꿈치 편 상태)',w:8,src:'AAOS 1965 · AMA Guides 5판 · Barnes 2001'},
+  potsi:{max:27,unit:'',lbl:'정상 27 이하 (몸통 대칭 지수 · 간이 POTSI)',w:8,src:'Suzuki 1999 · Inami 1999 (간이 산식)'},
+  atsi:{max:27,unit:'',lbl:'정상 27 이하 (전면 몸통 대칭 지수 · 간이 ATSI)',w:8,src:'Stoliński 2012·2017 (간이 산식)'},
+  thoracicKyphosis:{max:10,unit:'°',lbl:'정상 ±10° 이내 · 어깨 전방 돌출 지표(라운드숄더 경향)',w:7,signed:true,src:'Kendall 2005 플럼라인 (Cobb각 아님)'},
+  trunkLeanLat:{max:40,unit:'°',lbl:'OHS 상체 전방 경사 · +전방/−후방 (참고용)',w:0,signed:true,src:'Fry 2003 · NASM CES'},
+  slrAngle:{min:70,unit:'°',lbl:'정상 70° 이상 (들린 다리 허벅지-바닥 각도 · 80° 전후 평균)',w:6,src:'Youdas 2005 · AAOS 1965'},
+  trunkFlex:{min:70,unit:'°',lbl:'정상 70° 이상 (수직 기준 · 기능적 스크리닝)',w:6,src:'AMA Guides 5판 · Perret 2001 (참고)'},
 };
 
 // v1.18: 검사별 "표시·채점에 사용할 지표" 단일 정의 — 표(buildMetricsHTML)·종합점수·운동추천이 모두 공유.
@@ -1522,8 +1571,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.28.2-beta';
-const BUILD_TIME='2026-06-17';
+const APP_VERSION='v1.29.0-beta';
+const BUILD_TIME='2026-07-14';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1574,6 +1623,19 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.29.0-beta', date:'2026-07-14', items:[
+    '🔵 전면 UI 리브랜딩 — 초록 → 파랑 (전 페이지·가이드 이미지 포함)',
+    '🎯 정밀 인식 파이프라인 — 고사양 기기 full 모델 자동 선택(아이폰은 lite 유지), 신뢰도 임계값 0.5 상향, One-Euro 필터로 스켈레톤 지터 제거',
+    '✅ 캡처 품질 게이트 — 필수 관절 가시성·프레임·피사체 크기·골격 길이 일관성·좌우 타당성을 종합한 품질 점수(0~100)가 80점 이상 1.2초 유지돼야 촬영 적합 판정',
+    '📸 자동 촬영 복원(안전판) — 품질 게이트 통과 시 3초 카운트다운 후 자동 촬영. 카운트다운 중 매 프레임 재검증, 흔들리면 즉시 취소 (v1.23.1 "준비 전 찍힘" 원천 차단). 자동촬영 ON/OFF 토글',
+    '🧮 캡처 포즈 정밀화 — 5프레임 평균 → 7프레임 중앙값(이상치 강건) + 저장 프레임 재감지 융합으로 사진-스켈레톤 불일치 해결',
+    '🤖 AI 관절 위치 정밀 검증 — 촬영 직후 Claude 비전이 9개 핵심 관절 마커의 해부학적 위치를 검증, 오배치 시 경고 배지 + 재촬영 안내 (토글 가능)',
+    '🎬 동적 검사 강건화 — 극점 프레임을 3프레임 중앙값으로 평활(1프레임 오인식 차단), 반복 카운트 유령 반복 수정, 골격 일관성 통과 프레임만 채택',
+    '📚 임상 근거 명시 — 모든 정상범위에 출처 표기(Kendall·AAOS·AMA·Suzuki·Youdas 등), 측만/흉추후만 등 진단성 명칭을 스크리닝 지표명으로 정정, SLR 상한 경고 제거',
+    '📱 태블릿 우선 최적화 — 전면 카메라 전환+미러 프리뷰(키오스크), 가로 태블릿 카메라 우측 레일+3:4 가이드, ≥1100px 검사카드 3열, 터치 타깃 44px 보정, 핀치줌 허용',
+    '🛌 SLR 라이브 스켈레톤 90° 어긋남 수정 — 회전 CSS에 오버레이 캔버스 포함',
+    '⚖️ 상용화 정비 — 리포트·PDF 고정 면책문, 진단→분석·처방→추천 표현 정비, 관리자 비밀번호 하드코딩 제거, 클라우드 목록 XSS 방지',
+  ]},
   {ver:'v1.24.0', date:'2026-06-17', items:[
     '🎥 동적 검사 영상(녹화) 전환 — SLR·트렁크 전굴·OHS·숄더 외전·SKU(9종)는 녹화 버튼을 누르고 동작을 수행하면, 동작 전체를 추적해 최대 ROM(극점) 프레임을 자동으로 잡아 저장',
     '📷 정적 검사(전면·측면·후면 3종)는 사진 유지 — 촬영 버튼 → 3·2·1 준비 후 1장',
@@ -2297,11 +2359,12 @@ function buildReportPhase(){
   <div class="rep-sec"><div class="rep-sec-hd">📏 ROM·정렬 정상범위 게이지</div><div id="romGaugeBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">측정 후 각 항목이 정상범위 대비 어디에 있는지 게이지로 표시됩니다.</p></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">🔎 동작 보상 분석</div><div id="compBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">동적 검사(스쿼트·SLR·외전 등) 촬영 후 보상 패턴이 자동 분석됩니다.</p></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">🔮 교정 경향 예측 (참고용)</div><div id="projBody" style="padding:12px 16px"><p style="font-size:12px;color:var(--tx3)">측정 후 교정 시/미교정 시 경향이 표시됩니다.</p></div></div>
+  <div class="rep-sec" style="border-left:3px solid #b45309"><div style="padding:12px 16px;font-size:11px;color:var(--tx2);line-height:1.6">⚠️ <b>안내</b> — 본 분석은 운동·자세 관리를 위한 참고용 스크리닝이며, 의료 진단·치료가 아닙니다. 2D 카메라·AI 자세 추정 특성상 촬영 각도·조명·복장에 따라 오차(약 ±5~10°)가 발생할 수 있습니다. 통증·저림·기능 이상이 있으면 의료기관 상담을 권장합니다.</div></div>
   <div class="rep-sec"><div class="rep-sec-hd">검사 현황</div><div id="repTestList"></div></div>
   <div class="rep-sec"><div class="rep-sec-hd">트레이너 코멘트 (고객 리포트에 포함)</div>
     <div style="padding:12px 16px"><textarea class="tc-ta" id="trainerComment" rows="4" placeholder="고객에게 전달할 종합 소견을 입력하세요..." oninput="ASSESS.text=this.value;autoSave()"></textarea></div>
   </div>
-  <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 처방 (편집 가능)</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
+  <div class="rep-sec" id="exerciseSec"><div class="rep-sec-hd">맞춤 교정 운동 추천 (편집 가능)</div><div style="padding:12px 16px" id="exerciseContent"><p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p></div></div>
   <div class="rep-sec" id="aiReportSec"><div class="rep-sec-hd">AI 종합 분석 초안 (편집 가능)</div><div style="padding:14px 16px" id="aiReportContent"><p style="font-size:13px;color:var(--tx3)">아래 "AI 종합 분석 생성" 버튼을 누르면 초안이 생성됩니다. 편집 가능. (최대 3회)</p></div></div>
   <div class="rep-sec" style="background:#f0f9ff;border:1px dashed #93c5fd;border-radius:var(--r2)">
     <div style="padding:16px 20px">
@@ -2448,9 +2511,9 @@ function renderExerciseRecommendations(metrics){
   const titles=recs.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0"><span class="ex-simple-dot"></span><span class="ex-simple-title" style="flex:1">${r.title}</span><a href="https://www.youtube.com/results?search_query=${encodeURIComponent(r.title+' 교정운동')}" target="_blank" rel="noopener" style="font-size:10px;color:#1e40af;text-decoration:none;font-weight:800;white-space:nowrap;background:#eaf0fc;padding:3px 8px;border-radius:8px">▶ 시연</a></div>`).join('');
   return `<div style="margin-bottom:12px">${titles}</div>
     <div style="padding:10px 12px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:10px">
-      <div style="font-size:11px;color:#1e40af;font-weight:700;margin-bottom:6px">🔒 트레이너 전용 상세 처방</div>
+      <div style="font-size:11px;color:#1e40af;font-weight:700;margin-bottom:6px">🔒 트레이너 전용 상세 가이드</div>
       <div style="font-size:10px;color:#3b5fb5;line-height:1.5;margin-bottom:8px">각 운동의 세트×반복 수, 지도 포인트, 진행 순서는 트레이너에게 전송되며, 다음 세션에서 직접 코칭받으실 수 있습니다.</div>
-      <button onclick="sendFinalReportToTrainer()" class="abtn" style="width:100%;background:#1e40af;color:#fff;border-color:#1e40af;font-size:12px;padding:8px">📧 트레이너에게 상세 운동 처방 전송</button>
+      <button onclick="sendFinalReportToTrainer()" class="abtn" style="width:100%;background:#1e40af;color:#fff;border-color:#1e40af;font-size:12px;padding:8px">📧 트레이너에게 상세 운동 추천 전송</button>
     </div>`;
 }
 
@@ -2694,10 +2757,37 @@ function openCam(tid,slot){
   if(wrn) wrn.style.opacity='1';
   clearTimeout(window._hintFadeTimer);
   window._hintFadeTimer=setTimeout(()=>{ if(wrn) wrn.style.opacity='0'; },5000);
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false})
-    .then(s=>{camStream=s;const vv=document.getElementById('camVid');vv.srcObject=s;ensurePoseEngine().then(()=>{if(document.getElementById('camOv').classList.contains('show'))startLiveTracking();});})
+  _startCamStream()
+    .then(()=>{ensurePoseEngine().then(()=>{if(document.getElementById('camOv').classList.contains('show'))startLiveTracking();});})
     .catch(e=>{toast('카메라 오류: '+e.message);document.getElementById('camOv').classList.remove('show')});
   startDeviceLevel();
+}
+// ═══ v1.29-beta: 카메라 스트림 시작/전환 — 태블릿 키오스크(≥900px)는 전면 카메라 기본 ═══
+// 전면 카메라는 프리뷰만 미러(자연스러운 셀프 뷰). 저장 사진·랜드마크는 비미러 원본이라
+// 좌우 지표(좌/우 어깨 등) 계산은 기존과 동일하게 유지됨.
+let _camFacing=localStorage.getItem('ng_cam_facing')||(window.matchMedia&&matchMedia('(min-width:900px)').matches?'user':'environment');
+let _camMirrored=false;
+function _startCamStream(){
+  if(camStream){try{camStream.getTracks().forEach(t=>t.stop())}catch(e){}}
+  return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:_camFacing},width:{ideal:1920}},audio:false})
+    .then(s=>{
+      camStream=s;
+      const vv=document.getElementById('camVid');
+      vv.srcObject=s;
+      let fm=_camFacing;
+      try{ const st=s.getVideoTracks()[0].getSettings(); if(st&&st.facingMode)fm=st.facingMode; }catch(e){}
+      _camMirrored=(fm==='user');
+      vv.classList.toggle('mirror',_camMirrored);
+      return s;
+    });
+}
+function flipCamera(){
+  _camFacing=(_camFacing==='user')?'environment':'user';
+  localStorage.setItem('ng_cam_facing',_camFacing);
+  _oneEuroState=null;_liveHist=[];_stableSince=0;
+  _startCamStream()
+    .then(()=>toast(_camFacing==='user'?'전면 카메라 — 미러 표시 (저장은 원본)':'후면 카메라'))
+    .catch(e=>toast('카메라 전환 실패: '+e.message));
 }
 // v1.12: 영상 캡처 모드 — 1.5초 동안 여러 프레임 캡처해서 MediaPipe로
 // 각 프레임 분석 후 가장 많은 landmark가 감지된 프레임을 최종 사진으로 사용.
@@ -2706,35 +2796,64 @@ function openCam(tid,slot){
 // 프리뷰에 실시간 스켈레톤을 그리고, 포즈가 안정 + 가이드 안에 들면 카운트다운 후 자동 촬영.
 // Tasks 미로딩(폴백)이면 동작 안 하고 기존 수동 셔터(snap)만 사용.
 let _liveRAF=null,_liveHist=[],_capturing=false,_cdTimer=null,_lastStable=false;
+// ═══ v1.29-beta: 신뢰도 파이프라인 ═══
+// (1) One-Euro 필터 — 검출기 지터 제거(느린 움직임은 강하게, 빠른 움직임은 약하게 평활).
+// (2) 품질 게이트(_poseQuality) — 가시성·프레임 안·크기·지터·골격 길이 일관성·좌우 타당성 종합 점수.
+// (3) 자동 촬영 복원 — 게이트가 1.2초 연속 통과해야 카운트다운 시작, 카운트다운 중에도 매 프레임
+//     재검증(실패 시 즉시 취소) → v1.23.1의 '준비 전 찍힘' 문제 원천 차단.
+let _oneEuroState=null,_lastDetTS=0,_stableSince=0,_qualityPct=0,_qualityIssue='';
+let AUTO_CAP=localStorage.getItem('ng_auto_capture')!=='0'; // 기본 ON
+const OE_MIN_CUTOFF=1.6,OE_BETA=0.35,OE_DCUT=1.0; // One-Euro 파라미터 (30fps 기준 튜닝)
+function _oeAlpha(cutoff,dt){ const tau=1/(2*Math.PI*cutoff); return 1/(1+tau/dt); }
+function _filterPose(lm,ts){
+  if(!_oneEuroState||ts-_oneEuroState.ts>500){ _oneEuroState={ts,pts:lm.map(p=>p?{x:p.x,y:p.y,dx:0,dy:0}:null)}; return lm; }
+  const dt=Math.max(1,ts-_oneEuroState.ts)/1000; _oneEuroState.ts=ts;
+  const ad=_oeAlpha(OE_DCUT,dt);
+  return lm.map((p,i)=>{
+    if(!p)return p;
+    const st=_oneEuroState.pts[i];
+    if(!st){ _oneEuroState.pts[i]={x:p.x,y:p.y,dx:0,dy:0}; return p; }
+    const dx=(p.x-st.x)/dt, dy=(p.y-st.y)/dt;
+    st.dx=st.dx+ad*(dx-st.dx); st.dy=st.dy+ad*(dy-st.dy);
+    const cx=OE_MIN_CUTOFF+OE_BETA*Math.abs(st.dx), cy=OE_MIN_CUTOFF+OE_BETA*Math.abs(st.dy);
+    st.x=st.x+_oeAlpha(cx,dt)*(p.x-st.x); st.y=st.y+_oeAlpha(cy,dt)*(p.y-st.y);
+    return Object.assign({},p,{x:st.x,y:st.y});
+  });
+}
 function startLiveTracking(){
-  _liveHist=[];_capturing=false;_lastStable=false;_cancelCountdown();clearLiveOverlay();
+  _liveHist=[];_capturing=false;_lastStable=false;_oneEuroState=null;_stableSince=0;_qualityPct=0;_cancelCountdown();clearLiveOverlay();
   const badge=document.getElementById('camLiveBadge');
   if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); return; }
-  if(badge){badge.className='cam-live-badge on';badge.textContent=isDynamicTest(camTid)?'실시간 추적 — 녹화 버튼을 누르고 동작을 수행하세요':'실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요';}
+  if(badge){badge.className='cam-live-badge on';badge.textContent=isDynamicTest(camTid)?'실시간 추적 — 녹화 버튼을 누르고 동작을 수행하세요':(AUTO_CAP?'실시간 추적 — 자세를 맞추면 자동 촬영됩니다':'실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요');}
+  _syncAutoCapBtn();
   const v=document.getElementById('camVid');
   let lastT=-1;
   const loop=()=>{
     const ov=document.getElementById('camOv');
     if(!ov||!ov.classList.contains('show')){_liveRAF=null;return;}
     if(!_capturing && v.readyState>=2 && v.videoWidth){
-      if(v.currentTime!==lastT){
-        lastT=v.currentTime;
-        let r=null; try{ r=poseLMVideo.detectForVideo(v,performance.now()); }catch(e){}
-        if(r&&r.landmarks&&r.landmarks[0]){ const lm=_normLM(r.landmarks[0]); drawLiveOverlay(lm); if(_recording)_recTrack(lm); else checkAutoCapture(lm); }
-        else { clearLiveOverlay(); _lastStable=false; _cancelCountdown(); }
+      const now=performance.now();
+      if(v.currentTime!==lastT && now-_lastDetTS>=33){ // 감지 ≤30fps 캡 (120Hz 태블릿 과부하 방지)
+        lastT=v.currentTime; _lastDetTS=now;
+        let r=null; try{ r=poseLMVideo.detectForVideo(v,now); }catch(e){}
+        if(r&&r.landmarks&&r.landmarks[0]){ const lm=_filterPose(_normLM(r.landmarks[0]),now); drawLiveOverlay(lm); if(_recording)_recTrack(lm); else checkAutoCapture(lm); }
+        else { clearLiveOverlay(); _lastStable=false; _stableSince=0; _cancelCountdown(); }
       }
     }
     _liveRAF=requestAnimationFrame(loop);
   };
   _liveRAF=requestAnimationFrame(loop);
 }
-function stopLiveTracking(){ if(_liveRAF)cancelAnimationFrame(_liveRAF);_liveRAF=null;_cancelCountdown();_liveHist=[];_capturing=false;_lastStable=false;clearLiveOverlay(); const b=document.getElementById('camLiveBadge');if(b)b.classList.remove('on'); }
+function stopLiveTracking(){ if(_liveRAF)cancelAnimationFrame(_liveRAF);_liveRAF=null;_cancelCountdown();_liveHist=[];_capturing=false;_lastStable=false;_oneEuroState=null;_stableSince=0;clearLiveOverlay(); const b=document.getElementById('camLiveBadge');if(b)b.classList.remove('on'); }
 function _liveMap(cv,v){
-  const rect=v.getBoundingClientRect();
-  const dw=Math.max(1,Math.round(rect.width)),dh=Math.max(1,Math.round(rect.height));
+  // v1.29-beta: getBoundingClientRect → clientWidth/Height (레이아웃 크기, transform 불변).
+  // SLR 세로화면 90° 회전 시 오버레이 캔버스가 비디오와 같은 CSS 회전을 공유하므로
+  // 레이아웃 좌표계로 그리면 회전 후에도 정확히 정렬됨 (기존: 회전된 rect로 계산해 90° 어긋남).
+  const dw=Math.max(1,v.clientWidth),dh=Math.max(1,v.clientHeight);
   if(cv.width!==dw)cv.width=dw; if(cv.height!==dh)cv.height=dh;
   const vw=v.videoWidth,vh=v.videoHeight,s=Math.max(dw/vw,dh/vh),ox=(dw-vw*s)/2,oy=(dh-vh*s)/2;
-  return {dw,dh,fx:p=>p.x*vw*s+ox,fy:p=>p.y*vh*s+oy};
+  const mir=_camMirrored;
+  return {dw,dh,fx:p=>(mir?(1-p.x):p.x)*vw*s+ox,fy:p=>p.y*vh*s+oy};
 }
 function clearLiveOverlay(){ const cv=document.getElementById('camLiveCv'); if(cv)cv.getContext('2d').clearRect(0,0,cv.width,cv.height); }
 // v1.24.1-beta: 라이브 프리뷰는 iPOSTURE처럼 전신 33점 스켈레톤 전체(얼굴·팔·손·다리·발)를
@@ -2773,20 +2892,102 @@ function _inFrame(lm){
 }
 function _poseStable(lm){
   const CORE=[11,12,23,24,25,26,27,28];
-  _liveHist.push(lm); if(_liveHist.length>8)_liveHist.shift();
+  _liveHist.push(lm); if(_liveHist.length>10)_liveHist.shift();
   if(_liveHist.length<6)return false;
   let mv=0,c=0;
   for(let f=1;f<_liveHist.length;f++)CORE.forEach(i=>{const a=_liveHist[f-1][i],b=_liveHist[f][i];if(a&&b&&a.visibility>.5&&b.visibility>.5){mv+=Math.hypot(a.x-b.x,a.y-b.y);c++}});
-  return c>0&&(mv/c)<0.006;
+  return c>0&&(mv/c)<0.005;
 }
-// v1.23.1: 자동 즉시촬영 제거 — 안정/프레임 여부는 '표시만'. 실제 촬영은 트레이너가
-// 촬영 버튼(armCapture)으로 시작 → 3초 준비 카운트다운 → 촬영. (준비 전 찍힘 버그 해결)
+// ═══ v1.29-beta: 캡처 품질 게이트 — 촬영 채택 전 다층 검증 ═══
+// 검사별 필수 관절 가시성(0.6+), 프레임 안, 피사체 크기, 골격 길이 일관성(뼈 길이는
+// 프레임 간 변하지 않아야 함 — 오인식 프레임 즉시 감점), 좌우 대퇴 길이 타당성(좌우 뒤바뀜 방어).
+const QUALITY_REQ={
+  slr_l:[23,24,25,26,27,28], slr_r:[23,24,25,26,27,28],
+  trunk_l:[11,12,23,24,25,26],
+  _default:[0,11,12,23,24,25,26,27,28]
+};
+function _boneLen(lm,a,b){ const A=lm[a],B=lm[b]; if(!A||!B||A.visibility<.5||B.visibility<.5)return null; return Math.hypot(A.x-B.x,A.y-B.y); }
+function _poseQuality(lm){
+  const issues=[]; let score=100;
+  const req=QUALITY_REQ[camTid]||QUALITY_REQ._default;
+  // 1) 필수 관절 가시성 (임계 0.6 — 측정 등급)
+  const lowVis=req.filter(i=>!lm[i]||lm[i].visibility<0.6);
+  if(lowVis.length){ score-=lowVis.length*12; issues.push('관절 '+lowVis.length+'개 가시성 부족'); }
+  // 2) 프레임 안 여유
+  if(!_inFrame(lm)){ score-=35; issues.push('전신이 가이드 안에 들어오게'); }
+  // 3) 피사체 크기 — 표준 검사는 세로 45%+, SLR(누움)은 가로 45%+
+  const ys=req.map(i=>lm[i]).filter(p=>p&&p.visibility>.5).map(p=>p.y);
+  const xs=req.map(i=>lm[i]).filter(p=>p&&p.visibility>.5).map(p=>p.x);
+  if(ys.length>=4){
+    const span=(camTid==='slr_l'||camTid==='slr_r')?(Math.max(...xs)-Math.min(...xs)):(Math.max(...ys)-Math.min(...ys));
+    if(span<0.45){ score-=25; issues.push('더 가까이 — 화면에 크게'); }
+  }
+  // 4) 정지 안정성 (히스토리 지터)
+  if(!_poseStable(lm)){ score-=20; issues.push('잠시 정지'); }
+  // 5) 골격 길이 일관성 — 최근 프레임 간 어깨폭·골반폭·대퇴 길이 변동계수
+  if(_liveHist.length>=6){
+    const BONES=[[11,12],[23,24],[23,25],[24,26]];
+    let cvSum=0,cvN=0;
+    BONES.forEach(([a,b])=>{
+      const ls=_liveHist.slice(-6).map(f=>_boneLen(f,a,b)).filter(x=>x!==null);
+      if(ls.length>=4){ const m=ls.reduce((s,x)=>s+x,0)/ls.length; const sd=Math.sqrt(ls.reduce((s,x)=>s+(x-m)*(x-m),0)/ls.length); if(m>0){cvSum+=sd/m;cvN++;} }
+    });
+    if(cvN&&cvSum/cvN>0.10){ score-=20; issues.push('인식 불안정 — 배경·조명 확인'); }
+  }
+  // 6) 좌우 타당성 — 정면·후면 계열에서 좌우 대퇴 길이가 극단적으로 다르면 오인식 의심
+  if(['ant','post','ohs_b','sku','sku_r','trunk_b'].includes(camTid)){
+    const fl=_boneLen(lm,23,25),fr=_boneLen(lm,24,26);
+    if(fl&&fr){ const ratio=fl/fr; if(ratio<0.55||ratio>1.8){ score-=20; issues.push('좌우 관절 인식 의심'); } }
+  }
+  return {pct:Math.max(0,Math.round(score)), issue:issues[0]||''};
+}
+const AUTO_CAP_MIN_QUALITY=80, AUTO_CAP_HOLD_MS=1200;
+// v1.29-beta: 자동 촬영 복원 (v1.23.1에서 제거됐던 기능의 안전판 버전).
+// 품질 게이트 80점 이상이 1.2초 연속 유지되어야 3초 카운트다운 시작. 카운트다운 중 매 프레임
+// 재검증 — 게이트가 깨지면 즉시 취소 후 재탐색. 수동 셔터는 그대로 유지(토글 가능).
 function checkAutoCapture(lm){
-  _lastStable=_inFrame(lm)&&_poseStable(lm);
+  const q=_poseQuality(lm);
+  _qualityPct=q.pct; _qualityIssue=q.issue;
+  _lastStable=q.pct>=AUTO_CAP_MIN_QUALITY;
   const badge=document.getElementById('camLiveBadge');
-  if(!badge||!badge.classList.contains('on')||_cdTimer)return;
-  if(_lastStable){ badge.className='cam-live-badge on ready'; badge.textContent='✓ 자세 안정 — 촬영 버튼을 누르세요'; }
-  else { badge.className='cam-live-badge on'; badge.textContent='실시간 추적 — 자세를 가이드에 맞추세요'; }
+  if(!badge||!badge.classList.contains('on'))return;
+  if(_cdTimer){
+    // 카운트다운 중 연속 재검증 — 품질 붕괴 시 즉시 취소
+    if(q.pct<AUTO_CAP_MIN_QUALITY-10){
+      _cancelCountdown(); _stableSince=0;
+      badge.className='cam-live-badge on'; badge.textContent='움직임 감지 — 자세를 다시 잡아주세요';
+    }
+    return;
+  }
+  const now=performance.now();
+  if(_lastStable){
+    if(!_stableSince)_stableSince=now;
+    const held=now-_stableSince;
+    if(AUTO_CAP&&!isDynamicTest(camTid)&&held>=AUTO_CAP_HOLD_MS){
+      badge.className='cam-live-badge on ready'; badge.textContent='✓ 정밀 인식 완료 — 자동 촬영';
+      _startCountdown(3,captureLive);
+    }else{
+      badge.className='cam-live-badge on ready';
+      badge.textContent=AUTO_CAP&&!isDynamicTest(camTid)
+        ?('✓ 인식 '+q.pct+'% — 그대로 유지하세요')
+        :('✓ 자세 안정 '+q.pct+'% — 촬영 버튼을 누르세요');
+    }
+  }else{
+    _stableSince=0;
+    badge.className='cam-live-badge on';
+    badge.textContent=q.issue?('실시간 추적 — '+q.issue):'실시간 추적 — 자세를 가이드에 맞추세요';
+  }
+}
+function toggleAutoCap(){
+  AUTO_CAP=!AUTO_CAP; localStorage.setItem('ng_auto_capture',AUTO_CAP?'1':'0');
+  _stableSince=0; _cancelCountdown(); _syncAutoCapBtn();
+  toast(AUTO_CAP?'자동 촬영 ON — 자세가 정밀 인식되면 자동으로 찍힙니다':'자동 촬영 OFF — 촬영 버튼으로 찍습니다');
+}
+function _syncAutoCapBtn(){
+  const b=document.getElementById('autoCapBtn'); if(!b)return;
+  b.textContent='자동촬영 '+(AUTO_CAP?'ON':'OFF');
+  b.style.borderColor=AUTO_CAP?'rgba(46,159,255,.8)':'rgba(255,255,255,.2)';
+  b.style.color=AUTO_CAP?'#4fb2f5':'#ccc';
 }
 // 촬영 버튼 → 3초 준비 카운트다운 후 캡처 (라이브 평균 또는 폴백 snap)
 function armCapture(){
@@ -2802,10 +3003,21 @@ function _startCountdown(sec,cb){
   _cdTimer=setInterval(()=>{ n--; if(n<=0){clearInterval(_cdTimer);_cdTimer=null;if(cd)cd.style.display='none';if(typeof cb==='function')cb();} else if(cd){cd.textContent=n;} },1000);
 }
 function _cancelCountdown(){ if(_cdTimer){clearInterval(_cdTimer);_cdTimer=null;} const cd=document.getElementById('camCountdown'); if(cd)cd.style.display='none'; }
-function _avgRecentPose(){
-  const hist=_liveHist.slice(-5); if(!hist.length)return null;
+// v1.29-beta: 평균 → 중앙값(median). 평균은 한 프레임의 오인식이 결과를 끌고 가지만
+// 중앙값은 이상치에 강건. 가시성 낮은 프레임(<0.5)은 해당 관절 집계에서 제외.
+function _medianRecentPose(){
+  const hist=_liveHist.slice(-7); if(!hist.length)return null;
+  const med=a=>{ const s=[...a].sort((x,y)=>x-y); const m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
   const out=[];
-  for(let i=0;i<33;i++){ let sx=0,sy=0,sz=0,sv=0,c=0; hist.forEach(f=>{const p=f[i];if(p){sx+=p.x;sy+=p.y;sz+=p.z||0;sv+=p.visibility||0;c++}}); out[i]=c?{x:sx/c,y:sy/c,z:sz/c,visibility:sv/c}:null; }
+  for(let i=0;i<33;i++){
+    const good=hist.map(f=>f[i]).filter(p=>p&&p.visibility>=0.5);
+    if(good.length>=Math.ceil(hist.length/2)){
+      out[i]={x:med(good.map(p=>p.x)),y:med(good.map(p=>p.y)),z:med(good.map(p=>p.z||0)),visibility:good.reduce((s,p)=>s+p.visibility,0)/good.length};
+    }else{
+      const any=hist.map(f=>f[i]).filter(Boolean);
+      out[i]=any.length?{x:med(any.map(p=>p.x)),y:med(any.map(p=>p.y)),z:med(any.map(p=>p.z||0)),visibility:Math.min(0.4,any.reduce((s,p)=>s+p.visibility,0)/any.length)}:null;
+    }
+  }
   return out;
 }
 function captureLive(){
@@ -2814,11 +3026,29 @@ function captureLive(){
   if(!v||!v.videoWidth){_capturing=false;return;}
   hc.width=v.videoWidth;hc.height=v.videoHeight;hc.getContext('2d').drawImage(v,0,0);
   const dataUrl=hc.toDataURL('image/jpeg',.9);
-  const avg=_avgRecentPose();
+  // v1.29-beta: 사진-포즈 불일치 해결 — 저장되는 '그 프레임'을 다시 감지해서
+  // 히스토리 중앙값과 융합. (기존: 마지막 5프레임 평균 포즈 + 최종 1프레임 사진 → 서로 안 맞음)
+  const median=_medianRecentPose();
+  let fused=median;
+  try{
+    const still=poseLMVideo?poseLMVideo.detectForVideo(hc,performance.now()):null;
+    if(still&&still.landmarks&&still.landmarks[0]){
+      const sl=_normLM(still.landmarks[0]);
+      fused=sl.map((p,i)=>{
+        const m=median&&median[i];
+        if(!p||p.visibility<0.6)return m||p||null;         // 정지 감지 불확실 → 중앙값
+        if(!m||m.visibility<0.4)return p;                   // 중앙값 없음 → 정지 감지
+        const d=Math.hypot(p.x-m.x,p.y-m.y);
+        return d<=0.05?p:m;                                 // 일치하면 사진 기준, 크게 다르면 강건한 중앙값
+      });
+    }
+  }catch(e){ /* 정지 감지 실패 → 중앙값 사용 */ }
   const tid=camTid,slot=camSlot;
+  const q=_qualityPct;
   closeCam();
-  loadImg(tid,slot,dataUrl,false,avg);
-  toast((slot==='B'?'Before':'After')+' 촬영 완료');
+  loadImg(tid,slot,dataUrl,false,fused);
+  toast((slot==='B'?'Before':'After')+' 촬영 완료'+(q?` · 인식 품질 ${q}%`:''));
+  if(typeof aiVerifyPose==='function') aiVerifyPose(tid,slot); // AI 정밀 검증 (비동기, 토글 가능)
 }
 
 // ═══ v1.24: 동적 검사 영상(녹화) 모드 — 동작 추적 후 극점(최대 ROM) 프레임 자동 추출 ═══
@@ -2826,6 +3056,7 @@ function captureLive(){
 const DYNAMIC_PEAK={ slr_l:1,slr_r:1,trunk_l:1,sh_flex_l:1,sh_flex_r:1,ohs_l:1,ohs_b:1,sku:1,sku_r:1 };
 function isDynamicTest(tid){ return !!DYNAMIC_PEAK[tid]; }
 let _recording=false,_recBest=null,_recCount=0,_recAutoStop=null,_recReps=0,_recPhase='low',_recScores=[];
+let _recSmoothBuf=[],_recMin=Infinity,_recMax=-Infinity; // v1.29-beta: 피크 평활 + 세션 전체 진폭
 function _abducV(lm,sh,wr){ const A=lm[sh],B=lm[wr]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(B.x-A.x),(B.y-A.y))*180/Math.PI; }
 function _thighAngle(lm,h,k){ const A=lm[h],B=lm[k]; if(!A||!B||A.visibility<.4||B.visibility<.4)return null; return Math.atan2(Math.abs(A.y-B.y),Math.abs(A.x-B.x))*180/Math.PI; }
 // 검사별 "동작 진행 정도" 스칼라 — 클수록 동작 정점(최대 ROM)
@@ -2857,13 +3088,26 @@ function _liveReadout(tid,lm){
 function _recTrack(lm){
   if(!_inFrame(lm))return;
   _recCount++;
-  const sc=_peakScore(camTid,lm);
-  if(!_recBest||sc>_recBest.score){ const img=_grabFrame(); if(img)_recBest={score:sc,lm:_clonePose(lm),img}; }
-  // 반복(rep) 카운트 — 관찰 범위 정규화 + 진폭 게이트 + 히스테리시스 상태머신
-  _recScores.push(sc); if(_recScores.length>50)_recScores.shift();
-  const mn=Math.min(..._recScores),mx=Math.max(..._recScores),amp=mx-mn;
+  // v1.29-beta: 단일 프레임 피크 → 3프레임 중앙값 평활 피크. 한 프레임의 관절 오인식이
+  // '최대 ROM 프레임'으로 채택되던 문제(이상치 스파이크) 차단. 골격 일관성 검사도 통과해야 갱신.
+  const rawSc=_peakScore(camTid,lm);
+  _recSmoothBuf.push({sc:rawSc,lm:_clonePose(lm)}); if(_recSmoothBuf.length>3)_recSmoothBuf.shift();
+  const sorted=[..._recSmoothBuf].sort((a,b)=>a.sc-b.sc);
+  const midEntry=sorted[sorted.length>>1];
+  const sc=midEntry.sc;
+  const skelOk=(()=>{ // 좌우 대퇴 길이 극단 불일치 = 오인식 프레임 (누운 SLR은 원근 차이 허용)
+    const fl=_boneLen(lm,23,25),fr=_boneLen(lm,24,26);
+    if(!fl||!fr)return true; const r=fl/fr;
+    const lax=(camTid==='slr_l'||camTid==='slr_r');
+    return lax?(r>0.35&&r<2.9):(r>0.5&&r<2.0);
+  })();
+  if(skelOk&&(!_recBest||sc>_recBest.score)){ const img=_grabFrame(); if(img)_recBest={score:sc,lm:midEntry.lm,img}; }
+  // 반복(rep) 카운트 — v1.29-beta: 세션 전체 min/max 기준 (기존 50프레임 창은 오래된 극값이
+  // 빠지며 진폭이 좁아져 홀드 후반에 노이즈로 유령 반복이 잡히던 문제)
+  _recMin=Math.min(_recMin,sc); _recMax=Math.max(_recMax,sc);
+  const amp=_recMax-_recMin;
   const yBased=(camTid==='ohs_b'||camTid==='ohs_l'||camTid==='sku'||camTid==='sku_r');
-  if(amp>(yBased?0.05:12)){ const norm=(sc-mn)/(amp||1);
+  if(amp>(yBased?0.05:12)){ const norm=(sc-_recMin)/(amp||1);
     if(_recPhase==='low'&&norm>0.72)_recPhase='high';
     else if(_recPhase==='high'&&norm<0.30){_recPhase='low';_recReps++;} }
   // HUD
@@ -2874,6 +3118,7 @@ function _recTrack(lm){
 function toggleRecord(){ if(_recording)stopRecord(); else startRecord(); }
 function startRecord(){
   _recording=true;_recBest=null;_recCount=0;_recReps=0;_recPhase='low';_recScores=[];
+  _recSmoothBuf=[];_recMin=Infinity;_recMax=-Infinity;
   const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.add('recording');
   const hud=document.getElementById('camRecHud'); if(hud){hud.className='cam-rec-hud on';hud.innerHTML='';}
   const badge=document.getElementById('camLiveBadge'); if(badge){badge.className='cam-live-badge on ready';badge.textContent='● 녹화 중 — 동작을 천천히 끝까지 (다시 누르면 완료)';}
@@ -2888,6 +3133,7 @@ function stopRecord(){
   closeCam();
   loadImg(tid,slot,img,false,lm);
   toast((slot==='B'?'Before':'After')+' 동작 분석 완료 — 최대 지점 캡처'+(reps>0?` · ${reps}회 감지`:''));
+  if(typeof aiVerifyPose==='function') aiVerifyPose(tid,slot); // v1.29-beta: AI 정밀 검증
 }
 
 async function snap(){
@@ -3145,6 +3391,7 @@ async function loadImg(tid,slot,src,skipSave,injectPose){
   const az=document.getElementById(`add_${tid}_${slot}`);if(az)az.remove();
   zone.querySelector('canvas')?.remove();
   zone.querySelector('.pload')?.remove();
+  zone.querySelector('.ai-verify-badge')?.remove(); // v1.29-beta: 이전 AI 검증 배지 제거
   const canvas=document.createElement('canvas');canvas.className='pc';zone.appendChild(canvas);
   // v1.15.2: 3개 버튼을 flex 툴바로 묶어 겹침 방지 (트레이너 피드백 #1)
   zone.querySelector('.photo-tools')?.remove();
@@ -3307,7 +3554,7 @@ function showRetakeMenu(tid,slot){
 
 // ─ AI VISION CHECKLIST AUTO-FILL ─
 const CHK_PROMPTS = {
-  ant:`당신은 근거중심(Evidence-Based) 스포츠 물리치료사입니다. 전면(Anterior View) 자세 사진을 분석하세요.
+  ant:`당신은 근거중심(Evidence-Based) 스포츠 재활·교정운동 전문가입니다. 전면(Anterior View) 자세 사진을 분석하세요.
 
 [중요 원칙]
 일반 성인의 약 70%는 어깨/골반 비대칭이 존재합니다. "정상"으로 도망치지 말고, 사진에서 실제로 보이는 차이를 정확히 판정하세요. "동일"은 정말로 좌우가 거의 식별 불가능할 때만 선택합니다.
@@ -3330,7 +3577,7 @@ const CHK_PROMPTS = {
 - ant_knee: [0="Genu varum(O형)", 1="Genu valgum(X형)", 2="정상"]
 예시: [{"id":"ant_sh","sel":1,"reason":"우측 견봉이 좌측보다 약 18px 높음 (포즈 좌표 일치)"},{"id":"ant_pel","sel":2,"reason":"골반 대칭, 좌표차 5px 이내"},{"id":"ant_knee","sel":2,"reason":"무릎 정렬 정상"}]`,
 
-  post:`당신은 근거중심 스포츠 물리치료사입니다. 후면(Posterior View) 자세 사진을 분석하세요.
+  post:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 후면(Posterior View) 자세 사진을 분석하세요.
 
 [중요 원칙]
 일반 성인의 약 70%는 견갑/골반 비대칭이 존재합니다. "정상"으로 도망치지 말고, 사진에서 실제로 보이는 차이를 정확히 판정하세요. "정상"은 정말로 좌우가 거의 식별 불가능할 때만 선택합니다.
@@ -3355,7 +3602,7 @@ const CHK_PROMPTS = {
 - post_calc: [0="Valgus(외반)", 1="Varus(내반)", 2="정상"]
 예시: [{"id":"post_scol","sel":4,"reason":"척추 라인 직선"},{"id":"post_scap","sel":1,"reason":"우측 견갑골이 약 15px 높음"},{"id":"post_pel","sel":2,"reason":"PSIS 대칭"},{"id":"post_calc","sel":2,"reason":"종골 정렬 정상"}]`,
 
-  lat:`당신은 근거중심 스포츠 물리치료사입니다. 측면(Lateral View) 자세 사진을 분석하세요.
+  lat:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 측면(Lateral View) 자세 사진을 분석하세요.
 
 [Kendall 이상적 측면 정렬: 귀→견봉→대전자→슬관절 약간 전방→외측복사뼈]
 1. 경추 전만: 귀(외이도)가 견봉보다 2cm 이상 전방 = FHP(Forward Head Posture) = 증가.
@@ -3370,7 +3617,7 @@ JSON만.
 - lat_lumb: [0="증가(전방경사)", 1="감소(Flat back)", 2="정상"]
 - lat_knee: [0="굴곡", 1="과신전(Recurvatum)", 2="정상"]`,
 
-  sh_flex_l:`당신은 근거중심 스포츠 물리치료사입니다. 좌측 Shoulder Flexion 사진 분석.
+  sh_flex_l:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 좌측 Shoulder Flexion 사진 분석.
 
 [Janda Upper Crossed Syndrome 보상 패턴]
 1. Serratus Anterior 약화: 거상 시 견갑골 익상(winging) 또는 protraction 불량.
@@ -3385,7 +3632,7 @@ JSON만.
 - shfl_lat_l: [0="있음", 1="없음"]
 - shfl_bic_l: [0="있음", 1="없음"]`,
 
-  sh_flex_r:`당신은 근거중심 스포츠 물리치료사입니다. 우측 Shoulder Flexion 사진 분석.
+  sh_flex_r:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 우측 Shoulder Flexion 사진 분석.
 
 [동일 기준 적용]
 1. Serratus Anterior 약화: 견갑골 winging/protraction 불량.
@@ -3400,7 +3647,7 @@ JSON만.
 - shfl_lat_r: [0="있음", 1="없음"]
 - shfl_bic_r: [0="있음", 1="없음"]`,
 
-  trunk_b:`당신은 근거중심 스포츠 물리치료사입니다. 체간 전굴 후면 사진 분석.
+  trunk_b:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 체간 전굴 후면 사진 분석.
 
 [임상 기준]
 1. Scoliosis in motion: 전굴 시 척추 편위. Rib hump = 구조성.
@@ -3413,7 +3660,7 @@ JSON만.
 - tb_tone: [0="Lt. 증가", 1="Rt. 증가", 2="대칭"]
 - tb_shift: [0="우측", 1="좌측", 2="없음"]`,
 
-  trunk_l:`당신은 근거중심 스포츠 물리치료사입니다. 체간 전굴 측면 사진 분석.
+  trunk_l:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 체간 전굴 측면 사진 분석.
 
 [임상 기준]
 ROM: 제한(<45°)=손 무릎이하, 정상(45~90°)=손 발근처, 우수(90°+)=손바닥 바닥.
@@ -3426,7 +3673,7 @@ JSON만.
 - tl_sep: [0="흉추 우세", 1="요추 우세", 2="균등"]
 - tl_hip: [0="과도한 요추 굴곡", 1="정상 hip hinge"]`,
 
-  ohs_b:`당신은 근거중심 스포츠 물리치료사입니다. OHS 후면 사진 분석(NASM OPT 기준).
+  ohs_b:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. OHS 후면 사진 분석(NASM OPT 기준).
 
 [NASM Overhead Squat Assessment]
 1. 발목 내번: 스쿼트 시 발 내측 회전/발꿈치 들림. 비복근·가자미근 단축 지표.
@@ -3439,7 +3686,7 @@ JSON만.
 - ohsb_knee: [0="Lt. 내측 valgus", 1="Rt. 내측 valgus", 2="양측", 3="없음"]
 - ohsb_pel: [0="우측 전방", 1="좌측 전방", 2="없음"]`,
 
-  ohs_l:`당신은 근거중심 스포츠 물리치료사입니다. OHS 측면 사진 분석(NASM 기준).
+  ohs_l:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. OHS 측면 사진 분석(NASM 기준).
 
 [NASM Lateral OHS Assessment]
 1. 상체 전경각: 이상=직립. 과도(>45°)=흉추 가동성 제한 또는 발목 dorsiflexion 부족.
@@ -3458,7 +3705,7 @@ JSON만.
 - ohsl_pelv: [0="있음", 1="없음"]
 - ohsl_ank: [0="있음(발꿈치 들림)", 1="없음"]`,
 
-  sku:`당신은 근거중심 스포츠 물리치료사입니다. 좌측 Standing Knee Up 사진 분석 (좌측 무릎 거상).
+  sku:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 좌측 Standing Knee Up 사진 분석 (좌측 무릎 거상).
 
 [임상 기준]
 1. Lt. Glutes 약화: 좌측 무릎 들 때 반대측(우측) 골반 하강 = 좌측 지지측 중둔근 약화.
@@ -3472,7 +3719,7 @@ JSON만. 항목:
 - sku_ank_l: [0="불안정", 1="정상"]
 - sku_pel_l: [0="있음", 1="없음"]`,
 
-  sku_r:`당신은 근거중심 스포츠 물리치료사입니다. 우측 Standing Knee Up 사진 분석 (우측 무릎 거상).
+  sku_r:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 우측 Standing Knee Up 사진 분석 (우측 무릎 거상).
 
 [임상 기준]
 1. Rt. Glutes 약화: 우측 무릎 들 때 반대측(좌측) 골반 하강 = 우측 지지측 중둔근 약화.
@@ -3486,7 +3733,7 @@ JSON만. 항목:
 - sku_ank_r: [0="불안정", 1="정상"]
 - sku_pel_r: [0="있음", 1="없음"]`,
 
-  slr_l:`당신은 근거중심 스포츠 물리치료사입니다. 왼쪽 SLR 사진 분석.
+  slr_l:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 왼쪽 SLR 사진 분석.
 
 [임상 기준: 다수 연구 기반]
 SLR 정상값: 70~85°. 단축:<70°(슬굴곡근 단축/신경긴장). 과가동:>85°.
@@ -3498,7 +3745,7 @@ JSON만.
 - slrl_ham: [0="단축(<70°)", 1="정상(70~85°)", 2="과가동(>85°)"]
 - slrl_comp: [0="골반 보상 있음", 1="없음"]`,
 
-  slr_r:`당신은 근거중심 스포츠 물리치료사입니다. 오른쪽 SLR 사진 분석.
+  slr_r:`당신은 근거중심 스포츠 재활·교정운동 전문가입니다. 오른쪽 SLR 사진 분석.
 
 [임상 기준] SLR 정상: 70~85°. 단축:<70°. 과가동:>85°.
 골반 보상: 요추-골반 후방경사 확인.
@@ -3948,7 +4195,7 @@ async function generateBeforeNarrative(tid){
 
   const focus=TEST_FOCUS[tid]||'일반 정적 자세 평가';
   const testTitle=(TESTS.find(t=>t.id===tid)?.title)||tid;
-  const prompt=`당신은 16년 경력 스포츠 물리치료사입니다.
+  const prompt=`당신은 16년 경력 스포츠 재활·교정운동 전문가입니다.
 
 검사: ${testTitle}
 분석 범위: ${focus}
@@ -4166,7 +4413,22 @@ let _poseQueue=Promise.resolve();
 const TASKS_VER='0.10.18';
 // v1.24-beta: iOS 메모리 안전 — lite 모델(~3MB) + 단일 VIDEO 인스턴스(IMAGE 별도 생성 안 함)
 // + 세그멘테이션 끔 + 지연 로드(ensurePoseEngine) + close(). 홈/리포트에선 엔진 미로딩(메모리 0).
-const POSE_MODEL='https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task';
+// v1.29-beta: 정밀도 우선 — 기기 티어별 모델 선택. 태블릿/데스크탑/고사양 안드로이드는
+// full 모델(~6MB, 정확도↑), 아이폰은 메모리 크래시 이력(v1.24) 때문에 lite 유지.
+// full 초기화 실패 시 lite로 자동 폴백. localStorage 'ng_pose_model'로 강제 지정 가능.
+const POSE_MODEL_BASE='https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_';
+const IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_IPHONE=/iPhone|iPod/.test(navigator.userAgent);
+function pickPoseModelTier(){
+  const forced=localStorage.getItem('ng_pose_model');
+  if(forced==='full'||forced==='lite')return forced;
+  if(IS_IPHONE)return 'lite';                    // v1.24 iOS Safari 메모리 크래시 이력
+  const cores=navigator.hardwareConcurrency||4;
+  const mem=navigator.deviceMemory||4;           // Safari는 미지원 → 4로 가정
+  return (cores>=4&&mem>=4)?'full':'lite';
+}
+function poseModelURL(tier){ return POSE_MODEL_BASE+tier+'/float16/latest/pose_landmarker_'+tier+'.task'; }
+let POSE_TIER=pickPoseModelTier();
 let _poseInitPromise=null;
 function ensurePoseEngine(){ if(!_poseInitPromise)_poseInitPromise=initPoseEngine(); return _poseInitPromise; }
 function closePoseEngine(){
@@ -4175,13 +4437,22 @@ function closePoseEngine(){
 }
 async function initPoseEngine(){
   // 1) Tasks — 단일 VIDEO 인스턴스만(정지 감지도 detectForVideo로 처리 → 메모리 절반), 세그 끔
+  // v1.29-beta: 신뢰도 임계값 0.4→0.5(MediaPipe 기본값) 상향 — 낮은 확신 관절이 측정에 섞이는 것 차단.
+  // full 모델 우선(고사양), 실패 시 lite → CPU → Pose 0.5 순 폴백.
   try{
     const vision=await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VER}`);
     const fileset=await vision.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VER}/wasm`);
-    const opt=(delegate)=>({baseOptions:{modelAssetPath:POSE_MODEL,delegate},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:0.4,minPosePresenceConfidence:0.4,minTrackingConfidence:0.4,outputSegmentationMasks:false});
-    let lm;
-    try{ lm=await vision.PoseLandmarker.createFromOptions(fileset,opt('GPU')); }
-    catch(e){ lm=await vision.PoseLandmarker.createFromOptions(fileset,opt('CPU')); } // GPU 미지원 → CPU
+    const opt=(delegate,tier)=>({baseOptions:{modelAssetPath:poseModelURL(tier),delegate},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:0.5,minPosePresenceConfidence:0.5,minTrackingConfidence:0.5,outputSegmentationMasks:false});
+    let lm=null;
+    const tiers=POSE_TIER==='full'?['full','lite']:['lite'];
+    for(const tier of tiers){
+      try{ lm=await vision.PoseLandmarker.createFromOptions(fileset,opt('GPU',tier)); POSE_TIER=tier; break; }
+      catch(e){
+        try{ lm=await vision.PoseLandmarker.createFromOptions(fileset,opt('CPU',tier)); POSE_TIER=tier; break; }
+        catch(e2){ /* 다음 티어 */ }
+      }
+    }
+    if(!lm)throw new Error('tasks init failed');
     _TasksVision=vision; poseLMVideo=lm; poseLM=lm; poseEng=lm; poseEngKind='tasks'; poseOk=true;
     return;
   }catch(e){ /* Tasks 실패 → 폴백 */ }
@@ -4587,7 +4858,7 @@ function redrawSlot(tid,slot){
     // 편집 모드: 주요 관절만 드래그 핸들 강조
     const activeKeys=TEST_KEY[tid]||KEY;
     const isEditing=editPose&&editPose.tid===tid&&editPose.slot===slot;
-    if(isEditing){ const pr=Math.max(9,W*.012);
+    if(isEditing){ const pr=Math.max(13,W*.016); // v1.29: 편집 핸들 확대 (폰 시인성)
       activeKeys.forEach(i=>{ const pt=lm[i];if(!pt||pt.visibility<.4)return; const x=pt.x*W,y=pt.y*H;
         c.beginPath();c.arc(x,y,pr+3,0,Math.PI*2);c.strokeStyle='rgba(245,158,11,.95)';c.lineWidth=2;c.setLineDash([3,2]);c.stroke();c.setLineDash([]);
         c.beginPath();c.arc(x,y,pr,0,Math.PI*2);c.fillStyle='rgba(245,158,11,.95)';c.fill();c.strokeStyle='#fff';c.lineWidth=2;c.stroke(); }); }
@@ -4726,7 +4997,7 @@ async function completeAndSendToTrainer(){
     if(!AI_HISTORY.report.results.length){
       await genAIReport();
     }
-    // 2) 생성된 TRAINER_ONLY.finalReport + 각 테스트별 Clinical + 운동 처방 패키징
+    // 2) 생성된 TRAINER_ONLY.finalReport + 각 테스트별 Clinical + 운동 추천 패키징
     hideBuildingLoader();
     await sendFinalReportToTrainer();
     // 3) 고객 화면에는 완료 안내 (리포트 내용 노출 금지)
@@ -4870,6 +5141,78 @@ function redrawOL(tid){
   }
 }
 
+// ═══ v1.29-beta: AI 관절 위치 정밀 검증 — 촬영 직후 자동 실행 (토큰 사용, 토글 가능) ═══
+// MediaPipe가 찍은 9개 핵심 관절 마커를 사진 위에 그려 Claude 비전에게 해부학적 위치 검증을
+// 요청. 오배치 감지 시 카드에 경고 배지 + 보정 적용/재촬영 안내 → "이상하게 잡힌" 캡처가
+// 조용히 리포트로 흘러가는 것을 차단. localStorage 'ng_ai_verify'='0'으로 끌 수 있음.
+let AI_VERIFY_ON=localStorage.getItem('ng_ai_verify')!=='0';
+const AI_VERIFY_JOINTS=[[0,'코'],[11,'왼쪽 어깨'],[12,'오른쪽 어깨'],[23,'왼쪽 고관절'],[24,'오른쪽 고관절'],[25,'왼쪽 무릎'],[26,'오른쪽 무릎'],[27,'왼쪽 발목'],[28,'오른쪽 발목']];
+function _verifyBadge(tid,slot,state,txt){
+  const zone=document.getElementById(`zone_${tid}_${slot}`); if(!zone)return;
+  let b=zone.querySelector('.ai-verify-badge');
+  if(!b){ b=document.createElement('div'); b.className='ai-verify-badge'; zone.appendChild(b); }
+  const colors={busy:'rgba(0,0,0,.72)',pass:'rgba(11,100,216,.92)',warn:'rgba(217,119,6,.94)',fail:'rgba(220,38,38,.94)'};
+  b.style.cssText='position:absolute;top:8px;left:8px;z-index:6;font-size:10.5px;font-weight:800;color:#fff;padding:4px 10px;border-radius:10px;pointer-events:none;max-width:85%;background:'+(colors[state]||colors.busy);
+  b.textContent=txt;
+  if(state==='pass'){ setTimeout(()=>{ if(b.parentNode)b.style.opacity='0.55'; },4000); }
+}
+async function aiVerifyPose(tid,slot){
+  try{
+    if(!AI_VERIFY_ON)return;
+    const s=SHOTS[tid]?.[slot];
+    if(!s?.canvas||!s?.pose)return;
+    const _pw=localStorage.getItem('ng_app_pw'); if(!_pw)return; // 자동 실행에서는 비번 프롬프트를 띄우지 않음
+    if(!checkAndIncrement('AI 관절 검증: '+tid))return;
+    _verifyBadge(tid,slot,'busy','AI 관절 검증 중…');
+    // 검증용 이미지: 사진 + 번호 마커 (긴변 640px)
+    const src=s.canvas, r=Math.min(1,640/Math.max(src.width,src.height));
+    const vc=document.createElement('canvas'); vc.width=Math.round(src.width*r); vc.height=Math.round(src.height*r);
+    const vx=vc.getContext('2d'); vx.drawImage(src,0,0,vc.width,vc.height);
+    const dlm=(typeof getDisplayLM==='function')?getDisplayLM(s.pose):s.pose;
+    const pts=[];
+    AI_VERIFY_JOINTS.forEach(([idx,name],n)=>{
+      const p=dlm[idx]; if(!p||p.visibility<0.3)return;
+      const x=p.x*vc.width,y=p.y*vc.height;
+      vx.beginPath();vx.arc(x,y,7,0,Math.PI*2);vx.fillStyle='rgba(255,60,60,.85)';vx.fill();
+      vx.lineWidth=2;vx.strokeStyle='#fff';vx.stroke();
+      vx.font='bold 12px sans-serif';vx.fillStyle='#fff';vx.textAlign='center';vx.textBaseline='middle';
+      vx.fillText(String(n+1),x,y);
+      pts.push({n:n+1,idx,name});
+    });
+    if(pts.length<5){ _verifyBadge(tid,slot,'warn','AI 검증 생략 — 가시 관절 부족'); return; }
+    const b64=vc.toDataURL('image/jpeg',.8).split(',')[1];
+    const prompt=`이 사진에는 AI 자세 추정이 찍은 관절 마커(빨간 원+번호)가 표시되어 있습니다.
+각 번호의 마커가 실제 인물의 해당 관절 위치에 정확히 놓였는지 검증하세요.
+마커 목록: ${pts.map(p=>`${p.n}=${p.name}`).join(', ')}
+판정 기준: 마커 중심이 실제 관절에서 이미지 너비의 약 3% 이상 벗어나면 ok:false.
+벗어난 경우 dx,dy(이미지 너비/높이 대비 %, 오른쪽/아래가 +)로 보정량을 추정하세요.
+사람이 없거나 마커가 사람이 아닌 배경/거울/타인에 찍혔으면 overall:"fail".
+반드시 아래 JSON만 응답:
+{"overall":"pass|warn|fail","joints":[{"n":1,"ok":true,"dx":0,"dy":0}],"note":"한줄 요약"}
+overall 기준: 전부 정확=pass, 1~2개 경미한 오차=warn, 핵심 관절 명백한 오배치 또는 대상 오류=fail`;
+    const body=(model)=>JSON.stringify({model,max_tokens:500,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+      {type:'text',text:prompt}]}]});
+    let res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{method:'POST',mode:'cors',
+      headers:{'Content-Type':'application/json','x-app-password':_pw},body:body(AI_MODEL_SONNET)});
+    if(res.status===400||res.status===403||res.status===404){
+      res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{method:'POST',mode:'cors',
+        headers:{'Content-Type':'application/json','x-app-password':_pw},body:body(AI_MODEL_HAIKU)});
+    }
+    const data=await res.json();
+    const text=(data.content?.[0]?.text||'').trim();
+    let vr; try{ vr=JSON.parse(text.replace(/```json|```/g,'').trim()); }
+    catch(pe){ const m=text.match(/\{[\s\S]*\}/); if(m)vr=JSON.parse(m[0]); }
+    if(!vr||!vr.overall){ _verifyBadge(tid,slot,'warn','AI 검증 응답 오류'); return; }
+    s.aiVerify={overall:vr.overall,note:vr.note||'',joints:vr.joints||[],at:Date.now()};
+    if(vr.overall==='pass'){ _verifyBadge(tid,slot,'pass','✓ AI 검증 통과 — 관절 위치 정확'); }
+    else if(vr.overall==='warn'){ _verifyBadge(tid,slot,'warn','△ AI 검증: 일부 관절 오차 — 점 편집 확인 권장'); }
+    else{
+      _verifyBadge(tid,slot,'fail','✕ AI 검증 실패: '+(vr.note||'관절 오배치')+' — 재촬영 권장');
+      toast('⚠ AI 검증: '+(TESTS.find(t=>t.id===tid)?.title||tid)+' 관절 위치 이상 — 재촬영 또는 점 편집을 권장합니다');
+    }
+  }catch(e){ try{_verifyBadge(tid,slot,'warn','AI 검증 불가 (네트워크)');}catch(e2){} }
+}
 async function aiSyncImages(tid){
   const bS=SHOTS[tid]?.B, aS=SHOTS[tid]?.A;
   if(!bS?.canvas||!aS?.canvas){toast('Before/After 사진을 모두 업로드해주세요');return}
@@ -5295,7 +5638,10 @@ function attachPoseDrag(canvas,tid,slot){
       const d=Math.hypot(px-pos.x,py-pos.y);
       if(d<bestDist){bestDist=d;bestIdx=i}
     });
-    const tol=Math.max(40,canvas.width*0.05);
+    // v1.29: 터치 허용 반경을 CSS 픽셀 기준으로 — 폰에서 표시 캔버스가 축소되면
+    // 기존 40(내부픽셀)은 실제 손가락 기준 ~12px밖에 안 돼 점을 못 잡던 문제.
+    const _dispScale=canvas.width/Math.max(1,canvas.getBoundingClientRect().width);
+    const tol=Math.max(24*_dispScale,canvas.width*0.05);
     if(bestIdx>=0&&bestDist<=tol){
       dragLm={idx:bestIdx};
       try{canvas.setPointerCapture(ev.pointerId)}catch(e){}
@@ -5646,7 +5992,7 @@ const TEST_CONTEXT = {
 const TRAINER_ONLY = {
   clinical: {}, // tid → {improved, maintain, prescription, message}
   finalReport: '', // AI 종합 리포트 전문
-  finalExercises: '', // 교정 운동 처방 전문
+  finalExercises: '', // 교정 운동 추천 전문
 };
 
 // 트레이너에게 단일 테스트 임상 분석 상세 전송 (공유 시트)
@@ -5668,7 +6014,7 @@ ${c.improved||'(데이터 없음)'}
 ── 유지/관리 필요 ──
 ${c.maintain||'(데이터 없음)'}
 
-── 다음 운동 처방 ──
+── 다음 운동 추천 ──
 ${c.prescription||'(데이터 없음)'}
 
 ── 고객에게 한마디 ──
@@ -5785,7 +6131,7 @@ async function sendFinalReportToTrainer(){
   const name=document.getElementById('cName')?.value||'회원';
   const trainer=document.getElementById('cTrainer')?.value||'';
   const dateStr=new Date().toLocaleString('ko-KR');
-  // 운동 처방: Before 메트릭 기반 exercise library 추천 (v1.18: 관련 지표만)
+  // 운동 추천: Before 메트릭 기반 exercise library 추천 (v1.18: 관련 지표만)
   const aggB=aggregateRelevant('B');
   const exRecs=getRecommendedExercises(aggB);
   const exText=exRecs.length?exRecs.map(r=>{
@@ -5808,7 +6154,7 @@ async function sendFinalReportToTrainer(){
 ${TRAINER_ONLY.finalReport||'(AI 종합 리포트 생성 전)'}
 
 ━━━━━━━━━━━━━━━━━━━━
-▣ 맞춤 교정 운동 처방
+▣ 맞춤 교정 운동 추천
 ━━━━━━━━━━━━━━━━━━━━
 ${exText}
 
@@ -5838,7 +6184,7 @@ function showTextModal(title,text){
   m.onclick=(e)=>{if(e.target===m)m.remove()};
   document.body.appendChild(m);
 }
-// AI 응답 섹션 파서: "개선된 항목: / 유지·관리 필요: / 다음 운동 처방: / 고객에게 한마디:" 4개 블록으로 분리
+// AI 응답 섹션 파서: "개선된 항목: / 유지·관리 필요: / 다음 운동 추천: / 고객에게 한마디:" 4개 블록으로 분리
 function parseClinicalSections(text){
   const sections={improved:'',maintain:'',prescription:'',message:''};
   if(!text) return sections;
@@ -5846,7 +6192,7 @@ function parseClinicalSections(text){
   const headers=[
     {key:'improved', patterns:['개선된 항목','개선 항목','개선된']},
     {key:'maintain', patterns:['유지/관리','유지 관리','유지·관리','관리 필요']},
-    {key:'prescription', patterns:['다음 운동 처방','운동 처방','처방']},
+    {key:'prescription', patterns:['다음 운동 추천','운동 추천','다음 운동 처방','운동 처방','처방','추천']},
     {key:'message', patterns:['고객에게 한마디','고객에게','한마디']}
   ];
   const lines=text.split('\n');
@@ -5867,7 +6213,7 @@ function parseClinicalSections(text){
       current=matched;
       // 헤더 뒤에 내용이 바로 있는 경우 (예: "개선된 항목: 어깨 1° 향상")
       const afterColon=line.replace(/^.*?[:：]\s*/,'');
-      if(afterColon && afterColon!==line && !/^[*#\s]*(개선|유지|관리|처방|한마디)/.test(afterColon)){
+      if(afterColon && afterColon!==line && !/^[*#\s]*(개선|유지|관리|처방|추천|한마디)/.test(afterColon)){
         buf.push(afterColon);
       }
     } else if(current){
@@ -5914,7 +6260,7 @@ async function buildClinical(tid, forceGenerate){
   const hasAfter=!!(aS?.pose);
   const testFocus = TEST_FOCUS[tid] || '일반 자세 평가';
   const testTitle = TESTS.find(t=>t.id===tid)?.title||tid;
-  const aiPrompt=hasAfter?`당신은 16년 경력 스포츠 물리치료사이자 개인 트레이너입니다.
+  const aiPrompt=hasAfter?`당신은 16년 경력 스포츠 재활·교정운동 전문가이자 개인 트레이너입니다.
 
 검사: ${testTitle}
 분석 범위: ${testFocus}
@@ -5941,12 +6287,12 @@ ${deltaLines.join('\n')||'- 계산 불가'}
 유지/관리 필요:
 (아직 정상 범위 밖이거나 미세 비대칭 항목 1~2개)
 
-다음 운동 처방:
+다음 운동 추천:
 (교정 운동 2~3개, 세트×반복)
 
 고객에게 한마디:
 (1문장 동기부여, 트레이너의 전문가 톤)`:
-`당신은 16년 경력 스포츠 물리치료사입니다.
+`당신은 16년 경력 스포츠 재활·교정운동 전문가입니다.
 
 검사: ${testTitle}
 분석 범위: ${testFocus}
@@ -5964,7 +6310,7 @@ ${relKeys.filter(k=>typeof bm[k]==='number').map(k=>`- ${k}: ${bm[k].toFixed(1)}
 유지/관리 필요:
 (2~3개, 수치 포함)
 
-다음 운동 처방:
+다음 운동 추천:
 (관련 운동 2~3개)
 
 고객에게 한마디:
@@ -6049,7 +6395,7 @@ function renderClinicalBox(tid, loading){
     const improvedHtml = active.sections?.improved ? renderMD(active.sections.improved) : '<p style="font-size:12px;color:var(--tx3)">데이터 없음</p>';
     bodyHtml=`<div class="ai-md">${improvedHtml}</div>
       <div style="margin-top:10px;padding:8px 10px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:8px;font-size:10px;color:#1e40af;line-height:1.5">
-        🔒 <b>트레이너 전용</b>: 유지/관리·운동 처방·고객 한마디는 아래 버튼으로 전송됩니다.
+        🔒 <b>트레이너 전용</b>: 유지/관리·운동 추천·고객 한마디는 아래 버튼으로 전송됩니다.
       </div>
       <button onclick="sendClinicalToTrainer('${tid}')" class="abtn" style="margin-top:8px;font-size:11px;padding:6px 12px;width:100%;background:#1e40af;color:#fff;border-color:#1e40af">📧 트레이너에게 상세 전송 (${testTitle})</button>`;
   }
@@ -6225,7 +6571,7 @@ async function genAIReport(){
     const pick=(mm)=>Object.fromEntries(rk.filter(k=>typeof mm[k]==='number').map(k=>[k,mm[k].toFixed(1)]));
     allFindings.push(`\n[${t.title}]\n측정값: ${JSON.stringify(pick(bm))}\n→After: ${JSON.stringify(pick(am))}\n체크리스트: ${chk||'미입력'}`);
   });
-  const aiPrompt=`당신은 스포츠의학·재활 전문 물리치료사입니다.
+  const aiPrompt=`당신은 스포츠의학 기반 재활·교정운동 전문가입니다.
 ${name} 회원의 바디스캔 전체 결과를 바탕으로 "고객 전달용"과 "트레이너 전용" 두 가지 리포트를 작성합니다.
 
 ${allFindings.join('\n')}
@@ -6250,7 +6596,7 @@ ${allFindings.join('\n')}
 ## 핵심 근기능 불균형 패턴
 (5~7가지, 각 항목에 관련 근육명·임상 의미·NASM/Kendall 기반 설명)
 
-## 우선순위별 운동 처방
+## 우선순위별 운동 추천
 (Priority 1~3 단계로, 각 단계에 구체 운동명·세트×반복·주의사항)
 
 ## 재검사 권고 시점 및 목표 수치
@@ -6259,7 +6605,7 @@ ${allFindings.join('\n')}
 ## 트레이너 메모용 한마디
 (다음 세션 시 어떤 부분을 집중 코칭할지 1문장)
 
-한국어, 인사말·면책조항 금지, 마크다운 헤딩만 사용.`;
+한국어, 인사말 금지, 마크다운 헤딩만 사용.`;
   try{
     let _pw=getAppPw();
     if(!_pw){
@@ -6351,7 +6697,7 @@ function renderReportBox(loading){
     bodyHtml=`<div class="ai-md">${renderMD(active.clientPart)}</div>
       <div style="margin-top:14px;padding:10px 12px;background:#f0f9ff;border:1px dashed #93c5fd;border-radius:10px">
         <div style="font-size:11px;color:#1e40af;font-weight:700;margin-bottom:6px">🔒 트레이너 전용 상세 (고객 화면에 표시되지 않음)</div>
-        <div style="font-size:10px;color:#3b5fb5;line-height:1.5;margin-bottom:8px">우선순위별 운동 처방·재검사 목표·트레이너 메모는 아래 버튼으로 트레이너 본인에게만 전송됩니다.</div>
+        <div style="font-size:10px;color:#3b5fb5;line-height:1.5;margin-bottom:8px">우선순위별 운동 추천·재검사 목표·트레이너 메모는 아래 버튼으로 트레이너 본인에게만 전송됩니다.</div>
         <button onclick="sendFinalReportToTrainer()" class="abtn" style="width:100%;background:#1e40af;color:#fff;border-color:#1e40af;font-size:12px;padding:8px">📧 트레이너에게 상세 리포트 전송</button>
       </div>`;
     // TRAINER_ONLY 는 현재 active 기준 갱신
@@ -6404,11 +6750,12 @@ function renderRomGauges(){
         <div style="position:absolute;top:0;bottom:0;left:${g.nL.toFixed(1)}%;width:${g.nW.toFixed(1)}%;background:rgba(29,111,214,.22)"></div>
         <div style="position:absolute;top:-2px;bottom:-2px;left:${g.markerPct.toFixed(1)}%;width:3px;background:${col};border-radius:2px"></div>
       </div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">${n.lbl}</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">${n.lbl}${n.src?` <span style="color:#9ca3af">· 근거: ${n.src}</span>`:''}</div>
     </div>`);
   });
-  const ageNote=_ageRomAdj()?'<div style="font-size:10px;color:var(--tx3);margin-top:4px">※ 연령 반영: ROM 정상 하한 완화 적용</div>':'';
-  host.innerHTML = rows.length? rows.join('')+ageNote : '<p style="font-size:12px;color:var(--tx3)">측정 후 정상범위 게이지가 표시됩니다.</p>';
+  const ageNote=_ageRomAdj()?'<div style="font-size:10px;color:var(--tx3);margin-top:4px">※ 연령 반영: ROM 정상 하한 완화 적용 (Barnes 2001 · Gill 2020 — 연령에 따른 어깨 ROM 감소)</div>':'';
+  const proxyNote='<div style="font-size:10px;color:var(--tx3);margin-top:6px">※ 2D 사진 기반 정렬 경향 지표(proxy)로, 척추 만곡·골반 전방경사·회전은 정밀 측정 대상이 아닙니다. 참고용 스크리닝이며 진단이 아닙니다.</div>';
+  host.innerHTML = rows.length? rows.join('')+ageNote+proxyNote : '<p style="font-size:12px;color:var(--tx3)">측정 후 정상범위 게이지가 표시됩니다.</p>';
 }
 
 // v1.28-beta: 교정 경향 예측 (휴리스틱) — 종합점수·이탈 정도 기반 "경향 추정". 의학적 예측 아님(명시).
@@ -6437,13 +6784,13 @@ function analyzeComp(tid,lm,W,H){
     if(s&&h){ const lean=Math.atan2(Math.abs(s.x-h.x),Math.abs(s.y-h.y))*180/Math.PI;
       if(lean>45)out.push({label:'과도한 상체 전방 경사',level:'bad'}); else if(lean>32)out.push({label:'상체 전방 경사 경계',level:'warn'}); else out.push({label:'상체 정렬 양호',level:'ok'}); }
     const w=L(15)||L(16), sh=L(11)||L(12);
-    if(w&&sh&&w.y>sh.y+0.13)out.push({label:'팔 전방 낙하(광배·대흉근 단축 의심)',level:'warn'});
+    if(w&&sh&&w.y>sh.y+0.13)out.push({label:'팔 전방 낙하 관찰(광배·대흉근 긴장 가능)',level:'warn'});
   } else if(tid==='sku'||tid==='sku_r'){
     const ha=L(23),hb=L(24);
     if(ha&&hb){ const tilt=Math.atan2(Math.abs(ha.y-hb.y),Math.abs(ha.x-hb.x))*180/Math.PI;
-      if(tilt>7)out.push({label:'골반 하강(Trendelenburg·중둔근 약화)',level:'bad'}); else if(tilt>4)out.push({label:'경미한 골반 비대칭',level:'warn'}); else out.push({label:'골반 안정',level:'ok'}); }
+      if(tilt>7)out.push({label:'골반 하강 관찰(Trendelenburg 유사 패턴)',level:'bad'}); else if(tilt>4)out.push({label:'경미한 골반 비대칭',level:'warn'}); else out.push({label:'골반 안정',level:'ok'}); }
   } else if(tid==='slr_l'||tid==='slr_r'){
-    try{ const a=calcM(lm,W||1,H||1).slrAngle; if(typeof a==='number'){ if(a<70)out.push({label:`햄스트링 단축 (${a.toFixed(0)}° <70°)`,level:'bad'}); else if(a>85)out.push({label:`과가동 (${a.toFixed(0)}° >85°)`,level:'warn'}); else out.push({label:`정상 ROM (${a.toFixed(0)}°)`,level:'ok'}); } }catch(e){}
+    try{ const a=calcM(lm,W||1,H||1).slrAngle; if(typeof a==='number'){ if(a<70)out.push({label:`햄스트링 유연성 저하 관찰 (${a.toFixed(0)}° <70°)`,level:'bad'}); else if(a>85)out.push({label:`가동범위 넓음 (${a.toFixed(0)}° · 참고)`,level:'ok'}); else out.push({label:`정상 ROM (${a.toFixed(0)}°)`,level:'ok'}); } }catch(e){}
   } else if(tid==='trunk_l'){
     try{ const a=calcM(lm,W||1,H||1).trunkFlex; if(typeof a==='number'){ if(a<70)out.push({label:`전굴 ROM 제한 (${a.toFixed(0)}° <70°)`,level:'warn'}); else out.push({label:`전굴 ROM 양호 (${a.toFixed(0)}°)`,level:'ok'}); } }catch(e){}
   }
@@ -6523,7 +6870,7 @@ function updateReport(){
   const scoreA=compositeScore(aggA);
   const scoreDelta=(scoreB!==null&&scoreA!==null)?(scoreA-scoreB):null;
   renderScoreHero(scoreB,scoreA,scoreDelta,aggB,aggA);
-  // 교정 운동 처방 (Before 기준 — 교정 전 문제점 대응)
+  // 교정 운동 추천 (Before 기준 — 교정 전 문제점 대응)
   const exEl=document.getElementById('exerciseContent');
   if(exEl){
     if(Object.keys(aggB).length===0) exEl.innerHTML='<p style="font-size:12px;color:var(--tx3)">측정치에 따라 자동으로 교정 운동이 추천됩니다. (사진 촬영 후)</p>';
@@ -6864,14 +7211,28 @@ async function cloudSave(){
 }
 
 // v1.14.1: 관리자 비밀번호 — 이 비밀번호 입력 시 모든 트레이너 세션 열람 가능
-const ADMIN_PASSWORD = 'nationalgym-admin';
+// v1.29: 관리자 비밀번호 하드코딩 제거 (공개 저장소에 자격증명 노출 — 보안 사고 경로).
+// 관리자 모드는 별도 입력한 관리자용 비밀번호를 서버(Worker)가 검증하는 방식으로 전환.
+// ⚠ Worker에서 기존 'nationalgym-admin' 값을 반드시 폐기·교체할 것.
+const ADMIN_MODE_KEY='ng_admin_mode';
+function isAdminMode(){ return sessionStorage.getItem(ADMIN_MODE_KEY)==='1'; }
+function enterAdminMode(){
+  const pw=prompt('관리자 비밀번호를 입력하세요:');
+  if(!pw)return false;
+  localStorage.setItem('ng_app_pw', pw.trim()); // 관리자 비밀번호를 인증 헤더로 사용 (서버 검증)
+  sessionStorage.setItem(ADMIN_MODE_KEY,'1');
+  return true;
+}
+// v1.29: 저장 XSS 방지 — R2에서 온 문자열을 innerHTML에 넣기 전 이스케이프
+function escHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 
 async function cloudLoadList(){
   const _pw=getAppPw();
   if(!_pw){toast('앱 비밀번호가 필요합니다');return}
   // 트레이너 이름 기반 필터 (본인 세션만) OR 관리자 모드 (전체 보기)
   const trainer=(document.getElementById('cTrainer')?.value||'').trim();
-  const isAdmin=(_pw===ADMIN_PASSWORD);
+  const isAdmin=isAdminMode();
   const prefix=isAdmin?'':(trainer?trainer+'/':'');
   showBuildingLoader(isAdmin?'전체 세션 로딩 (관리자)...':'내 세션 로딩...');
   try{
@@ -6905,10 +7266,10 @@ function showCloudLoadModal(sessions, isAdmin){
     const d=new Date(s.uploaded);
     const dstr=d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     const sizeMB=(s.size/1024/1024).toFixed(1);
-    return `<div onclick="cloudLoadSession('${s.key}')" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    return `<div onclick="cloudLoadSession('${escHtml(s.key).replace(/'/g,'')}')" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-size:13px;font-weight:700;color:#111">${s.client||'?'}</div>
-        <div style="font-size:10px;color:#6b7280">${s.trainer||'—'} · ${dstr} · ${sizeMB}MB</div>
+        <div style="font-size:13px;font-weight:700;color:#111">${escHtml(s.client||'?')}</div>
+        <div style="font-size:10px;color:#6b7280">${escHtml(s.trainer||'—')} · ${dstr} · ${sizeMB}MB</div>
       </div>
       <div style="font-size:11px;color:#1e40af;font-weight:700">불러오기 →</div>
     </div>`;
@@ -6916,7 +7277,10 @@ function showCloudLoadModal(sessions, isAdmin){
   m.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column">
     <div style="font-size:15px;font-weight:800;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
       <span>☁️ ${isAdmin?'전체 세션 (관리자)':'내 세션'} (${sessions.length}개)</span>
-      <button onclick="document.getElementById('cloudLoadModal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888">✕</button>
+      <span style="display:flex;gap:8px;align-items:center">
+        <button onclick="document.getElementById('cloudLoadModal').remove();(isAdminMode()?(sessionStorage.removeItem(ADMIN_MODE_KEY),localStorage.removeItem('ng_app_pw'),toast('관리자 모드 해제'),undefined):(enterAdminMode()&&cloudLoadList()))" style="background:none;border:1px solid #d1d5db;border-radius:8px;font-size:10px;cursor:pointer;color:#6b7280;padding:3px 8px">${isAdmin?'관리자 해제':'관리자'}</button>
+        <button onclick="document.getElementById('cloudLoadModal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888">✕</button>
+      </span>
     </div>
     <div style="flex:1;overflow-y:auto">${rows}</div>
   </div>`;
@@ -7633,10 +7997,10 @@ async function buildPDFCanvas(){
   // Trainer comment
   const tc=document.getElementById('trainerComment')?.value;
   if(tc){inner+=`<div style="background:#e7f0fb;border-radius:8px;padding:14px;margin-top:8px"><div style="font-size:13px;font-weight:700;color:#084a9e;margin-bottom:6px">트레이너 코멘트</div><div style="font-size:13px;color:#222;line-height:1.6">${tc}</div></div>`}
-  // 교정 운동 처방 섹션
+  // 교정 운동 추천 섹션
   const exRecs=getRecommendedExercises(aggB);
   if(exRecs.length){
-    inner+=`<div style="margin-top:14px;page-break-inside:avoid"><div style="font-size:14px;font-weight:700;color:#0b3a7d;padding-bottom:6px;border-bottom:2px solid #0b64d8;margin-bottom:10px">맞춤 교정 운동 처방</div>`;
+    inner+=`<div style="margin-top:14px;page-break-inside:avoid"><div style="font-size:14px;font-weight:700;color:#0b3a7d;padding-bottom:6px;border-bottom:2px solid #0b64d8;margin-bottom:10px">맞춤 교정 운동 추천</div>`;
     exRecs.forEach(r=>{
       inner+=`<div style="background:#f0f6fd;border-left:3px solid #0b64d8;border-radius:6px;padding:10px 12px;margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:#0d4491">${r.title}</div>
@@ -7648,7 +8012,8 @@ async function buildPDFCanvas(){
     });
     inner+='</div>';
   }
-  inner+=`<div style="text-align:center;color:#aaa;font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid #eee">NationalGym | 바디스캔 | Powered by WellnessMode · ${APP_VERSION}</div>
+  inner+=`<div style="margin-top:20px;padding:10px 12px;background:#fdf6ec;border:1px solid #e8d9bd;border-radius:6px;font-size:10px;color:#7a6a4f;line-height:1.6">⚠️ 본 리포트는 운동·자세 관리를 위한 참고용 스크리닝 결과이며, 의료 진단·치료가 아닙니다. 2D 카메라·AI 자세 추정 특성상 촬영 조건에 따라 오차(약 ±5~10°)가 발생할 수 있습니다. 통증·저림 등 이상 증상이 있으면 의료기관 상담을 권장합니다.</div>`;
+  inner+=`<div style="text-align:center;color:#aaa;font-size:11px;margin-top:14px;padding-top:12px;border-top:1px solid #eee">NationalGym | 바디스캔 | Powered by WellnessMode · ${APP_VERSION}</div>
   </div>`; // close body padding div
   container.innerHTML=inner;
   document.body.appendChild(container);

@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <title>측정값 방법론 — NationalGym 바디스캔</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -129,7 +129,7 @@ section .src{font-size:11px;color:var(--tx3);margin-bottom:10px}
   <div class="src">spineAngle · 단위 °</div>
   <div class="row"><div class="lb">측정 의미</div><div class="vl">어깨 중점(좌·우 견봉의 중간)과 골반 중점(좌·우 ASIS의 중간)을 잇는 직선이 <b>수직선</b>과 이루는 각도. 몸통 전체의 좌우 또는 앞뒤 기울기.</div></div>
   <div class="row"><div class="lb">계산식</div><div class="vl"><code>atan2(어깨중점.x − 골반중점.x, 골반중점.y − 어깨중점.y) × 180/π</code></div></div>
-  <div class="row"><div class="lb">해석</div><div class="vl">전면·후면에서는 좌우 기울기, 측면에서는 앞뒤 기울기. 측만증, 골반 비대칭 보상 패턴 평가.</div></div>
+  <div class="row"><div class="lb">해석</div><div class="vl">전면·후면에서는 좌우 기울기, 측면에서는 앞뒤 기울기. 체간 비대칭·보상 패턴의 <b>경향 관찰</b>용 지표(진단 아님).</div></div>
 </section>
 
 <section id="shoulderHipAlign">
@@ -137,7 +137,7 @@ section .src{font-size:11px;color:var(--tx3);margin-bottom:10px}
   <div class="src">shoulderHipAlign · 단위 %</div>
   <div class="row"><div class="lb">측정 의미</div><div class="vl">어깨 중점이 골반 중점에서 좌우로 벗어난 거리를 <b>키 대비 백분율</b>로 표시.</div></div>
   <div class="row"><div class="lb">계산식</div><div class="vl"><code>|어깨중점.x − 골반중점.x| / 키 × 100</code></div></div>
-  <div class="row"><div class="lb">해석</div><div class="vl">3% 이하 정상. 3~5% 경미, 5% 초과 측만증 의심. 가슴-골반 라인이 완전히 정렬되지 않은 정도.</div></div>
+  <div class="row"><div class="lb">해석</div><div class="vl">3% 이하 정상. 3~5% 경미, 5% 초과 시 정렬 이상 경향. 가슴-골반 라인이 완전히 정렬되지 않은 정도 (앱 내부 참고 지표).</div></div>
 </section>
 
 <section id="kneeAlign">
@@ -193,7 +193,7 @@ section .src{font-size:11px;color:var(--tx3);margin-bottom:10px}
   <div class="src">potsi (후면) · atsi (전면) · 단위 없음 (지수)</div>
   <div class="row"><div class="lb">출처</div><div class="vl"><b>POTSI</b>: Suzuki et al. 1999 — Posterior Trunk Symmetry Index for scoliosis screening.</div></div>
   <div class="row"><div class="lb">계산</div><div class="vl">3개 좌우쌍(어깨·견갑하각·골반 — 후면 / 어깨·골반·무릎 — 전면)의 좌우 차이를 합산해 백분율로 환산한 종합 지수.</div></div>
-  <div class="row"><div class="lb">해석</div><div class="vl"><b>≤ 27 정상</b> / 27~50 경미 측만 / &gt; 50 명백 측만(X-ray 권장). 0=완전 대칭.</div></div>
+  <div class="row"><div class="lb">해석</div><div class="vl"><b>≤ 27 정상</b> / 27~50 비대칭 경향 / &gt; 50 뚜렷한 비대칭(의료기관 정밀검사 권장). 0=완전 대칭. ※ 앱 산식은 원저 POTSI 6요소의 간이 3요소 버전 — 측만증 진단 지표가 아님.</div></div>
 </section>
 
 <section id="tilt-impact">
@@ -203,11 +203,30 @@ section .src{font-size:11px;color:var(--tx3);margin-bottom:10px}
   <div class="note tip">앱에서 결과지 하단의 노란 안내 박스는 같은 메시지를 표시합니다.</div>
 </section>
 
+<section id="limits-2d">
+  <h2><span class="ko">⚠️ 2D 측정의 한계와 지표 성격</span></h2>
+  <div class="row"><div class="lb">측정 방식</div><div class="vl">2D 단일 카메라와 AI 자세 추정(MediaPipe 33-point 랜드마크) 기반 <b>추정치</b>입니다. 랜드마크는 관절 중심 추정값으로, 촉진 가능한 골성 지표(ASIS·C7·견봉돌기)와 다릅니다.</div></div>
+  <div class="row"><div class="lb">측정 불가</div><div class="vl">척추 만곡(흉추후만 Cobb각·측만), 골반 전방경사(APT), 축 회전(어깨·골반 회전)은 2D 단일 카메라로 정확히 측정할 수 없어 <b>정렬 경향 지표(proxy)</b>로만 표시합니다.</div></div>
+  <div class="row"><div class="lb">오차 범위</div><div class="vl">마커리스 단일 카메라 방식의 관절각 오차는 통상 <b>약 ±5~10°</b>입니다 (촬영 각도·조명·복장 영향). Before/After 비교는 반드시 동일 조건에서 촬영하세요.</div></div>
+  <div class="row"><div class="lb">지표 성격</div><div class="vl">정상범위는 공개 문헌을 참고한 <b>스크리닝 기준</b>이며 의학적 정상치 판정이 아닙니다. 통증·저림·기능 이상이 있으면 의료기관 상담을 권장합니다.</div></div>
+  <div class="note tip">v1.17에서 CVA·Q-angle·무릎/골반 비율·픽셀 단위 지표는 2D 랜드마크로 정확 측정이 불가해 제거되었습니다. 이 문서의 해당 섹션은 이력 참고용입니다. 최신 지표·정상범위는 앱 내 'ROM·정렬 정상범위 게이지'를 참조하세요.</div>
+</section>
+
+<section id="references">
+  <h2><span class="ko">📚 참고 문헌 (정상범위 근거)</span></h2>
+  <div class="row"><div class="lb">자세 정렬</div><div class="vl">Kendall FP et al., <i>Muscles: Testing and Function with Posture and Pain</i>, 5th ed., 2005 · Ferreira EAG et al., SAPO photogrammetric protocol, 2010 · McEvoy &amp; Grimmer 2005 · Singla &amp; Veqar 2017</div></div>
+  <div class="row"><div class="lb">관절가동범위</div><div class="vl">AAOS, <i>Joint Motion: Method of Measuring and Recording</i>, 1965 · AMA <i>Guides to the Evaluation of Permanent Impairment</i>, 5th ed., 2001 · Barnes CJ et al. 2001 (연령·성별 어깨 ROM) · Gill TK et al. 2020 (어깨 ROM 체계적 문헌고찰)</div></div>
+  <div class="row"><div class="lb">햄스트링·SLR</div><div class="vl">Youdas JW et al., <i>JOSPT</i> 2005 (연령·성별 햄스트링 길이) · Magee DJ, <i>Orthopedic Physical Assessment</i></div></div>
+  <div class="row"><div class="lb">체간 대칭</div><div class="vl">Suzuki N et al. 1999 (POTSI) · Inami K et al. 1999 (POTSI 정상치) · Stoliński Ł et al. 2012·2017 (ATSI)</div></div>
+  <div class="row"><div class="lb">두부 전방 자세</div><div class="vl">Yip CHT, Chiu TTW, Poon ATK, <i>Manual Therapy</i> 2008 (CVA와 경부통) · Raine &amp; Twomey 1997 · Salahzadeh Z et al. 2014</div></div>
+  <div class="row"><div class="lb">동작 스크리닝</div><div class="vl">Clark MA et al., <i>NASM Essentials of Corrective Exercise Training</i> (OHS 보상 패턴) · Noyes FR et al. 2005 (드롭점프 무릎 정렬) · Munro, Herrington &amp; Carolan 2012 (FPPA) · Fry AC et al. 2003 (스쿼트 체간 각도) · Youdas JW et al. 2007 (단하지 기립 골반 하강)</div></div>
+</section>
+
 <div class="foot">
-  <b>NationalGym 바디스캔 측정 방법론</b> · v1.16.0<br>
+  <b>NationalGym 바디스캔 측정 방법론</b> · v1.29.0<br>
   · MediaPipe Pose Landmarker (33-point) 기반 2D 측정. 일부 값은 견봉·이주 보정으로 후처리됨<br>
   · 임상적 진단이 아닌 <b>스크리닝/비교</b> 목적. 의학적 결정은 전문 의료진 평가 필수<br>
-  · 출처: Kendall — Muscles Testing and Function (5th ed) · Suzuki et al. 1999 (POTSI) · Yip et al. 2008 (CVA)
+  · 정상범위 출처는 위 '참고 문헌' 섹션 참조
 </div>
 
 </div>
