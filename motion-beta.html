@@ -166,7 +166,7 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .fv{font-size:11.5px;padding:4px 0;border-radius:8px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fv.B{background:#fde8e8;color:#991b1b}
 .fv.A{background:#e0edfd;color:#1e40af}
-.fv.ok{background:var(--g3);color:var(--g2);font-size:10.5px}
+.fv.ok{background:#dcf3fc;color:#0e7490;font-size:10.5px} /* v1.29: After 셀(#e0edfd)과 구분되는 시안 톤 */
 .fv.bad{background:var(--r3);color:var(--red);font-size:10.5px}
 .fv.same{background:var(--bg3);color:var(--tx3);font-size:10.5px}
 /* v1.18: 비정상은 배경 대신 빨간 테두리로 표시 — B/A 배경 일관성 유지 (트레이너 #1) */
@@ -537,13 +537,21 @@ input[type=range]{accent-color:var(--brand)}
   .cam-ov{flex-direction:row}
   .cam-bar{flex-direction:column;justify-content:center;width:150px;border-top:none;border-left:1px solid rgba(255,255,255,.08);padding:20px 12px;gap:16px}
   .cam-bar>div:first-child{text-align:center}
-  .gbox{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
-  #camGuideSvgWrap{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+  /* v1.29: SLR(누운 자세·가로 프레이밍)은 3:4 세로 박스 제외 — 리뷰 지적 */
+  .cam-ov:not(.cam-landscape-shot) .gbox{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+  .cam-ov:not(.cam-landscape-shot) #camGuideSvgWrap{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
 }
 /* 라이브 배지·HUD: 소형 폰에서 잘리지 않게 줄바꿈 허용 */
 .cam-live-badge{white-space:normal;max-width:94%;text-align:center;line-height:1.4}
 .cam-rec-hud .crh-cue{white-space:normal;line-height:1.4}
 @media (max-width:374px){ .cam-rec-hud .crh-val{font-size:24px} }
+/* v1.29-beta: 카메라 바 버튼 4개 — 소형 폰 압축 보정 */
+@media (max-width:429px){
+  .cam-bar{gap:7px;padding:12px 10px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .cam-bar .cclose{padding:8px 9px;font-size:11.5px}
+  .cam-bar>div:first-child{overflow:hidden}
+  .cam-bar .ct-name,.cam-bar .ct-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 </style>
 </head>
 <body>
@@ -1587,7 +1595,7 @@ async function checkForUpdate(){
     });
     if(!res.ok) return;
     const text=await res.text();
-    const m=text.match(/const APP_VERSION='(v[\d.]+)'/);
+    const m=text.match(/const APP_VERSION='(v[\d.]+(?:-beta)?)'/); // v1.29: -beta 접미사 인식 (베타에서 배너 상시 노출 버그)
     if(!m) return;
     const latestVer=m[1];
     if(latestVer!==APP_VERSION){
@@ -2765,7 +2773,9 @@ function openCam(tid,slot){
 // ═══ v1.29-beta: 카메라 스트림 시작/전환 — 태블릿 키오스크(≥900px)는 전면 카메라 기본 ═══
 // 전면 카메라는 프리뷰만 미러(자연스러운 셀프 뷰). 저장 사진·랜드마크는 비미러 원본이라
 // 좌우 지표(좌/우 어깨 등) 계산은 기존과 동일하게 유지됨.
-let _camFacing=localStorage.getItem('ng_cam_facing')||(window.matchMedia&&matchMedia('(min-width:900px)').matches?'user':'environment');
+// v1.29: 전면 카메라 '자동 기본값' 제거 — 미러 프리뷰가 좌/우 지정 가이드(SKU·SLR·외전)와 방향이
+// 어긋날 수 있어(리뷰 지적) 항상 후면이 기본. 키오스크는 '전환' 버튼으로 명시적 선택(선택은 기억됨).
+let _camFacing=localStorage.getItem('ng_cam_facing')||'environment';
 let _camMirrored=false;
 function _startCamStream(){
   if(camStream){try{camStream.getTracks().forEach(t=>t.stop())}catch(e){}}
@@ -2784,6 +2794,7 @@ function _startCamStream(){
 function flipCamera(){
   _camFacing=(_camFacing==='user')?'environment':'user';
   localStorage.setItem('ng_cam_facing',_camFacing);
+  _cancelCountdown(); if(_recording)stopRecord(); // v1.29: 전환 중 미검증 프레임 촬영/녹화 방지
   _oneEuroState=null;_liveHist=[];_stableSince=0;
   _startCamStream()
     .then(()=>toast(_camFacing==='user'?'전면 카메라 — 미러 표시 (저장은 원본)':'후면 카메라'))
@@ -2802,6 +2813,7 @@ let _liveRAF=null,_liveHist=[],_capturing=false,_cdTimer=null,_lastStable=false;
 // (3) 자동 촬영 복원 — 게이트가 1.2초 연속 통과해야 카운트다운 시작, 카운트다운 중에도 매 프레임
 //     재검증(실패 시 즉시 취소) → v1.23.1의 '준비 전 찍힘' 문제 원천 차단.
 let _oneEuroState=null,_lastDetTS=0,_stableSince=0,_qualityPct=0,_qualityIssue='';
+let _cdAuto=false; // 현재 카운트다운이 자동 촬영發인지 (수동 셔터 카운트다운은 품질 게이트로 취소하지 않음)
 let AUTO_CAP=localStorage.getItem('ng_auto_capture')!=='0'; // 기본 ON
 const OE_MIN_CUTOFF=1.6,OE_BETA=0.35,OE_DCUT=1.0; // One-Euro 파라미터 (30fps 기준 튜닝)
 function _oeAlpha(cutoff,dt){ const tau=1/(2*Math.PI*cutoff); return 1/(1+tau/dt); }
@@ -2823,7 +2835,7 @@ function _filterPose(lm,ts){
 function startLiveTracking(){
   _liveHist=[];_capturing=false;_lastStable=false;_oneEuroState=null;_stableSince=0;_qualityPct=0;_cancelCountdown();clearLiveOverlay();
   const badge=document.getElementById('camLiveBadge');
-  if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); return; }
+  if(poseEngKind!=='tasks'||!poseLMVideo){ if(badge)badge.classList.remove('on'); _syncAutoCapBtn(); return; }
   if(badge){badge.className='cam-live-badge on';badge.textContent=isDynamicTest(camTid)?'실시간 추적 — 녹화 버튼을 누르고 동작을 수행하세요':(AUTO_CAP?'실시간 추적 — 자세를 맞추면 자동 촬영됩니다':'실시간 추적 — 자세를 맞추고 촬영 버튼을 누르세요');}
   _syncAutoCapBtn();
   const v=document.getElementById('camVid');
@@ -2837,7 +2849,9 @@ function startLiveTracking(){
         lastT=v.currentTime; _lastDetTS=now;
         let r=null; try{ r=poseLMVideo.detectForVideo(v,now); }catch(e){}
         if(r&&r.landmarks&&r.landmarks[0]){ const lm=_filterPose(_normLM(r.landmarks[0]),now); drawLiveOverlay(lm); if(_recording)_recTrack(lm); else checkAutoCapture(lm); }
-        else { clearLiveOverlay(); _lastStable=false; _stableSince=0; _cancelCountdown(); }
+        else { clearLiveOverlay(); _lastStable=false; _stableSince=0; _cancelCountdown();
+          const bdg=document.getElementById('camLiveBadge');
+          if(bdg&&bdg.classList.contains('on')){ bdg.className='cam-live-badge on'; bdg.textContent='실시간 추적 — 전신이 보이게 서주세요'; } }
       }
     }
     _liveRAF=requestAnimationFrame(loop);
@@ -2904,12 +2918,22 @@ function _poseStable(lm){
 const QUALITY_REQ={
   slr_l:[23,24,25,26,27,28], slr_r:[23,24,25,26,27,28],
   trunk_l:[11,12,23,24,25,26],
+  post:[11,12,23,24,25,26,27,28], trunk_b:[11,12,23,24,25,26,27,28], ohs_b:[11,12,23,24,25,26,27,28], // 후면 — 코 미검출 (v1.16 이력)
   _default:[0,11,12,23,24,25,26,27,28]
 };
+// 측면(lat)은 반대쪽 관절이 가려짐 — 좌/우 체인 중 잘 보이는 쪽만 요구 (리뷰 지적: 게이트 도달 불능)
+function _reqForTest(lm){
+  if(camTid==='lat'||camTid==='ohs_l'){
+    const visSum=ids=>ids.reduce((s,i)=>s+(lm[i]?.visibility||0),0);
+    const L=[11,23,25,27],R=[12,24,26,28];
+    return [0].concat(visSum(L)>=visSum(R)?L:R);
+  }
+  return QUALITY_REQ[camTid]||QUALITY_REQ._default;
+}
 function _boneLen(lm,a,b){ const A=lm[a],B=lm[b]; if(!A||!B||A.visibility<.5||B.visibility<.5)return null; return Math.hypot(A.x-B.x,A.y-B.y); }
 function _poseQuality(lm){
   const issues=[]; let score=100;
-  const req=QUALITY_REQ[camTid]||QUALITY_REQ._default;
+  const req=_reqForTest(lm);
   // 1) 필수 관절 가시성 (임계 0.6 — 측정 등급)
   const lowVis=req.filter(i=>!lm[i]||lm[i].visibility<0.6);
   if(lowVis.length){ score-=lowVis.length*12; issues.push('관절 '+lowVis.length+'개 가시성 부족'); }
@@ -2952,8 +2976,9 @@ function checkAutoCapture(lm){
   const badge=document.getElementById('camLiveBadge');
   if(!badge||!badge.classList.contains('on'))return;
   if(_cdTimer){
-    // 카운트다운 중 연속 재검증 — 품질 붕괴 시 즉시 취소
-    if(q.pct<AUTO_CAP_MIN_QUALITY-10){
+    // 카운트다운 중 연속 재검증 — 자동 시작 카운트다운만 취소 대상.
+    // 수동 셔터(트레이너 판단)는 품질이 낮아도 끝까지 진행 (v1.29: 촬영 불능 방지 — 리뷰 지적)
+    if(_cdAuto&&q.pct<AUTO_CAP_MIN_QUALITY-10){
       _cancelCountdown(); _stableSince=0;
       badge.className='cam-live-badge on'; badge.textContent='움직임 감지 — 자세를 다시 잡아주세요';
     }
@@ -2965,12 +2990,12 @@ function checkAutoCapture(lm){
     const held=now-_stableSince;
     if(AUTO_CAP&&!isDynamicTest(camTid)&&held>=AUTO_CAP_HOLD_MS){
       badge.className='cam-live-badge on ready'; badge.textContent='✓ 정밀 인식 완료 — 자동 촬영';
-      _startCountdown(3,captureLive);
+      _cdAuto=true; _startCountdown(3,captureLive);
     }else{
       badge.className='cam-live-badge on ready';
       badge.textContent=AUTO_CAP&&!isDynamicTest(camTid)
         ?('✓ 인식 '+q.pct+'% — 그대로 유지하세요')
-        :('✓ 자세 안정 '+q.pct+'% — 촬영 버튼을 누르세요');
+        :('✓ 자세 안정 '+q.pct+(isDynamicTest(camTid)?'% — 녹화 버튼을 누르세요':'% — 촬영 버튼을 누르세요'));
     }
   }else{
     _stableSince=0;
@@ -2985,6 +3010,7 @@ function toggleAutoCap(){
 }
 function _syncAutoCapBtn(){
   const b=document.getElementById('autoCapBtn'); if(!b)return;
+  b.style.display=(poseEngKind==='tasks'&&poseLMVideo)?'':'none'; // 폴백 엔진에선 자동촬영 불가 — 숨김
   b.textContent='자동촬영 '+(AUTO_CAP?'ON':'OFF');
   b.style.borderColor=AUTO_CAP?'rgba(46,159,255,.8)':'rgba(255,255,255,.2)';
   b.style.color=AUTO_CAP?'#4fb2f5':'#ccc';
@@ -2995,6 +3021,7 @@ function armCapture(){
   if(isDynamicTest(camTid) && poseEngKind==='tasks' && poseLMVideo){ toggleRecord(); return; }
   if(_capturing||_cdTimer)return;
   const cb=(poseEngKind==='tasks'&&poseLMVideo)?captureLive:snap;
+  _cdAuto=false; // 수동 셔터 — 품질 게이트로 취소하지 않음
   _startCountdown(3,cb);
 }
 function _startCountdown(sec,cb){
@@ -3002,7 +3029,7 @@ function _startCountdown(sec,cb){
   if(cd){cd.style.display='block';cd.textContent=n;}
   _cdTimer=setInterval(()=>{ n--; if(n<=0){clearInterval(_cdTimer);_cdTimer=null;if(cd)cd.style.display='none';if(typeof cb==='function')cb();} else if(cd){cd.textContent=n;} },1000);
 }
-function _cancelCountdown(){ if(_cdTimer){clearInterval(_cdTimer);_cdTimer=null;} const cd=document.getElementById('camCountdown'); if(cd)cd.style.display='none'; }
+function _cancelCountdown(){ if(_cdTimer){clearInterval(_cdTimer);_cdTimer=null;} _cdAuto=false; const cd=document.getElementById('camCountdown'); if(cd)cd.style.display='none'; }
 // v1.29-beta: 평균 → 중앙값(median). 평균은 한 프레임의 오인식이 결과를 끌고 가지만
 // 중앙값은 이상치에 강건. 가시성 낮은 프레임(<0.5)은 해당 관절 집계에서 제외.
 function _medianRecentPose(){
@@ -3046,9 +3073,9 @@ function captureLive(){
   const tid=camTid,slot=camSlot;
   const q=_qualityPct;
   closeCam();
+  _pendingVerify={tid,slot}; // AI 정밀 검증 예약 — loadImg 완료 시 실행
   loadImg(tid,slot,dataUrl,false,fused);
   toast((slot==='B'?'Before':'After')+' 촬영 완료'+(q?` · 인식 품질 ${q}%`:''));
-  if(typeof aiVerifyPose==='function') aiVerifyPose(tid,slot); // AI 정밀 검증 (비동기, 토글 가능)
 }
 
 // ═══ v1.24: 동적 검사 영상(녹화) 모드 — 동작 추적 후 극점(최대 ROM) 프레임 자동 추출 ═══
@@ -3091,22 +3118,24 @@ function _recTrack(lm){
   // v1.29-beta: 단일 프레임 피크 → 3프레임 중앙값 평활 피크. 한 프레임의 관절 오인식이
   // '최대 ROM 프레임'으로 채택되던 문제(이상치 스파이크) 차단. 골격 일관성 검사도 통과해야 갱신.
   const rawSc=_peakScore(camTid,lm);
-  _recSmoothBuf.push({sc:rawSc,lm:_clonePose(lm)}); if(_recSmoothBuf.length>3)_recSmoothBuf.shift();
-  const sorted=[..._recSmoothBuf].sort((a,b)=>a.sc-b.sc);
-  const midEntry=sorted[sorted.length>>1];
-  const sc=midEntry.sc;
+  _recSmoothBuf.push(rawSc); if(_recSmoothBuf.length>3)_recSmoothBuf.shift();
+  const sorted=[..._recSmoothBuf].sort((a,b)=>a-b);
+  const sc=sorted[sorted.length>>1]; // 3프레임 중앙값 점수 (이상치 스파이크 억제)
+  const yBased=(camTid==='ohs_b'||camTid==='ohs_l'||camTid==='sku'||camTid==='sku_r');
   const skelOk=(()=>{ // 좌우 대퇴 길이 극단 불일치 = 오인식 프레임 (누운 SLR은 원근 차이 허용)
     const fl=_boneLen(lm,23,25),fr=_boneLen(lm,24,26);
     if(!fl||!fr)return true; const r=fl/fr;
     const lax=(camTid==='slr_l'||camTid==='slr_r');
     return lax?(r>0.35&&r<2.9):(r>0.5&&r<2.0);
   })();
-  if(skelOk&&(!_recBest||sc>_recBest.score)){ const img=_grabFrame(); if(img)_recBest={score:sc,lm:midEntry.lm,img}; }
+  // v1.29: 저장은 '현재 프레임'의 사진+좌표 쌍으로 일치시키되(리뷰 지적: 중앙값 좌표+현재 사진 불일치),
+  // 현재 점수가 중앙값에서 크게 벗어난 이상치 프레임이면 갱신하지 않음 → 진짜 피크는 다음 프레임에 채택됨
+  const corroborated=Math.abs(rawSc-sc)<=(yBased?0.03:8);
+  if(skelOk&&corroborated&&(!_recBest||rawSc>_recBest.score)){ const img=_grabFrame(); if(img)_recBest={score:rawSc,lm:_clonePose(lm),img}; }
   // 반복(rep) 카운트 — v1.29-beta: 세션 전체 min/max 기준 (기존 50프레임 창은 오래된 극값이
   // 빠지며 진폭이 좁아져 홀드 후반에 노이즈로 유령 반복이 잡히던 문제)
   _recMin=Math.min(_recMin,sc); _recMax=Math.max(_recMax,sc);
   const amp=_recMax-_recMin;
-  const yBased=(camTid==='ohs_b'||camTid==='ohs_l'||camTid==='sku'||camTid==='sku_r');
   if(amp>(yBased?0.05:12)){ const norm=(sc-_recMin)/(amp||1);
     if(_recPhase==='low'&&norm>0.72)_recPhase='high';
     else if(_recPhase==='high'&&norm<0.30){_recPhase='low';_recReps++;} }
@@ -3131,9 +3160,9 @@ function stopRecord(){
   if(!_recBest||!_recBest.img||_recCount<3){ toast('동작 인식 부족 — 전신이 보이게 다시 시도'); const badge=document.getElementById('camLiveBadge'); if(badge)badge.textContent='실시간 추적 — 자세를 맞추고 녹화 버튼을 누르세요'; return; }
   const tid=camTid,slot=camSlot,lm=_recBest.lm,img=_recBest.img,reps=_recReps;
   closeCam();
+  _pendingVerify={tid,slot}; // AI 정밀 검증 예약 — loadImg 완료 시 실행
   loadImg(tid,slot,img,false,lm);
   toast((slot==='B'?'Before':'After')+' 동작 분석 완료 — 최대 지점 캡처'+(reps>0?` · ${reps}회 감지`:''));
-  if(typeof aiVerifyPose==='function') aiVerifyPose(tid,slot); // v1.29-beta: AI 정밀 검증
 }
 
 async function snap(){
@@ -3533,9 +3562,16 @@ async function loadImg(tid,slot,src,skipSave,injectPose){
     if(SHOTS[tid].B?.img&&SHOTS[tid].A?.img&&currentPhase==='compare'){
       rebuildCompare();
     }
+    // v1.29: AI 관절 검증은 SHOTS가 채워진 이 시점에 실행 (captureLive 직후 호출 시
+    // img.onload 전이라 canvas/pose가 비어 검증이 조용히 생략되거나 이전 사진을 검증하던 레이스 수정)
+    if(_pendingVerify&&_pendingVerify.tid===tid&&_pendingVerify.slot===slot){
+      const pv=_pendingVerify; _pendingVerify=null;
+      if(SHOTS[tid][slot].pose&&SHOTS[tid][slot].canvas){ try{aiVerifyPose(pv.tid,pv.slot)}catch(e){} }
+    }
   };
   img.src=src;
 }
+let _pendingVerify=null; // {tid,slot} — loadImg 완료 후 AI 관절 검증 예약
 
 function showRetakeMenu(tid,slot){
   const existing=document.getElementById('retakeMenu');if(existing)existing.remove();
@@ -4623,7 +4659,7 @@ function drawClinicalReferences(c,lm,W,H,tid,slot){
   const TH_DEG=1.0; // 1° 이상이면 비대칭
   const fs=Math.max(14,W*.018);
   // 색상 스케일
-  const OK='rgba(29,111,214,.85)'; // ok-blue
+  const OK='rgba(14,165,233,.9)'; // ok — 스카이블루 (After 스켈레톤 딥블루와 구분, 리뷰 지적)
   const BAD='rgba(220,38,38,.9)';  // red
   const NEUTRAL='rgba(100,116,139,.55)'; // slate dashed
 
@@ -4871,7 +4907,7 @@ function redrawSlot(tid,slot){
     c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
     c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-10);c.fillStyle=mkCol;c.fillText(dist+'px',mx,my-10);
   });
-  const cols=['#be1414','#0f46c8','#1d6fd6','#b45309','#7c3aed','#0891b2'];
+  const cols=['#be1414','#0f46c8','#0ea5e9','#b45309','#7c3aed','#0891b2']; // v1.29: 인접 블루 구분
   s.markers.forEach((m,i)=>{
     const col=cols[i%cols.length];
     const r=Math.max(13,W*.018);
@@ -5116,7 +5152,7 @@ function redrawOL(tid){
   // After manual markers (blue)
   const aMk=aS.markers||[];
   aMk.forEach((m,i)=>{
-    const cols=['#0f46c8','#1d6fd6','#7c3aed','#0891b2'];const col=cols[i%cols.length];
+    const cols=['#0f46c8','#0ea5e9','#7c3aed','#b45309'];const col=cols[i%cols.length]; // v1.29: 인접 블루 구분
     const r2=Math.max(11,W*.015);
     c.beginPath();c.arc(m.x,m.y,r2,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=.9;c.fill();c.globalAlpha=1;
     c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
@@ -6192,7 +6228,7 @@ function parseClinicalSections(text){
   const headers=[
     {key:'improved', patterns:['개선된 항목','개선 항목','개선된']},
     {key:'maintain', patterns:['유지/관리','유지 관리','유지·관리','관리 필요']},
-    {key:'prescription', patterns:['다음 운동 추천','운동 추천','다음 운동 처방','운동 처방','처방','추천']},
+    {key:'prescription', patterns:['다음 운동 추천','운동 추천','다음 운동 처방','운동 처방','처방']},
     {key:'message', patterns:['고객에게 한마디','고객에게','한마디']}
   ];
   const lines=text.split('\n');
@@ -7216,23 +7252,27 @@ async function cloudSave(){
 // ⚠ Worker에서 기존 'nationalgym-admin' 값을 반드시 폐기·교체할 것.
 const ADMIN_MODE_KEY='ng_admin_mode';
 function isAdminMode(){ return sessionStorage.getItem(ADMIN_MODE_KEY)==='1'; }
+// v1.29: 관리자 비밀번호는 세션 한정 별도 보관 — 트레이너의 앱 비밀번호(ng_app_pw)를
+// 오타 입력으로 덮어쓰던 문제 수정 (리뷰 지적). 서버 거절(401/403) 시 관리자 모드 자동 해제.
+function adminPw(){ return sessionStorage.getItem('ng_admin_pw')||''; }
 function enterAdminMode(){
   const pw=prompt('관리자 비밀번호를 입력하세요:');
   if(!pw)return false;
-  localStorage.setItem('ng_app_pw', pw.trim()); // 관리자 비밀번호를 인증 헤더로 사용 (서버 검증)
+  sessionStorage.setItem('ng_admin_pw', pw.trim());
   sessionStorage.setItem(ADMIN_MODE_KEY,'1');
   return true;
 }
+function exitAdminMode(){ sessionStorage.removeItem(ADMIN_MODE_KEY); sessionStorage.removeItem('ng_admin_pw'); }
 // v1.29: 저장 XSS 방지 — R2에서 온 문자열을 innerHTML에 넣기 전 이스케이프
 function escHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 
 async function cloudLoadList(){
-  const _pw=getAppPw();
+  const isAdmin=isAdminMode();
+  const _pw=isAdmin?adminPw():getAppPw();
   if(!_pw){toast('앱 비밀번호가 필요합니다');return}
   // 트레이너 이름 기반 필터 (본인 세션만) OR 관리자 모드 (전체 보기)
   const trainer=(document.getElementById('cTrainer')?.value||'').trim();
-  const isAdmin=isAdminMode();
   const prefix=isAdmin?'':(trainer?trainer+'/':'');
   showBuildingLoader(isAdmin?'전체 세션 로딩 (관리자)...':'내 세션 로딩...');
   try{
@@ -7241,7 +7281,8 @@ async function cloudLoadList(){
     });
     hideBuildingLoader();
     if(!res.ok){
-      toast('목록 로드 실패: '+res.status);
+      if(isAdmin&&(res.status===401||res.status===403)){ exitAdminMode(); toast('관리자 인증 실패 — 관리자 모드를 해제했습니다'); }
+      else toast('목록 로드 실패: '+res.status);
       return;
     }
     const data=await res.json();
@@ -7262,11 +7303,14 @@ function showCloudLoadModal(sessions, isAdmin){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
   // 날짜 최신순 정렬
   sessions.sort((a,b)=>new Date(b.uploaded)-new Date(a.uploaded));
-  const rows=sessions.map(s=>{
+  // v1.29: onclick에 키 문자열 인라인 금지 — 인덱스 참조로 저장 XSS 원천 차단
+  // (escHtml 후 따옴표 제거는 &#39;가 속성 디코딩으로 되살아나 무력화되던 문제 — 리뷰 지적)
+  window._cloudSessions=sessions;
+  const rows=sessions.map((s,i)=>{
     const d=new Date(s.uploaded);
     const dstr=d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     const sizeMB=(s.size/1024/1024).toFixed(1);
-    return `<div onclick="cloudLoadSession('${escHtml(s.key).replace(/'/g,'')}')" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    return `<div onclick="cloudLoadSession(window._cloudSessions[${i}].key)" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:13px;font-weight:700;color:#111">${escHtml(s.client||'?')}</div>
         <div style="font-size:10px;color:#6b7280">${escHtml(s.trainer||'—')} · ${dstr} · ${sizeMB}MB</div>
@@ -7278,7 +7322,7 @@ function showCloudLoadModal(sessions, isAdmin){
     <div style="font-size:15px;font-weight:800;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
       <span>☁️ ${isAdmin?'전체 세션 (관리자)':'내 세션'} (${sessions.length}개)</span>
       <span style="display:flex;gap:8px;align-items:center">
-        <button onclick="document.getElementById('cloudLoadModal').remove();(isAdminMode()?(sessionStorage.removeItem(ADMIN_MODE_KEY),localStorage.removeItem('ng_app_pw'),toast('관리자 모드 해제'),undefined):(enterAdminMode()&&cloudLoadList()))" style="background:none;border:1px solid #d1d5db;border-radius:8px;font-size:10px;cursor:pointer;color:#6b7280;padding:3px 8px">${isAdmin?'관리자 해제':'관리자'}</button>
+        <button onclick="document.getElementById('cloudLoadModal').remove();(isAdminMode()?(exitAdminMode(),toast('관리자 모드 해제'),undefined):(enterAdminMode()&&cloudLoadList()))" style="background:none;border:1px solid #d1d5db;border-radius:8px;font-size:10px;cursor:pointer;color:#6b7280;padding:3px 8px">${isAdmin?'관리자 해제':'관리자'}</button>
         <button onclick="document.getElementById('cloudLoadModal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888">✕</button>
       </span>
     </div>
@@ -7289,7 +7333,7 @@ function showCloudLoadModal(sessions, isAdmin){
 
 async function cloudLoadSession(key){
   document.getElementById('cloudLoadModal')?.remove();
-  const _pw=getAppPw();
+  const _pw=isAdminMode()?adminPw():getAppPw(); // v1.29: 관리자 모드는 관리자 비밀번호로 인증
   if(!_pw) return;
   showBuildingLoader('세션 복원 중...');
   try{

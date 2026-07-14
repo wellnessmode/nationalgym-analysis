@@ -166,7 +166,7 @@ canvas.main-oc{display:block;width:100%;height:auto}
 .fv{font-size:11.5px;padding:4px 0;border-radius:8px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fv.B{background:#fde8e8;color:#991b1b}
 .fv.A{background:#e0edfd;color:#1e40af}
-.fv.ok{background:var(--g3);color:var(--g2);font-size:10.5px}
+.fv.ok{background:#dcf3fc;color:#0e7490;font-size:10.5px} /* v1.29: After 셀(#e0edfd)과 구분되는 시안 톤 */
 .fv.bad{background:var(--r3);color:var(--red);font-size:10.5px}
 .fv.same{background:var(--bg3);color:var(--tx3);font-size:10.5px}
 /* v1.18: 비정상은 배경 대신 빨간 테두리로 표시 — B/A 배경 일관성 유지 (트레이너 #1) */
@@ -484,8 +484,9 @@ input[type=range]{accent-color:var(--brand)}
   .cam-ov{flex-direction:row}
   .cam-bar{flex-direction:column;justify-content:center;width:150px;border-top:none;border-left:1px solid rgba(255,255,255,.08);padding:20px 12px;gap:16px}
   .cam-bar>div:first-child{text-align:center}
-  .gbox{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
-  #camGuideSvgWrap{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+  /* v1.29: SLR(누운 자세·가로 프레이밍)은 3:4 세로 박스 제외 — 리뷰 지적 */
+  .cam-ov:not(.cam-landscape-shot) .gbox{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
+  .cam-ov:not(.cam-landscape-shot) #camGuideSvgWrap{left:50%;right:auto;transform:translateX(-50%);aspect-ratio:3/4;width:auto;height:93%;top:3.5%;bottom:auto}
 }
 </style>
 </head>
@@ -1522,7 +1523,7 @@ async function checkForUpdate(){
     });
     if(!res.ok) return;
     const text=await res.text();
-    const m=text.match(/const APP_VERSION='(v[\d.]+)'/);
+    const m=text.match(/const APP_VERSION='(v[\d.]+(?:-beta)?)'/); // v1.29: -beta 접미사 인식 (베타에서 배너 상시 노출 버그)
     if(!m) return;
     const latestVer=m[1];
     if(latestVer!==APP_VERSION){
@@ -4055,7 +4056,7 @@ function drawClinicalReferences(c,lm,W,H,tid,slot){
   const TH_DEG=1.0; // 1° 이상이면 비대칭
   const fs=Math.max(14,W*.018);
   // 색상 스케일
-  const OK='rgba(29,111,214,.85)'; // ok-blue
+  const OK='rgba(14,165,233,.9)'; // ok — 스카이블루 (After 스켈레톤 딥블루와 구분, 리뷰 지적)
   const BAD='rgba(220,38,38,.9)';  // red
   const NEUTRAL='rgba(100,116,139,.55)'; // slate dashed
 
@@ -4309,7 +4310,7 @@ function redrawSlot(tid,slot){
     c.font=`bold ${fs}px -apple-system,sans-serif`;c.textAlign='center';
     c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=4;c.strokeText(dist+'px',mx,my-10);c.fillStyle=mkCol;c.fillText(dist+'px',mx,my-10);
   });
-  const cols=['#be1414','#0f46c8','#1d6fd6','#b45309','#7c3aed','#0891b2'];
+  const cols=['#be1414','#0f46c8','#0ea5e9','#b45309','#7c3aed','#0891b2']; // v1.29: 인접 블루 구분
   s.markers.forEach((m,i)=>{
     const col=cols[i%cols.length];
     const r=Math.max(13,W*.018);
@@ -4552,7 +4553,7 @@ function redrawOL(tid){
   // After manual markers (blue)
   const aMk=aS.markers||[];
   aMk.forEach((m,i)=>{
-    const cols=['#0f46c8','#1d6fd6','#7c3aed','#0891b2'];const col=cols[i%cols.length];
+    const cols=['#0f46c8','#0ea5e9','#7c3aed','#b45309'];const col=cols[i%cols.length]; // v1.29: 인접 블루 구분
     const r2=Math.max(11,W*.015);
     c.beginPath();c.arc(m.x,m.y,r2,0,Math.PI*2);c.fillStyle=col;c.globalAlpha=.9;c.fill();c.globalAlpha=1;
     c.strokeStyle='#fff';c.lineWidth=2.5;c.stroke();
@@ -5556,7 +5557,7 @@ function parseClinicalSections(text){
   const headers=[
     {key:'improved', patterns:['개선된 항목','개선 항목','개선된']},
     {key:'maintain', patterns:['유지/관리','유지 관리','유지·관리','관리 필요']},
-    {key:'prescription', patterns:['다음 운동 추천','운동 추천','다음 운동 처방','운동 처방','처방','추천']},
+    {key:'prescription', patterns:['다음 운동 추천','운동 추천','다음 운동 처방','운동 처방','처방']},
     {key:'message', patterns:['고객에게 한마디','고객에게','한마디']}
   ];
   const lines=text.split('\n');
@@ -6445,23 +6446,27 @@ async function cloudSave(){
 // ⚠ Worker에서 기존 'nationalgym-admin' 값을 반드시 폐기·교체할 것.
 const ADMIN_MODE_KEY='ng_admin_mode';
 function isAdminMode(){ return sessionStorage.getItem(ADMIN_MODE_KEY)==='1'; }
+// v1.29: 관리자 비밀번호는 세션 한정 별도 보관 — 트레이너의 앱 비밀번호(ng_app_pw)를
+// 오타 입력으로 덮어쓰던 문제 수정 (리뷰 지적). 서버 거절(401/403) 시 관리자 모드 자동 해제.
+function adminPw(){ return sessionStorage.getItem('ng_admin_pw')||''; }
 function enterAdminMode(){
   const pw=prompt('관리자 비밀번호를 입력하세요:');
   if(!pw)return false;
-  localStorage.setItem('ng_app_pw', pw.trim()); // 관리자 비밀번호를 인증 헤더로 사용 (서버 검증)
+  sessionStorage.setItem('ng_admin_pw', pw.trim());
   sessionStorage.setItem(ADMIN_MODE_KEY,'1');
   return true;
 }
+function exitAdminMode(){ sessionStorage.removeItem(ADMIN_MODE_KEY); sessionStorage.removeItem('ng_admin_pw'); }
 // v1.29: 저장 XSS 방지 — R2에서 온 문자열을 innerHTML에 넣기 전 이스케이프
 function escHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 
 async function cloudLoadList(){
-  const _pw=getAppPw();
+  const isAdmin=isAdminMode();
+  const _pw=isAdmin?adminPw():getAppPw();
   if(!_pw){toast('앱 비밀번호가 필요합니다');return}
   // 트레이너 이름 기반 필터 (본인 세션만) OR 관리자 모드 (전체 보기)
   const trainer=(document.getElementById('cTrainer')?.value||'').trim();
-  const isAdmin=isAdminMode();
   const prefix=isAdmin?'':(trainer?trainer+'/':'');
   showBuildingLoader(isAdmin?'전체 세션 로딩 (관리자)...':'내 세션 로딩...');
   try{
@@ -6470,7 +6475,8 @@ async function cloudLoadList(){
     });
     hideBuildingLoader();
     if(!res.ok){
-      toast('목록 로드 실패: '+res.status);
+      if(isAdmin&&(res.status===401||res.status===403)){ exitAdminMode(); toast('관리자 인증 실패 — 관리자 모드를 해제했습니다'); }
+      else toast('목록 로드 실패: '+res.status);
       return;
     }
     const data=await res.json();
@@ -6491,11 +6497,14 @@ function showCloudLoadModal(sessions, isAdmin){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
   // 날짜 최신순 정렬
   sessions.sort((a,b)=>new Date(b.uploaded)-new Date(a.uploaded));
-  const rows=sessions.map(s=>{
+  // v1.29: onclick에 키 문자열 인라인 금지 — 인덱스 참조로 저장 XSS 원천 차단
+  // (escHtml 후 따옴표 제거는 &#39;가 속성 디코딩으로 되살아나 무력화되던 문제 — 리뷰 지적)
+  window._cloudSessions=sessions;
+  const rows=sessions.map((s,i)=>{
     const d=new Date(s.uploaded);
     const dstr=d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     const sizeMB=(s.size/1024/1024).toFixed(1);
-    return `<div onclick="cloudLoadSession('${escHtml(s.key).replace(/'/g,'')}')" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    return `<div onclick="cloudLoadSession(window._cloudSessions[${i}].key)" style="padding:12px;background:#fff;border:1px solid #ddd;border-radius:10px;cursor:pointer;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:13px;font-weight:700;color:#111">${escHtml(s.client||'?')}</div>
         <div style="font-size:10px;color:#6b7280">${escHtml(s.trainer||'—')} · ${dstr} · ${sizeMB}MB</div>
@@ -6507,7 +6516,7 @@ function showCloudLoadModal(sessions, isAdmin){
     <div style="font-size:15px;font-weight:800;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
       <span>☁️ ${isAdmin?'전체 세션 (관리자)':'내 세션'} (${sessions.length}개)</span>
       <span style="display:flex;gap:8px;align-items:center">
-        <button onclick="document.getElementById('cloudLoadModal').remove();(isAdminMode()?(sessionStorage.removeItem(ADMIN_MODE_KEY),localStorage.removeItem('ng_app_pw'),toast('관리자 모드 해제'),undefined):(enterAdminMode()&&cloudLoadList()))" style="background:none;border:1px solid #d1d5db;border-radius:8px;font-size:10px;cursor:pointer;color:#6b7280;padding:3px 8px">${isAdmin?'관리자 해제':'관리자'}</button>
+        <button onclick="document.getElementById('cloudLoadModal').remove();(isAdminMode()?(exitAdminMode(),toast('관리자 모드 해제'),undefined):(enterAdminMode()&&cloudLoadList()))" style="background:none;border:1px solid #d1d5db;border-radius:8px;font-size:10px;cursor:pointer;color:#6b7280;padding:3px 8px">${isAdmin?'관리자 해제':'관리자'}</button>
         <button onclick="document.getElementById('cloudLoadModal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888">✕</button>
       </span>
     </div>
@@ -6518,7 +6527,7 @@ function showCloudLoadModal(sessions, isAdmin){
 
 async function cloudLoadSession(key){
   document.getElementById('cloudLoadModal')?.remove();
-  const _pw=getAppPw();
+  const _pw=isAdminMode()?adminPw():getAppPw(); // v1.29: 관리자 모드는 관리자 비밀번호로 인증
   if(!_pw) return;
   showBuildingLoader('세션 복원 중...');
   try{
