@@ -285,8 +285,9 @@ canvas.main-oc{display:block;width:100%;height:auto}
 /* v1.21.1: SLR 가로 촬영 — 프리뷰+가이드를 90° 회전. 폰을 세로로 든 채 왼쪽으로 눕히면 화면이 정방향 가로가 됨(가로모드 토글 불필요). --cbw/--cbh = .cam-body 실측 크기(JS)
    v1.22: 세로 화면에서만 회전 — 아이패드/태블릿을 이미 가로로 든 경우 이중 회전 방지 (전 기기 시뮬레이션 결과) */
 @media (orientation:portrait){
-  .cam-ov.cam-landscape-shot #camVid,
-  .cam-ov.cam-landscape-shot .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
+  .cam-ov.cam-landscape-shot.tilted #camVid,
+  .cam-ov.cam-landscape-shot.tilted .cam-guide{position:absolute;top:50%;left:50%;width:var(--cbh,100%);height:var(--cbw,100%);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
+  /* v1.30.1: 실제 기기 기울기(자이로) 감지 시에만 회전 — 폰을 안 눕혔는데 화면만 돌아가던 혼란 해결 */
 }
 /* v1.19.2: 박스를 화면 최대로 (여백 거의 없이). 안내문은 박스 안에 두되 5초 후 자동 소멸 */
 .gbox{position:absolute;border:2px solid rgba(46,159,255,.95);top:3.5%;bottom:3.5%;left:3%;right:3%;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.16)}
@@ -562,6 +563,7 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 #landingScreen{background:radial-gradient(90% 60% at 15% -10%,rgba(21,64,124,.65) 0%,transparent 60%),radial-gradient(70% 50% at 92% -5%,rgba(10,80,150,.35) 0%,transparent 55%),radial-gradient(120% 80% at 50% -10%,#0e1e33 0%,#06101c 55%,#020609 100%)}
 .ls-btn-primary{border-radius:18px;box-shadow:0 10px 30px rgba(46,159,255,.35),inset 0 1px 0 rgba(255,255,255,.22)}
 .ls-feat{border-radius:18px}
+@keyframes rotHint{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-90deg)}}
 </style>
 </head>
 <body>
@@ -599,7 +601,7 @@ html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   <div class="ls-footer" id="lsFooter"></div>
 </div>
 <div class="hdr">
-  <div class="logo"><em>National</em>Gym <sup>Body Scan</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer;flex-shrink:0" onclick="resetRateLimit()" title="탭하면 리셋"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span>
+  <div class="logo"><em>National</em>Gym <sup>Body Scan</sup></div><span id="buildBadge" style="font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span><span id="rateBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;cursor:pointer;flex-shrink:0" onclick="showAiMenu()" title="AI 설정"></span><span id="saveBadge" style="font-size:9px;color:rgba(255,255,255,.5);margin-left:6px;letter-spacing:.03em;white-space:nowrap;flex-shrink:0"></span>
   <div class="hdr-r">
     <div class="phase-pill" id="phasePill">Before 촬영</div>
     <button class="abtn" style="font-size:11px;padding:5px 11px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" onclick="backToLandingConfirm()">🏠 처음</button>
@@ -1201,12 +1203,61 @@ async function fetchWithRetry(url, opts, retries=1, timeoutMs=45000){
       const timer=setTimeout(()=>ctrl.abort(),timeoutMs);
       const res=await fetch(url,{...opts,signal:ctrl.signal});
       clearTimeout(timer);
+      // v1.30.1: 서버가 비밀번호를 거부하면(401/403) 재입력 안내 — "AI가 하나도 안 됨"의 최다 원인.
+      // 서버에서 비밀번호를 교체하면 기기에 저장된 옛 비밀번호가 계속 전송되며 전부 403이 나던 문제.
+      if((res.status===401||res.status===403)&&url.indexOf('/v1/')>-1) _promptAuthFix();
       return res;
     }catch(e){
       if(i===retries) throw e;
       await new Promise(r=>setTimeout(r,500+i*500));
     }
   }
+}
+let _authFixTs=0;
+function _promptAuthFix(){
+  const now=Date.now();
+  if(now-_authFixTs<60000) return; // 1분에 한 번만
+  _authFixTs=now;
+  setTimeout(()=>{
+    if(!confirm('🔒 서버가 앱 비밀번호를 거부했습니다 (403).\n\n비밀번호가 변경된 것 같습니다. 지금 새 비밀번호를 입력할까요?\n(입력 후 방금 작업을 다시 실행하면 됩니다)'))return;
+    const pw=prompt('새 앱 비밀번호를 입력하세요:');
+    if(pw&&pw.trim()){ localStorage.setItem('ng_app_pw',pw.trim()); toast('비밀번호 저장 완료 — 방금 작업을 다시 실행해주세요'); }
+  },50);
+}
+// v1.30.1: AI 연결 진단 — 헤더 AI 배지 탭 메뉴에서 실행
+async function aiConnectionTest(){
+  const pw=localStorage.getItem('ng_app_pw');
+  if(!pw){ toast('저장된 비밀번호가 없습니다 — 먼저 비밀번호를 입력하세요'); changeAppPw(); return; }
+  toast('AI 서버 연결 확인 중...');
+  try{
+    const res=await fetchWithRetry(NG_API_BASE+'/v1/messages',{method:'POST',mode:'cors',
+      headers:{'Content-Type':'application/json','x-app-password':pw},
+      body:JSON.stringify({model:AI_MODEL_HAIKU,max_tokens:1,messages:[{role:'user',content:'hi'}]})},0,15000);
+    if(res.ok){ toast('✅ AI 연결 정상 — 비밀번호 유효'); }
+    else if(res.status===401||res.status===403){ toast('❌ 비밀번호 거부(403) — 새 비밀번호를 입력하세요'); }
+    else if(res.status===429){ toast('⏳ 서버 사용량 한도 초과(429) — 잠시 후 재시도'); }
+    else { toast('⚠ 서버 응답 오류: HTTP '+res.status); }
+  }catch(e){ toast('⚠ 네트워크 오류 — 인터넷 연결을 확인하세요'); }
+}
+function changeAppPw(){
+  const pw=prompt('앱 비밀번호를 입력하세요:', '');
+  if(pw&&pw.trim()){ localStorage.setItem('ng_app_pw',pw.trim()); toast('비밀번호 저장 완료'); }
+}
+function showAiMenu(){
+  const existing=document.getElementById('aiMenuModal'); if(existing){existing.remove();return;}
+  const m=document.createElement('div'); m.id='aiMenuModal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  const bx=document.createElement('div');
+  bx.style.cssText='background:#fff;border-radius:16px;padding:18px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)';
+  bx.innerHTML='<div style="font-size:14px;font-weight:800;margin-bottom:12px">🤖 AI 설정</div>';
+  const mk=(label,fn)=>{ const b=document.createElement('button');
+    b.style.cssText='display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid var(--brd);border-radius:12px;background:var(--bg3);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit';
+    b.textContent=label; b.onclick=()=>{m.remove();fn();}; return b; };
+  bx.appendChild(mk('🔍 AI 연결 테스트', aiConnectionTest));
+  bx.appendChild(mk('🔑 비밀번호 재입력', changeAppPw));
+  bx.appendChild(mk('♻️ 사용량 카운터 리셋', resetRateLimit));
+  m.appendChild(bx); document.body.appendChild(m);
 }
 
 const IDB_NAME='ng_npt_v3',IDB_VER=2,IDB_STORE='photos',IDB_SESSIONS='sessions';
@@ -1581,7 +1632,7 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.30.0';
+const APP_VERSION='v1.30.1';
 const BUILD_TIME='2026-07-18';
 
 // ═══════════════════════════════════════════
@@ -1633,6 +1684,12 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.30.1', date:'2026-07-18', items:[
+    '📄 PDF 화질 대폭 개선 — 리포트 전체 1장 렌더(축소 뭉개짐) → 섹션별 고해상도 렌더로 교체 (현장 피드백)',
+    '🛌 SLR 촬영 UX — 폰을 실제로 눕혔을 때만 화면 회전(자이로 감지). 눕히기 전에는 "폰을 왼쪽으로 눕혀주세요" 안내 표시',
+    '🔑 AI 403 복구 — 서버가 비밀번호를 거부하면 재입력 안내. 헤더 AI 배지 탭 → 연결 테스트·비밀번호 재입력·카운터 리셋',
+    '📖 지표 이름 쉬운 말로 — "POTSI 대칭"→"몸통 대칭(후면)", "두부 전방 이동"→"거북목 경향" 등',
+  ]},
   {ver:'v1.30.0', date:'2026-07-18', items:[
     '✨ 모던 UI 리프레시 — 쿨 뉴트럴 토큰, 글래스 헤더, 세그먼트 필 내비(상단 고정), 소프트 엘리베이션 카드, 토널 버튼, 글로우 CTA',
     '📊 리포트 대시보드 정련 — 종합점수 히어로 리디자인, 트렌드 차트 마커 확대(가독성)',
@@ -2741,16 +2798,11 @@ function openCam(tid,slot){
   // v1.21.1: 격자 오버레이를 촬영 가이드에도 반영
   const _cg=document.getElementById('camGrid'); if(_cg) _cg.classList.toggle('on', GRID_ON);
   // v1.21.1: SLR 90° 회전 — .cam-body 실측 크기를 CSS 변수로 (회전된 프리뷰가 화면을 꽉 채우도록)
+  // v1.30.1: 회전은 실기울기 감지 시에만(_setSlrTilt) — 열자마자 돌아가 있던 문제 해결
+  camOv.classList.remove('tilted'); _devTilted=false;
   const camBody=camOv.querySelector('.cam-body');
-  if(camBody){
-    if(isSLR){
-      void camBody.offsetHeight; // show 직후 레이아웃 강제 후 측정
-      camBody.style.setProperty('--cbw', camBody.clientWidth+'px');
-      camBody.style.setProperty('--cbh', camBody.clientHeight+'px');
-    }else{
-      camBody.style.removeProperty('--cbw'); camBody.style.removeProperty('--cbh');
-    }
-  }
+  if(camBody&&!isSLR){ camBody.style.removeProperty('--cbw'); camBody.style.removeProperty('--cbh'); }
+  _updateRotatePrompt();
   // v1.19.3: 안내문(경고) 5초 후 서서히 소멸 — 인라인 opacity로 직접 제어
   // (이전 버그: 인라인 opacity:1 이 CSS .hint-faded 클래스를 이겨서 안 사라짐)
   const wrn=document.getElementById('camWarning');
@@ -2848,9 +2900,29 @@ async function snapSingle(){
 }
 
 // v1.22: SLR 프리뷰가 실제로 90° 회전 표시 중인지 — CSS @media (orientation:portrait) 조건과 동일해야 함
+// v1.30.1: SLR 실기울기 상태 — 자이로(gamma)로 폰이 실제로 옆으로 누웠는지 추적
+let _devTilted=false,_tiltKnown=false;
+function _setSlrTilt(on){
+  if(_devTilted===on)return;
+  _devTilted=on;
+  const camOv=document.getElementById('camOv'); if(!camOv)return;
+  camOv.classList.toggle('tilted',on);
+  const camBody=camOv.querySelector('.cam-body');
+  if(on&&camBody){ void camBody.offsetHeight; camBody.style.setProperty('--cbw',camBody.clientWidth+'px'); camBody.style.setProperty('--cbh',camBody.clientHeight+'px'); }
+  _updateRotatePrompt();
+}
+function _updateRotatePrompt(){
+  const camOv=document.getElementById('camOv'), pr=document.getElementById('camRotatePrompt'); if(!camOv||!pr)return;
+  const show=camOv.classList.contains('show')
+    && camOv.classList.contains('cam-landscape-shot')
+    && window.matchMedia('(orientation: portrait)').matches
+    && _tiltKnown && !_devTilted;
+  pr.style.display=show?'flex':'none';
+}
 function slrPreviewRotated(){
   const ov=document.getElementById('camOv');
   return !!ov && ov.classList.contains('cam-landscape-shot')
+      && ov.classList.contains('tilted')
       && window.matchMedia('(orientation: portrait)').matches;
 }
 // v1.22: 촬영 중 기기 회전/리사이즈 시 회전 프리뷰 치수(--cbw/--cbh) 재측정
@@ -2942,6 +3014,12 @@ function startDeviceLevel(){
       let offset;
       if(isLandscape && gamma!==null && gamma!==undefined){
         offset = 90 - Math.abs(gamma); // 0 = 완벽 수직(가로), +면 화면이 앞으로/뒤로 기욺
+        // v1.30.1: 실기울기 감지 — |gamma|>=55° 눕힘 판정 / <=40° 복귀 (히스테리시스)
+        _tiltKnown=true;
+        const g=Math.abs(gamma);
+        if(!_devTilted&&g>=55)_setSlrTilt(true);
+        else if(_devTilted&&g<=40)_setSlrTilt(false);
+        _updateRotatePrompt();
       } else {
         offset = beta - 90;
       }
@@ -2991,7 +3069,7 @@ function autoSaveToGallery(dataUrl, filename){
     setTimeout(()=>document.body.removeChild(a),500);
   }catch(e){console.warn('갤러리 저장 실패',e)}
 }
-function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;document.getElementById('camOv').classList.remove('show');stopDeviceLevel()}
+function closeCam(){if(camStream)camStream.getTracks().forEach(t=>t.stop());camStream=null;const _ov=document.getElementById('camOv');_ov.classList.remove('show');_ov.classList.remove('tilted');_devTilted=false;_updateRotatePrompt();stopDeviceLevel()}
 function doUpload(tid,slot){pendUp={tid,slot};const f=document.getElementById('fi');f.value='';const _sy=window.scrollY;f.click();setTimeout(()=>window.scrollTo(0,_sy),100)}
 document.getElementById('fi').addEventListener('click',function(e){e.stopPropagation()},{capture:true});
 document.getElementById('fi').addEventListener('change',function(e){
@@ -6214,7 +6292,7 @@ function renderScoreHero(scoreB,scoreA,delta,aggB,aggA){
   // 메트릭별 상세
   const rows=[];
   // v1.18: 종합점수 카드 행 — aggB에 실제 들어온 지표만, 부호 포함 표기
-  const labels={shoulderTilt:'어깨 기울기',hipTilt:'골반 기울기',headTilt:'머리 기울기',spineAngle:'체간 기울기',shoulderHipAlign:'어깨-골반 편차',headOffsetAngle:'두부 전방 이동',thoracicKyphosis:'흉추 전경사',shoulderAbductionL:'어깨 외전(좌)',shoulderAbductionR:'어깨 외전(우)',slrAngle:'SLR 각도',trunkFlex:'전굴 ROM',potsi:'POTSI 대칭',atsi:'ATSI 대칭'};
+  const labels={shoulderTilt:'어깨 좌우 균형',hipTilt:'골반 좌우 균형',headTilt:'머리 좌우 균형',spineAngle:'몸통 기울기',shoulderHipAlign:'상체-골반 정렬',headOffsetAngle:'거북목 경향',thoracicKyphosis:'어깨 말림',shoulderAbductionL:'왼팔 들어올리기',shoulderAbductionR:'오른팔 들어올리기',slrAngle:'다리 올리기(유연성)',trunkFlex:'앞으로 숙이기',potsi:'몸통 대칭(후면)',atsi:'몸통 대칭(전면)'}; // v1.30.1: 쉬운 지표명
   Object.keys(labels).forEach(k=>{
     const bv=aggB[k],av=aggA[k];
     if(bv===undefined&&av===undefined) return;
@@ -7056,44 +7134,39 @@ function hideBuildingLoader(){
 }
 
 async function buildFinalPDF(){
-  let dataUrl;
+  // v1.30.1: 섹션 캔버스 배열을 A4 페이지에 순차 패킹 (섹션별 고해상도 렌더)
+  let sections;
   try{
-    dataUrl = await buildPDFCanvas();
+    sections = await buildPDFCanvas();
   }catch(e){
     throw new Error('PDF 캔버스 생성 실패: '+(e?.message||String(e)));
   }
-  if(!dataUrl || typeof dataUrl!=='string' || !dataUrl.startsWith('data:image')){
-    throw new Error('PDF 이미지 데이터 유효하지 않음');
-  }
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const pw=210;
-  const img=new Image();
-  try{
-    await new Promise((res,rej)=>{
-      img.onload=()=>res();
-      img.onerror=()=>rej(new Error('PDF 이미지 로드 실패 — dataUrl 길이: '+(dataUrl?.length||0)));
-      img.src=dataUrl;
-    });
-  }catch(e){
-    throw e; // preserves the Error message
-  }
-  const imgW=pw-20;const imgH=imgW*img.height/img.width;
-  const pageH=297-20;
-  if(imgH<=pageH){
-    doc.addImage(dataUrl,'JPEG',10,10,imgW,imgH);
-  } else {
-    let remaining=imgH,srcY=0;
-    while(remaining>0){
-      const chunk=Math.min(remaining,pageH);
-      const sliceH=Math.round(img.height*(chunk/imgH));
-      const sc=document.createElement('canvas');sc.width=img.width;sc.height=sliceH;
-      sc.getContext('2d').drawImage(img,0,srcY,img.width,sliceH,0,0,img.width,sliceH);
-      if(srcY>0)doc.addPage();
-      doc.addImage(sc.toDataURL('image/jpeg',.92),'JPEG',10,10,imgW,chunk);
-      srcY+=sliceH;remaining-=chunk;
+  const margin=10, availW=190, pageBottom=287; // A4 210×297
+  let y=margin;
+  sections.forEach((cv,i)=>{
+    const hMM=availW*cv.height/cv.width;
+    if(hMM<=pageBottom-margin){
+      if(y+hMM>pageBottom){ doc.addPage(); y=margin; }
+      doc.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',margin,y,availW,hMM);
+      y+=hMM+3;
+    }else{
+      // 한 페이지보다 큰 섹션 → 세로 슬라이스
+      let remaining=hMM, srcY=0;
+      while(remaining>0){
+        let space=pageBottom-y;
+        if(space<40){ doc.addPage(); y=margin; space=pageBottom-y; }
+        const chunk=Math.min(remaining,space);
+        const sliceH=Math.max(1,Math.round(cv.height*(chunk/hMM)));
+        const sc=document.createElement('canvas'); sc.width=cv.width; sc.height=sliceH;
+        sc.getContext('2d').drawImage(cv,0,srcY,cv.width,sliceH,0,0,cv.width,sliceH);
+        doc.addImage(sc.toDataURL('image/jpeg',.92),'JPEG',margin,y,availW,chunk);
+        srcY+=sliceH; remaining-=chunk; y+=chunk+2;
+      }
     }
-  }
+    if(i===0){ doc.addPage(); y=margin; } // 커버는 단독 페이지
+  });
   const filename=(document.getElementById('cName')?.value||'회원')+'_BodyScan_'+new Date().toISOString().slice(0,10)+'.pdf';
   return {doc, filename};
 }
@@ -7342,36 +7415,28 @@ async function buildPDFCanvas(){
     document.body.removeChild(container);
     throw new Error('PDF 렌더 라이브러리(html2canvas) 미로딩 — 네트워크 확인 후 재시도');
   }
-  const cw=container.scrollWidth||800, ch=container.scrollHeight||1000;
-  // v1.22.3: iOS Safari 캔버스 한계 현실화 — 변당 ~8192px / 면적 ~16.7M px 초과 시 toDataURL이
-  // 빈 값을 반환해 "다운로드 됐다는데 빈/없는 파일"이 됨 (직원 피드백 #5). scale을 한계 안으로 강제하고,
-  // 가독성 하한(0.35)이 변 한계를 넘지 못하도록 마지막에 재클램프.
+  // ═══ v1.30.1: 섹션별 개별 렌더링 — PDF 저화질 근본 수정 ═══
+  // 기존: 리포트 전체(세로 1만px+)를 캔버스 1장으로 렌더 → iOS 면적 한계(16M px)에 걸려
+  // scale이 0.35~0.5로 강제 축소 → 글자가 뭉개지는 저화질 PDF (CEO 피드백).
+  // 수정: 커버·검사 블록 등 섹션 단위로 각각 scale 2 렌더 → 섹션당 한계 여유 → 선명한 PDF.
   const MAX_EDGE=8000, MAX_AREA=16000000;
-  let scale=2;
-  scale=Math.min(scale, MAX_EDGE/(ch||1), MAX_EDGE/(cw||1));
-  scale=Math.min(scale, Math.sqrt(MAX_AREA/((cw*ch)||1)));
-  if(!(scale>0)||!isFinite(scale)) scale=1;
-  scale=Math.max(0.35, scale);
-  scale=Math.min(scale, MAX_EDGE/(ch||1), MAX_EDGE/(cw||1)); // 하한이 변 한계 초과 방지
-  let canvas;
+  const secEls=[container.children[0], ...(container.children[1]?container.children[1].children:[])].filter(el=>el&&el.offsetHeight>2);
+  const sections=[];
   try{
-    canvas=await html2canvas(container,{scale,useCORS:true,allowTaint:true,backgroundColor:'#fff',logging:false});
+    for(const el of secEls){
+      const w=el.scrollWidth||740, h=el.scrollHeight||100;
+      let scale=Math.min(2, MAX_EDGE/(h||1), MAX_EDGE/(w||1), Math.sqrt(MAX_AREA/((w*h)||1)));
+      if(!(scale>0)||!isFinite(scale)) scale=1;
+      const cv=await html2canvas(el,{scale,useCORS:true,allowTaint:true,backgroundColor:'#fff',logging:false});
+      if(cv&&cv.width&&cv.height) sections.push(cv);
+    }
   }catch(e){
     document.body.removeChild(container);
     throw new Error('html2canvas 실패: '+(e?.message||String(e)));
   }
   document.body.removeChild(container);
-  if(!canvas || !canvas.width || !canvas.height){
-    throw new Error('캔버스 크기 유효하지 않음 (html2canvas 반환값 비정상)');
-  }
-  let url;
-  try{
-    url=canvas.toDataURL('image/jpeg',0.9);
-    if(!url || url.length<100) throw new Error('toDataURL empty');
-  }catch(e){
-    throw new Error('캔버스→이미지 변환 실패: '+(e?.message||String(e))+' (크기 '+canvas.width+'x'+canvas.height+', scale '+scale.toFixed(2)+')');
-  }
-  return url;
+  if(!sections.length) throw new Error('PDF 섹션 렌더 결과 없음');
+  return sections;
 }
 
 function _exportPDF_UNUSED(){
