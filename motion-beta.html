@@ -19,16 +19,20 @@
 /* v1.19.1: Pretendard를 기본 폰트로 (로드 실패 시 시스템 폰트로 자동 폴백) */
 :root{--font-ko:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
 body{font-family:var(--font-ko)}
+/* v1.30: 모던 디자인 토큰 — 웜베이지 → 쿨 뉴트럴, 라디우스 확대, 레이어드 섀도우, 모션·포커스 토큰 */
 :root{
-  --bg:#f5f4f0;--bg2:#fff;--bg3:#f0efe9;--bg4:#e6e5de;
-  --brd:#e0ddd4;--brd2:#c4c2b8;
-  --tx:#0d0d0d;--tx2:#505050;--tx3:#999;
+  --bg:#f4f6f9;--bg2:#fff;--bg3:#edf1f6;--bg4:#e2e8f0;
+  --brd:#e3e8ef;--brd2:#c6d0dd;
+  --tx:#0f172a;--tx2:#46536b;--tx3:#64748b;
   --brand:#0b64d8;--g2:#084a9e;--g3:#e7f0fb;
   --blue:#1a5fd4;--b3:#eaf0fc;
   --red:#c92020;--r3:#fef0f0;
   --amber:#b87000;--a3:#fff7e0;
-  --r:10px;--r2:16px;--r3:24px;
-  --sh:0 2px 12px rgba(0,0,0,.07);--sh2:0 4px 24px rgba(0,0,0,.12);
+  --r:12px;--r2:18px;--rad3:26px; /* v1.30: 반경 토큰 분리 — --r3(#fef0f0 빨간 틴트)와 충돌로 배경이 투명 렌더링되던 기존 버그 수정 */
+  --sh:0 1px 2px rgba(15,23,42,.05),0 4px 14px rgba(15,23,42,.06);
+  --sh2:0 2px 8px rgba(15,23,42,.07),0 14px 34px rgba(15,23,42,.11);
+  --ring:0 0 0 3px rgba(11,100,216,.16);
+  --tr:.16s cubic-bezier(.4,0,.2,1);
 }
 html,body{background:var(--bg);color:var(--tx);font-family:var(--font-ko);min-height:100%;font-size:15px;overscroll-behavior-y:none}
 button,input,select,textarea{font-family:inherit}
@@ -552,6 +556,75 @@ input[type=range]{accent-color:var(--brand)}
   .cam-bar>div:first-child{overflow:hidden}
   .cam-bar .ct-name,.cam-bar .ct-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* ═══ v1.30: 모던 UI 레이어 — 2026 트렌드 리프레시 ═══
+   글래스 헤더·세그먼트 필 내비·소프트 엘리베이션 카드·토널 버튼·포커스 링·
+   리듀스드 모션 대응. 기존 DOM/JS 구조는 그대로, 컴포넌트 시각 언어만 교체. */
+html,body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+/* 헤더 — 프로스티드 글래스 */
+.hdr{border-bottom:1px solid rgba(255,255,255,.07)}
+.phase-pill{background:rgba(11,100,216,.16);border:1px solid rgba(11,100,216,.35);color:#6aa8f0}
+/* 단계 탭 — 세그먼트 필 (상단 고정) */
+.pnav-wrap{padding:10px 12px;gap:8px;position:sticky;top:54px;z-index:290;border-bottom:1px solid var(--brd)}
+/* 글래스 서피스 — 미지원 엔진(구형 웹뷰 태블릿)은 원래의 불투명 배경 유지 */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .hdr{background:rgba(8,12,20,.84);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5)}
+  .pnav-wrap{background:rgba(255,255,255,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .cam-bar{background:rgba(6,9,15,.78);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+}
+.pnav{border-radius:999px;padding:9px 15px;border-bottom:2px solid transparent;transition:background var(--tr),color var(--tr),box-shadow var(--tr)}
+.pnav.on{background:var(--tx);color:#fff;border-bottom-color:transparent;box-shadow:0 3px 12px rgba(15,23,42,.22)}
+.pnav.on .pn{background:rgba(255,255,255,.22);color:#fff}
+/* 카드 — 헤어라인 + 소프트 섀도우 + 호버 리프트(포인터 기기) */
+.tc-head{border-bottom-color:var(--bg4)}
+.tc-badge{padding:4px 11px;border-radius:999px}
+.tc-badge.done{border:1px solid rgba(11,100,216,.22)}
+.tc-num.done{box-shadow:0 2px 8px rgba(11,100,216,.35)}
+@media (hover:hover) and (pointer:fine){
+  .test-card{transition:box-shadow var(--tr),transform var(--tr)}
+  .test-card:hover{box-shadow:var(--sh2);transform:translateY(-2px)}
+}
+.rep-sec-hd{background:transparent;border-bottom:1px solid var(--bg4);font-size:13.5px;letter-spacing:-.01em}
+/* 입력 — 포커스 링 */
+.f input:focus,.f select:focus,.ci-note:focus{border-color:var(--brand);box-shadow:var(--ring)}
+/* 버튼 — 토널 하이어라키 + 프레스 스케일 */
+.abtn{min-height:40px;padding:9px 18px;border-radius:999px;font-weight:600;transition:transform var(--tr),box-shadow var(--tr),background var(--tr)}
+.abtn:active{transform:scale(.97)}
+.abtn.primary{background:linear-gradient(180deg,#1a74e8,#0b64d8);border-color:transparent;box-shadow:0 4px 14px rgba(11,100,216,.35),inset 0 1px 0 rgba(255,255,255,.18)}
+.abtn.sec{background:var(--tx);border-color:var(--tx)}
+.pa-btn{border-radius:14px;min-height:48px;font-weight:600;transition:background var(--tr),border-color var(--tr),transform var(--tr)}
+.pa-btn:active{transform:scale(.98)}
+.pa-btn.cam{border:1px solid rgba(11,100,216,.35);background:linear-gradient(180deg,#f2f7ff,#e7f0fc);box-shadow:0 2px 8px rgba(11,100,216,.10)}
+.mbt{min-height:34px}
+.mbt.on{box-shadow:0 2px 8px rgba(15,23,42,.2)}
+.ci-pill{min-height:34px;border-radius:999px}
+/* 종합 점수 히어로 — 딥네이비 + 브랜드 글로우 (dataviz 히어로 넘버 스펙) */
+.score-hero{background:radial-gradient(120% 140% at 85% -20%,rgba(26,116,232,.30) 0%,rgba(26,116,232,0) 55%),linear-gradient(160deg,#0c1626,#101d33 60%,#0c1424);border:1px solid rgba(120,170,255,.14);box-shadow:var(--sh2)}
+.sh-wrap{padding:24px 20px}
+.sh-num{font-size:56px;font-family:var(--font-ko);letter-spacing:-.02em}
+.sh-tag{border-radius:999px;padding:4px 12px}
+.sev-tbl{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px}
+.sev-dot{width:8px;height:8px}
+/* 카메라 크롬 — 글래스 바 + 링 셔터 */
+.shutter{border:4px solid rgba(255,255,255,.35);box-shadow:0 0 0 3px rgba(255,255,255,.22),0 6px 18px rgba(0,0,0,.4);transition:transform .12s}
+.cclose{border-radius:999px;background:rgba(255,255,255,.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.gbox{border-radius:16px;border-width:2.5px}
+/* 토스트 — 글래스 필 + 슬라이드 업 */
+.toast{background:rgba(10,14,22,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:11px 22px;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translateX(-50%) translateY(8px);transition:opacity .25s,transform .25s}
+.toast.on{transform:translateX(-50%) translateY(0)}
+/* 접근성 — 포커스 링·선택 색·모션 최소화 */
+:where(button,input,select,textarea):focus-visible{outline:3px solid rgba(56,148,255,.65);outline-offset:2px}
+::selection{background:rgba(11,100,216,.18)}
+@media (max-width:374px){.pnav{padding:9px 11px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media (pointer:fine){
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#c9d3e0;border-radius:8px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-track{background:transparent}
+}
+/* 베타 라이트 랜딩 — 톤 정리 (라이트 테마 유지) */
+.ls-btn-primary{border-radius:18px;box-shadow:0 10px 30px rgba(11,100,216,.30),inset 0 1px 0 rgba(255,255,255,.35)}
+.ls-feat{border-radius:18px}
 </style>
 </head>
 <body>
@@ -1579,8 +1652,8 @@ let currentPhase = 'before';
 // ═══════════════════════════════════════════
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
-const APP_VERSION='v1.29.0-beta';
-const BUILD_TIME='2026-07-14';
+const APP_VERSION='v1.30.0-beta';
+const BUILD_TIME='2026-07-18';
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1631,6 +1704,11 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
+  {ver:'v1.30.0-beta', date:'2026-07-18', items:[
+    '✨ 모던 UI 리프레시 — 쿨 뉴트럴 토큰, 글래스 헤더·카메라 바, 세그먼트 필 내비(상단 고정), 소프트 엘리베이션 카드, 토널 버튼',
+    '📊 리포트 대시보드 정련 — 종합점수 히어로 리디자인, ROM 게이지 마크 정련(라운드 트랙+핀 마커), 트렌드 차트 마커 확대',
+    '♿ 접근성 — 포커스 링 표준화, 모션 최소화(reduced-motion) 대응',
+  ]},
   {ver:'v1.29.0-beta', date:'2026-07-14', items:[
     '🔵 전면 UI 리브랜딩 — 초록 → 파랑 (전 페이지·가이드 이미지 포함)',
     '🎯 정밀 인식 파이프라인 — 고사양 기기 full 모델 자동 선택(아이폰은 lite 유지), 신뢰도 임계값 0.5 상향, One-Euro 필터로 스켈레톤 지터 제거',
@@ -2651,11 +2729,11 @@ function drawTrendChart(sessions){
     const x=padL+(n>1?i*xStep:chartW/2);
     if(s.scoreB!==null&&s.scoreB!==undefined){
       c.fillStyle='#ea580c';
-      c.beginPath();c.arc(x,getY(s.scoreB),3,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(x,getY(s.scoreB),4,0,Math.PI*2);c.fill();
     }
     if(s.scoreA!==null&&s.scoreA!==undefined){
       c.fillStyle='#1d6fd6';
-      c.beginPath();c.arc(x,getY(s.scoreA),4,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(x,getY(s.scoreA),5,0,Math.PI*2);c.fill();
     }
   });
   // 범례
@@ -6782,11 +6860,11 @@ function renderRomGauges(){
         <span style="font-weight:700;color:var(--tx)">${PB_LABEL[k]||k}</span>
         <span style="font-weight:800;color:${col};font-variant-numeric:tabular-nums">${disp}</span>
       </div>
-      <div style="position:relative;height:10px;background:#eef0f2;border-radius:6px;overflow:hidden">
-        <div style="position:absolute;top:0;bottom:0;left:${g.nL.toFixed(1)}%;width:${g.nW.toFixed(1)}%;background:rgba(29,111,214,.22)"></div>
-        <div style="position:absolute;top:-2px;bottom:-2px;left:${g.markerPct.toFixed(1)}%;width:3px;background:${col};border-radius:2px"></div>
+      <div style="position:relative;height:8px;background:#e6ebf2;border-radius:999px;overflow:visible">
+        <div style="position:absolute;top:0;bottom:0;left:${g.nL.toFixed(1)}%;width:${g.nW.toFixed(1)}%;background:rgba(29,111,214,.20);border-radius:999px"></div>
+        <div style="position:absolute;top:-3px;bottom:-3px;left:calc(${g.markerPct.toFixed(1)}% - 2px);width:4px;background:${col};border-radius:999px;box-shadow:0 0 0 1.5px #fff"></div>
       </div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:3px">${n.lbl}${n.src?` <span style="color:#9ca3af">· 근거: ${n.src}</span>`:''}</div>
+      <div style="font-size:10px;color:var(--tx3);margin-top:3px">${n.lbl}${n.src?` <span style="color:var(--tx3)">· 근거: ${n.src}</span>`:''}</div>
     </div>`);
   });
   const ageNote=_ageRomAdj()?'<div style="font-size:10px;color:var(--tx3);margin-top:4px">※ 연령 반영: ROM 정상 하한 완화 적용 (Barnes 2001 · Gill 2020 — 연령에 따른 어깨 ROM 감소)</div>':'';
