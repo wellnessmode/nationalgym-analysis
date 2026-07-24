@@ -1649,7 +1649,7 @@ let currentPhase = 'before';
 // BUILD INFO (업데이트 시 자동 갱신)
 // ═══════════════════════════════════════════
 const APP_VERSION='v1.31.1';
-const BUILD_TIME='2026-07-19';
+const BUILD_TIME='2026-07-24'; // 실제 배포일과 어긋나지 않도록: 표시용 날짜는 lastModifiedDateStr()(서버 최종 수정일)로 자동 산출, 이 상수는 폴백
 
 // ═══════════════════════════════════════════
 // AUTO VERSION CHECK — 새 버전 자동 감지 (캐시 우회)
@@ -1700,10 +1700,10 @@ function showUpdateBanner(newVer){
 // ═══════════════════════════════════════════
 // 새 버전 배포 시 맨 위에 항목 추가
 const CHANGELOG = [
-  {ver:'v1.31.1', date:'2026-07-19', items:[
+  {ver:'v1.31.1', date:'2026-07-20', items:[
     '🩺 근육 검사 항목에 "긴장(Tightness)" 추가 — 흔한 소견인 긴장을 맨 앞에, 드문 소견인 단축(Shortness)은 뒤로 (Lat·Hip flexor·Quadriceps·Hamstring). AI 판정도 긴장 우선하도록 기준 반영',
   ]},
-  {ver:'v1.31.0', date:'2026-07-19', items:[
+  {ver:'v1.31.0', date:'2026-07-20', items:[
     '🎨 프로페셔널 아이콘 시스템 — UI 전반의 이모지 아이콘을 벡터(SVG) 아이콘으로 교체 (랜딩·리포트 헤더·버튼·배지)',
     '✨ 마이크로 모션 — 검사 카드 순차 등장 애니메이션 (모션 최소화 설정 존중)',
     '♿ 접근성 — 토스트 스크린리더 알림(aria-live), 셔터 버튼 라벨, 더블탭 줌 지연 제거, 커서 일관화',
@@ -2201,7 +2201,7 @@ window.addEventListener('load', () => {
   restoreAll();
   // 버전/빌드 배지
   const bb=document.getElementById('buildBadge');
-  if(bb) bb.textContent=APP_VERSION+' · '+BUILD_TIME;
+  if(bb) bb.textContent=APP_VERSION+' · '+lastModifiedDateStr();
   const lsF=document.getElementById('lsFooter');
   if(lsF) lsF.textContent='Powered by WellnessMode';
   renderChangelog();
@@ -7367,7 +7367,7 @@ async function buildPDFCanvas(){
     </div>`:''}
     <div style="position:absolute;bottom:40px;left:40px;right:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.15);font-size:11px;color:#6b7280;display:flex;justify-content:space-between">
       <span>Powered by WellnessMode · NationalGym 바디스캔 System</span>
-      <span>${APP_VERSION} · ${BUILD_TIME}</span>
+      <span>${APP_VERSION} · ${lastModifiedDateStr()}</span>
     </div>
   </div>
   <!-- 본문 -->
@@ -7546,7 +7546,7 @@ async function buildShareCard(name,trainer){
   c.fillText(dateStr+(trainer?(' · 담당 '+trainer):''),CW-pad,110);
   c.font='400 16px -apple-system,sans-serif';
   c.fillStyle='#86b6e8';
-  c.fillText(APP_VERSION+' · '+BUILD_TIME,CW-pad,148);
+  c.fillText(APP_VERSION+' · '+lastModifiedDateStr(),CW-pad,148);
   c.textAlign='left';
   // ─ 본문: 모든 테스트 카드 ─
   let y=headerH+pad;
