@@ -706,7 +706,7 @@ body{touch-action:manipulation} /* 더블탭 줌 지연 제거 (핀치줌은 유
 .rs-thumbs::-webkit-scrollbar{display:none}
 .rs-th{margin:0;flex:0 0 96px}
 .rs-th img{width:96px;height:128px;object-fit:cover;border-radius:10px;background:#0d1420;display:block}
-.rs-th figcaption{font-size:10px;color:var(--tx3);text-align:center;margin-top:4px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs-th figcaption{font-size:10px;color:var(--tx3);text-align:center;margin-top:4px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .rs-findings{padding:10px 16px 14px;display:flex;flex-direction:column;gap:10px}
 .rs-f-hd{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx)}
 .rs-f-s{font-size:12.5px;color:var(--tx2);line-height:1.55;margin-top:3px;padding-left:2px}
@@ -775,6 +775,7 @@ body{touch-action:manipulation} /* 더블탭 줌 지연 제거 (핀치줌은 유
 .onb-consent input,.onb-opt input{width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--brand)}
 .onb-req{color:#b91c1c;font-weight:800}
 .onb-go{margin-top:6px}
+.onb-withdraw{font-size:11.5px;color:var(--tx3);line-height:1.5;padding:2px 2px 8px}
 @media (min-width:600px){.onb-ov{align-items:center}}
 /* 퀵 스캔 · 진행률 · 섹션 헤더 */
 .tc-hidden{display:none!important}
@@ -845,7 +846,7 @@ body{touch-action:manipulation} /* 더블탭 줌 지연 제거 (핀치줌은 유
     <button class="ls-mode" onclick="startAnalysis('full')"><div class="lm-k"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 정밀 검사</div><div class="lm-t">13검사 + 수기 7종</div><div class="lm-s">동작 영상 분석·SLR·외전·수기 촉진까지. PT 정식 평가용</div></button>
   </div>
   <div class="ls-cta">
-    <button class="ls-btn-secondary" onclick="startAnalysis();setTimeout(()=>{showPhase('report');cloudLoadList()},300)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><path d="M17.5 19a4.5 4.5 0 0 0 0-9 7 7 0 0 0-13.6 2A4.5 4.5 0 0 0 6.5 19z"/></svg>클라우드에서 세션 불러오기</button>
+    <button class="ls-btn-secondary" onclick="startAnalysis(null,()=>{showPhase('report');cloudLoadList()})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px"><path d="M17.5 19a4.5 4.5 0 0 0 0-9 7 7 0 0 0-13.6 2A4.5 4.5 0 0 0 6.5 19z"/></svg>클라우드에서 세션 불러오기</button>
   </div>
   <div class="ls-foot-links"><button type="button" onclick="toggleChangelog();document.getElementById('lsChangelog').scrollIntoView({behavior:'smooth',block:'nearest'})">업데이트 내역</button><a href="methodology.html">측정 방법·근거</a></div>
   <!-- v1.20.4: 변경 내역 — 기본 접힘, 헤더 탭하면 펼침 -->
@@ -899,6 +900,10 @@ body{touch-action:manipulation} /* 더블탭 줌 지연 제거 (핀치줌은 유
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f8f8f6;border-radius:8px">
         <input type="checkbox" id="cGridOn" checked onchange="toggleGrid(this.checked)" style="width:15px;height:15px;accent-color:var(--brand)">
         <label for="cGridOn" style="font-size:11px;color:var(--tx);font-weight:600;cursor:pointer;flex:1">▦ 모눈 격자 오버레이 — 사진에 체형측정 롤스크린 방식 모눈 표시 (기본 켜짐)</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f8f8f6;border-radius:8px">
+        <input type="checkbox" id="cAiVerify" onchange="AI_VERIFY_ON=this.checked;CLOUD_OK=this.checked||CLOUD_OK;try{localStorage.setItem('ng_ai_verify',this.checked?'1':'0')}catch(e){};if(this.checked)toast('AI 관절 검증 ON — 촬영 사진이 외부 AI 서버로 전송됩니다')" style="width:15px;height:15px;accent-color:var(--brand)">
+        <label for="cAiVerify" style="font-size:11px;color:var(--tx);font-weight:600;cursor:pointer;flex:1">🤖 AI 관절 검증 — 촬영 사진을 외부 AI 서버로 전송해 관절 인식을 교차 확인 (기본 꺼짐 · 회원 동의 필요)</label>
       </div>
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f8f8f6;border-radius:8px">
         <input type="checkbox" id="cVoiceOn" checked onchange="VOICE_ON=this.checked;localStorage.setItem('ng_voice',VOICE_ON?'1':'0');if(VOICE_ON)speak('음성 안내를 켰어요',{force:true})" style="width:15px;height:15px;accent-color:var(--brand)">
@@ -1038,6 +1043,13 @@ body{touch-action:manipulation} /* 더블탭 줌 지연 제거 (핀치줌은 유
 <div class="toast" id="toastEl" role="status" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 <script>
+// v2.1.1: 사파리 프라이빗 등 스토리지 차단 환경에서 localStorage 접근이 throw하면
+// 전역 초기화(SCAN_MODE·VOICE_ON·AUTO_CAP·ng_cam_facing…)가 통째로 중단돼 앱이 무반응이 된다.
+// 메모리 폴백으로 교체해 세션 내에서는 정상 동작하게 한다(새로고침 시 초기화됨).
+(function(){var ok=false;try{localStorage.setItem('_ngls','1');localStorage.removeItem('_ngls');ok=true}catch(e){}
+  if(!ok){var m={},mem={getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){var ks=Object.keys(m);return i<ks.length?ks[i]:null},get length(){return Object.keys(m).length}};
+    try{Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return mem}})}catch(e2){}}
+})();
 
 // ─ NG API PROXY 설정 ─
 // 아래 주소를 본인의 Cloudflare Worker 주소로 교체하세요.
@@ -1911,8 +1923,8 @@ function scoreLabel(score){
   if(score>=90) return '우수';
   if(score>=75) return '양호';
   if(score>=60) return '보통';
-  if(score>=45) return '주의';
-  return '위험';
+  if(score>=45) return '관리 권장';
+  return '집중 관리'; // v2.1.1: '위험'은 건강 위험을 암시 — 비의료 서비스 표현으로 교체
 }
 
 // ═══════════════════════════════════════════
@@ -2509,14 +2521,15 @@ function toggleChangelog(){
   if(box) box.classList.toggle('open');
 }
 
-function startAnalysis(mode){
+function startAnalysis(mode,after){
   if(mode)setScanMode(mode);
   // v2.1: 첫 실행 1회 — 촬영 환경 안내 + 신체 사진 수집·이용 동의
+  // v2.1.1: after 콜백으로 동의 이후 진입 화면을 지정(기존 setTimeout 경합 제거)
   showOnboardingIfNeeded(()=>{
     const ls=document.getElementById('landingScreen');
     if(ls) ls.classList.add('hidden');
-    showPhase('before');
     try{applyScanMode()}catch(e){}
+    if(typeof after==='function') after(); else showPhase('before');
   });
 }
 // 언제든 랜딩으로 복귀 (즉시 전환, 확인 없음)
@@ -3681,7 +3694,9 @@ function _liveReadout(tid,lm){
   return {valTxt,cueTxt,cueCls};
 }
 function _recTrack(lm){
-  if(!_inFrame(lm))return;
+  // v2.1.1: 녹화 중에는 checkAutoCapture가 안 돌아 가이드 박스 색이 녹화 직전 상태로 굳는다.
+  if(!_inFrame(lm)){ try{camCue('bad','전신이 가이드 안에 들어오게')}catch(e){} return; }
+  if(_cueLevel!=='ok'){ _cueOkSpoken=true; try{camCue('ok','')}catch(e){} }
   _recCount++;
   // v2.0: 동작 '전체' 타임라인 기록 (분석은 stopRecord에서 analyzeMotion으로)
   if(_recFrames.length<900) _recFrames.push({t:performance.now()-_recStartTs, lm:_clonePose(lm)});
@@ -3784,7 +3799,6 @@ async function stopRecord(){
   const sh=document.querySelector('#camOv .shutter'); if(sh)sh.classList.remove('recording');
   const hud=document.getElementById('camRecHud'); if(hud)hud.className='cam-rec-hud';
   _updateCamModeCap();
-  speak('녹화 종료, 분석 중이에요',{force:true});
   try{
     // 영상 마감 (최대 4초 대기 — 실패해도 분석은 진행)
     let videoBlob=null;
@@ -3807,6 +3821,7 @@ async function stopRecord(){
     if(camTid===tid&&camSlot===slot)closeCam();
     _pendingVerify={tid,slot}; // AI 정밀 검증 예약 — loadImg 완료 시 실행
     loadImg(tid,slot,best.img,false,best.lm);
+    speak('동작 분석 완료',{force:true}); // v2.1.1: closeCam의 cancel() 뒤로 이동 — 이전엔 항상 잘렸음
     toast((slot==='B'?'Before':'After')+' 동작 분석 완료'+(reps>0?` · ${reps}회`:'')+(motion.summary?` · ${motion.summary}`:''));
   } finally { _stopping=false; }
 }
@@ -5325,6 +5340,7 @@ function updateSlotBadge(tid,slot){
   const n=document.getElementById(`tcn_${tid}_${slot}`);if(n)n.classList.add('done');
   const b=document.getElementById(`tcb_${tid}_${slot}`);if(b){b.textContent='완료';b.className='tc-badge done'}
   try{refreshProgress()}catch(e){}
+  try{rsRefresh()}catch(e){}
 }
 
 // v1.21: 전 호출 직렬화 — poseEng.onResults는 전역 핸들러라 동시 호출 시 결과가 엉킴
@@ -5800,6 +5816,7 @@ function drawLabel(c,text,x,y,color,fs){
 // ═══════════════════════════════════════════
 function redrawSlot(tid,slot){
   const s=SHOTS[tid]?.[slot];if(!s?.ctx||!s?.img)return;
+  s._thumb240=null; // v2.1.1: 캔버스가 바뀌면 결과 썸네일 캐시 무효화
   const c=s.ctx,W=s.canvas.width,H=s.canvas.height;
   c.clearRect(0,0,W,H);c.drawImage(s.img,0,0);
   // 격자 오버레이 (스켈레톤보다 먼저)
@@ -6121,7 +6138,16 @@ function redrawOL(tid){
 // MediaPipe가 찍은 9개 핵심 관절 마커를 사진 위에 그려 Claude 비전에게 해부학적 위치 검증을
 // 요청. 오배치 감지 시 카드에 경고 배지 + 보정 적용/재촬영 안내 → "이상하게 잡힌" 캡처가
 // 조용히 리포트로 흘러가는 것을 차단. localStorage 'ng_ai_verify'='0'으로 끌 수 있음.
-let AI_VERIFY_ON=localStorage.getItem('ng_ai_verify')!=='0';
+// v2.1.1: 이 기능은 촬영 사진을 외부 AI 서버로 전송한다 — 개인정보 고지와 일치시키기 위해 기본 OFF(옵트인).
+let AI_VERIFY_ON=localStorage.getItem('ng_ai_verify')==='1';
+// v2.1.1: 국외 이전(클라우드 저장) 선택 동의 상태
+let CLOUD_OK=localStorage.getItem('ng_cloud_ok')==='1';
+function requireCloudConsent(){
+  if(CLOUD_OK)return true;
+  const ok=confirm('클라우드 저장은 사진·측정값을 국외(미국) 서버로 전송합니다.\n\n회원에게 안내하고 동의를 받으셨나요?\n확인을 누르면 이후 저장에도 동의가 적용됩니다.');
+  if(ok){ CLOUD_OK=true; try{localStorage.setItem('ng_cloud_ok','1')}catch(e){} }
+  return ok;
+}
 const AI_VERIFY_JOINTS=[[0,'코'],[11,'왼쪽 어깨'],[12,'오른쪽 어깨'],[23,'왼쪽 고관절'],[24,'오른쪽 고관절'],[25,'왼쪽 무릎'],[26,'오른쪽 무릎'],[27,'왼쪽 발목'],[28,'오른쪽 발목']];
 function _verifyBadge(tid,slot,state,txt){
   const zone=document.getElementById(`zone_${tid}_${slot}`); if(!zone)return;
@@ -8058,6 +8084,7 @@ function updateSaveStatusBadge(state){
 
 function autoSave(){
   try{refreshProgress()}catch(e){}
+  try{rsRefresh()}catch(e){}
   if(SAVE_STATUS.pending) return; // 디바운스
   SAVE_STATUS.pending=true;
   updateSaveStatusBadge('saving');
@@ -8219,6 +8246,7 @@ function showRestorePrompt(info){
 // CLOUD SAVE / LOAD (Cloudflare R2 via Worker)
 // ═══════════════════════════════════════════
 async function cloudSave(){
+  if(!requireCloudConsent())return; // v2.1.1: 국외 이전(미국 서버) 선택 동의 확인
   const name=(document.getElementById('cName')?.value||'').trim();
   const trainer=(document.getElementById('cTrainer')?.value||'').trim();
   if(!name){toast('회원 이름을 먼저 입력하세요');return}
@@ -9254,7 +9282,10 @@ async function clearAll(){
   ASSESS={text:'',training:[]};
   try{localStorage.removeItem(LS+'_meta')}catch(e){}
   try{await clearAllMotionData()}catch(e){} // v2.0: 스켈레톤 영상·동작 지표도 함께 삭제
-  updateCompareCta();toast('초기화 완료');
+  updateCompareCta();
+  try{refreshProgress()}catch(e){}
+  if(currentPhase==='result'){try{renderResult()}catch(e){}}
+  toast('초기화 완료');
 }
 
 
@@ -9276,8 +9307,15 @@ const LEVEL_PCT={ok:100,warn:70,bad:40};
 // 동적 검사(analyzeMotion) 지표 level → 0~100 (지표별 평균)
 function _motionQuality(slot){
   let n=0,s=0;
-  TESTS.forEach(t=>{ const m=SHOTS[t.id]?.[slot]?.motion; if(!m||!m.metrics)return;
-    m.metrics.forEach(x=>{ if(x.level in LEVEL_PCT){ s+=LEVEL_PCT[x.level]; n++; } }); });
+  TESTS.forEach(t=>{
+    const sh=SHOTS[t.id]?.[slot]; if(!sh)return;
+    const m=sh.motion;
+    if(m&&m.metrics){ m.metrics.forEach(x=>{ if(x.level in LEVEL_PCT){ s+=LEVEL_PCT[x.level]; n++; } }); return; }
+    // v2.1.1: 사진만 있는 동작 검사도 정적 보상 분석으로 점수에 반영
+    if(!isDynamicTest(t.id)||!sh.pose||!sh.canvas)return;
+    let comps=[]; try{ comps=analyzeComp(t.id,sh.pose,sh.canvas.width,sh.canvas.height); }catch(e){}
+    comps.forEach(cp=>{ if(cp.level in LEVEL_PCT){ s+=LEVEL_PCT[cp.level]; n++; } });
+  });
   return n?Math.round(s/n):null;
 }
 // 4축 서브스코어 + 종합 (종합은 기존 compositeScore 유지 — 세션 히스토리 호환)
@@ -9321,15 +9359,18 @@ const F_METRIC={
 // ── 체크리스트 → 소견 (itemId → {opt index 조건}) ──
 // sel: 선택된 옵션 인덱스 배열. 함수는 해당 인덱스가 소견인지와 좌/우 방향 문자열을 돌려준다.
 const F_CHECK={
-  lat_thor:   {region:'side', sym:'흉추 후만(등 굽음)',    tight:['pec','lat'],            weak:['rhomboid','lower_trap','erector'], ex:'thoracic_kyphosis'},
-  lat_lumb:   {region:'side', sym:'요추 전만(허리 과신전)', tight:['hip_flexor','erector'], weak:['abs','glute_max'],               ex:'lumbar_hyperlordosis'},
+  lat_thor:   {region:'side', sym:'흉추 후만(등 굽음)',    tight:['pec','lat'],            weak:['rhomboid','lower_trap','erector'], ex:'thoracic_kyphosis',
+    opt:{1:{sym:'흉추 편평(Flat back)',tight:['erector'],weak:['pec','serratus'],ex:null}}},
+  lat_lumb:   {region:'side', sym:'요추 전만(허리 과신전)', tight:['hip_flexor','erector'], weak:['abs','glute_max'],               ex:'lumbar_hyperlordosis',
+    opt:{1:{sym:'요추 전만 감소(편평등)',tight:['hamstring','glute_max'],weak:['erector','hip_flexor'],ex:null}}},
   lat_cerv:   {region:'side', sym:'거북목(경추 정렬)',       tight:['upper_trap','scm'],     weak:['deep_neck'],                     ex:'fhp'},
   ant_knee:   {region:'front',sym:'무릎 정렬(O/X다리)',      tight:['adductor','tfl'],       weak:['glute_med'],                     ex:'knee_valgus', varus:1},
   post_scap:  {region:'back', sym:'날개뼈 비대칭',           tight:['upper_trap','pec'],     weak:['serratus','lower_trap'],         ex:'shoulder_tilt'},
   post_pel:   {region:'back', sym:'골반 높이 차이',          tight:['ql'],                   weak:['glute_med'],                     ex:'pelvic_tilt'},
   post_scol:  {region:'back', sym:'척추 좌우 커브 경향',     tight:['ql','erector'],         weak:['erector','abs'],                 ex:'shoulder_tilt'},
   ohsl_arm:   {region:'motion',sym:'팔 앞으로 쏟아짐',       tight:['lat','pec'],            weak:['lower_trap','serratus'],         ex:'thoracic_kyphosis'},
-  ohsl_trunk: {region:'motion',sym:'상체 앞으로 기욺',       tight:['hip_flexor','gastroc'], weak:['glute_max','abs'],               ex:'lumbar_hyperlordosis'},
+  ohsl_trunk: {region:'motion',sym:'상체 앞으로 기욺',       tight:['hip_flexor','gastroc'], weak:['glute_max','abs'],               ex:'lumbar_hyperlordosis',
+    opt:{1:{sym:'스쿼트 시 상체 뒤로 젖혀짐',tight:['hip_flexor','erector'],weak:['abs'],ex:null}}},
   ohsl_lum:   {region:'motion',sym:'허리 과신전',            tight:['hip_flexor','erector'], weak:['abs','glute_max'],               ex:'lumbar_hyperlordosis'},
   ohsl_pelv:  {region:'motion',sym:'골반 전방경사',          tight:['hip_flexor','erector'], weak:['abs','glute_max'],               ex:'lumbar_hyperlordosis'},
   ohsl_ank:   {region:'motion',sym:'발목 가동범위 제한',     tight:['gastroc'],              weak:['tibialis'],                      ex:null},
@@ -9349,12 +9390,16 @@ const F_CHECK={
   shfl_lat_r: {region:'motion',sym:'오른쪽 광배근 긴장',     tight:['lat'],                  weak:['lower_trap'],                    ex:'thoracic_kyphosis'},
   shfl_serr_l:{region:'motion',sym:'왼쪽 전거근 약화',       tight:[],                       weak:['serratus'],                      ex:'shoulder_tilt'},
   shfl_serr_r:{region:'motion',sym:'오른쪽 전거근 약화',     tight:[],                       weak:['serratus'],                      ex:'shoulder_tilt'},
-  slrl_ham:   {region:'motion',sym:'왼쪽 햄스트링 타이트',   tight:['hamstring'],            weak:[],                                ex:null},
-  slrr_ham:   {region:'motion',sym:'오른쪽 햄스트링 타이트', tight:['hamstring'],            weak:[],                                ex:null},
+  slrl_ham:   {region:'motion',sym:'왼쪽 햄스트링 타이트',   tight:['hamstring'],            weak:[],                                ex:null,
+    opt:{2:{sym:'왼쪽 햄스트링 과가동',tight:[],weak:['hamstring','glute_max'],ex:null}}},
+  slrr_ham:   {region:'motion',sym:'오른쪽 햄스트링 타이트', tight:['hamstring'],            weak:[],                                ex:null,
+    opt:{2:{sym:'오른쪽 햄스트링 과가동',tight:[],weak:['hamstring','glute_max'],ex:null}}},
   tl_rom:     {region:'side', sym:'앞으로 숙이기 제한',      tight:['hamstring','erector'],  weak:[],                                ex:null},
   tl_hip:     {region:'side', sym:'힙힌지 패턴 부족',        tight:['hamstring'],            weak:['glute_max','erector'],           ex:null},
-  pq_lt:      {region:'manual',sym:'왼쪽 허벅지 앞 긴장',    tight:['quad','hip_flexor'],    weak:[],                                ex:'lumbar_hyperlordosis'},
-  pq_rt:      {region:'manual',sym:'오른쪽 허벅지 앞 긴장',  tight:['quad','hip_flexor'],    weak:[],                                ex:'lumbar_hyperlordosis'},
+  pq_lt:      {region:'manual',sym:'왼쪽 허벅지 앞 긴장',    tight:['quad','hip_flexor'],    weak:[],                                ex:'lumbar_hyperlordosis',
+    opt:{2:{sym:'왼쪽 허벅지 앞 약화',tight:[],weak:['quad'],ex:null}}},
+  pq_rt:      {region:'manual',sym:'오른쪽 허벅지 앞 긴장',  tight:['quad','hip_flexor'],    weak:[],                                ex:'lumbar_hyperlordosis',
+    opt:{2:{sym:'오른쪽 허벅지 앞 약화',tight:[],weak:['quad'],ex:null}}},
   pql_lt:     {region:'manual',sym:'왼쪽 옆허리(QL) 긴장',   tight:['ql'],                   weak:['glute_med'],                     ex:'pelvic_tilt'},
   pql_rt:     {region:'manual',sym:'오른쪽 옆허리(QL) 긴장', tight:['ql'],                   weak:['glute_med'],                     ex:'pelvic_tilt'},
   np_scm_lt:  {region:'manual',sym:'왼쪽 목 앞 근육 긴장',   tight:['scm'],                  weak:['deep_neck'],                     ex:'fhp'},
@@ -9363,10 +9408,31 @@ const F_CHECK={
   np_scal_rt: {region:'manual',sym:'오른쪽 사각근 긴장',     tight:['scalene'],              weak:['deep_neck'],                     ex:'fhp'},
   np_utrap_lt:{region:'manual',sym:'왼쪽 승모근 긴장',       tight:['upper_trap'],           weak:['lower_trap'],                    ex:'shoulder_tilt'},
   np_utrap_rt:{region:'manual',sym:'오른쪽 승모근 긴장',     tight:['upper_trap'],           weak:['lower_trap'],                    ex:'shoulder_tilt'},
-  cp_lt:      {region:'manual',sym:'왼쪽 종아리 압통',       tight:['gastroc'],              weak:[],                                ex:null},
-  cp_rt:      {region:'manual',sym:'오른쪽 종아리 압통',     tight:['gastroc'],              weak:[],                                ex:null},
-  ca_lt:      {region:'manual',sym:'왼쪽 아킬레스 압통',     tight:['gastroc'],              weak:[],                                ex:null},
-  ca_rt:      {region:'manual',sym:'오른쪽 아킬레스 압통',   tight:['gastroc'],              weak:[],                                ex:null},
+  // v2.1.1: 압통(통증)은 비의료 서비스가 회원에게 '소견'으로 제시할 성질이 아니다 — 트레이너 전용.
+  cp_lt:      {region:'manual',sym:'왼쪽 종아리 압통',       tight:['gastroc'],              weak:[],                                ex:null, trainerOnly:true},
+  cp_rt:      {region:'manual',sym:'오른쪽 종아리 압통',     tight:['gastroc'],              weak:[],                                ex:null, trainerOnly:true},
+  ca_lt:      {region:'manual',sym:'왼쪽 아킬레스 압통',     tight:['gastroc'],              weak:[],                                ex:null, trainerOnly:true},
+  ca_rt:      {region:'manual',sym:'오른쪽 아킬레스 압통',   tight:['gastroc'],              weak:[],                                ex:null, trainerOnly:true},
+  // v2.1.1: 리뷰 지적 — 'bad'로 코딩돼 있는데 매핑이 없어 선택해도 결과에 반영되지 않던 항목들
+  lat_knee:   {region:'side', sym:'무릎 과신전 경향',        tight:['gastroc','quad'],       weak:['hamstring','glute_max'],         ex:null},
+  post_calc:  {region:'back', sym:'발 뒤꿈치 정렬 이상',     tight:['gastroc'],              weak:['tibialis','glute_med'],          ex:'knee_valgus'},
+  tb_scol:    {region:'back', sym:'숙일 때 등 좌우 높낮이',  tight:['ql','erector'],         weak:['erector','abs'],                 ex:'shoulder_tilt'},
+  tb_tone:    {region:'back', sym:'등 근육 좌우 두께 차이',  tight:['erector','ql'],         weak:['erector'],                       ex:'shoulder_tilt'},
+  tb_shift:   {region:'back', sym:'숙일 때 몸통 쏠림',       tight:['ql'],                   weak:['abs','glute_med'],               ex:'pelvic_tilt'},
+  tl_sep:     {region:'side', sym:'흉·요추 분리 부족',       tight:['erector','hamstring'],  weak:['abs'],                           ex:null},
+  sku_ank_l:  {region:'motion',sym:'왼쪽 발목 불안정',       tight:['gastroc'],              weak:['tibialis','glute_med'],          ex:'knee_valgus'},
+  sku_ank_r:  {region:'motion',sym:'오른쪽 발목 불안정',     tight:['gastroc'],              weak:['tibialis','glute_med'],          ex:'knee_valgus'},
+  slrl_comp:  {region:'motion',sym:'왼쪽 다리 올릴 때 골반 보상', tight:['hip_flexor'],      weak:['abs'],                           ex:'lumbar_hyperlordosis'},
+  slrr_comp:  {region:'motion',sym:'오른쪽 다리 올릴 때 골반 보상',tight:['hip_flexor'],     weak:['abs'],                           ex:'lumbar_hyperlordosis'},
+  shfl_bic_l: {region:'motion',sym:'왼팔 올릴 때 이두 과활성', tight:['biceps','lat'],       weak:['lower_trap'],                    ex:'thoracic_kyphosis'},
+  shfl_bic_r: {region:'motion',sym:'오른팔 올릴 때 이두 과활성',tight:['biceps','lat'],      weak:['lower_trap'],                    ex:'thoracic_kyphosis'},
+  phe_lt:     {region:'manual',sym:'왼쪽 골반 경사(엎드림 검사)', tight:['hip_flexor','erector'], weak:['abs','glute_max'],          ex:'lumbar_hyperlordosis',
+    opt:{1:{sym:'왼쪽 골반 후방경사',tight:['hamstring','glute_max'],weak:['erector','hip_flexor'],ex:null}}},
+  phe_rt:     {region:'manual',sym:'오른쪽 골반 경사(엎드림 검사)',tight:['hip_flexor','erector'], weak:['abs','glute_max'],         ex:'lumbar_hyperlordosis',
+    opt:{1:{sym:'오른쪽 골반 후방경사',tight:['hamstring','glute_max'],weak:['erector','hip_flexor'],ex:null}}},
+  patrick_lt: {region:'manual',sym:'왼쪽 고관절 불편감',     tight:['adductor','hip_flexor'],weak:['glute_max','glute_med'],         ex:'pelvic_tilt', trainerOnly:true},
+  patrick_rt: {region:'manual',sym:'오른쪽 고관절 불편감',   tight:['adductor','hip_flexor'],weak:['glute_max','glute_med'],         ex:'pelvic_tilt', trainerOnly:true},
+  np_curve:   {region:'manual',sym:'거북목(경추 커브)',      tight:['upper_trap','scm'],     weak:['deep_neck'],                     ex:'fhp'},
 };
 // ── 동작 분석(analyzeMotion) 지표 라벨 → 소견 ──
 const F_MOTION=[
@@ -9382,15 +9448,29 @@ const F_MOTION=[
   {m:/반대 다리 들림/, sym:'다리 올릴 때 골반 보상',tight:['hip_flexor'],           weak:['abs'],                    ex:'lumbar_hyperlordosis'},
   {m:/무릎 거상/,      sym:'무릎 들기 높이 부족',   tight:['hamstring'],            weak:['hip_flexor','abs'],       ex:null},
   {m:/스쿼트 깊이/,    sym:'스쿼트 깊이 부족',      tight:['gastroc','hip_flexor'], weak:['glute_max','quad'],       ex:'lumbar_hyperlordosis'},
+  {m:/무릎 벌어짐|Varus/,sym:'O다리 경향(무릎 내반)', tight:['tfl'],                  weak:['adductor','glute_med'],   ex:'knee_varus'},
+  {m:/무릎 모임\(내측|Valgus/,sym:'무릎 모임(니 밸거스)',tight:['adductor','tfl'],   weak:['glute_med','glute_max'],  ex:'knee_valgus'},
+  {m:/골반 좌우 비대칭|골반 회전/,sym:'골반 회전·이동',tight:['ql','tfl'],            weak:['glute_med','abs'],        ex:'pelvic_tilt'},
+  {m:/상체 전방 경사/, sym:'스쿼트 시 상체 기욺',   tight:['hip_flexor','gastroc'], weak:['glute_max','abs'],        ex:'lumbar_hyperlordosis'},
+  {m:/팔 전방 낙하/,   sym:'팔 앞으로 쏟아짐',      tight:['lat','pec'],            weak:['lower_trap','serratus'],  ex:'thoracic_kyphosis'},
+  {m:/햄스트링 유연성 저하/,sym:'햄스트링 타이트',  tight:['hamstring'],            weak:[],                         ex:null},
+  {m:/전굴 ROM 제한/,  sym:'앞으로 숙이기 제한',    tight:['hamstring','erector'],  weak:[],                         ex:null},
   {m:/상체 보상/,      sym:'한발 서기 상체 흔들림', tight:['ql'],                   weak:['glute_med','abs'],        ex:'pelvic_tilt'},
 ];
 const REGION_META={front:{label:'정면',order:1,tests:['ant','sku','sku_r']},side:{label:'측면',order:2,tests:['lat','ohs_l','trunk_l']},back:{label:'후면',order:3,tests:['post','sh_flex_l','sh_flex_r','ohs_b','trunk_b']},motion:{label:'동작',order:4,tests:[]},manual:{label:'수기 검사',order:5,tests:[]}};
 const LEVEL_W={bad:3,warn:1,ok:0};
 
 // ── 소견 수집: 지표 + 체크리스트 + 동작 분석 → 정면→측면→후면→동작 순 ──
-function buildFindings(slot){
-  slot=slot||'B'; const out=[]; const seen=new Set();
-  const add=f=>{ const key=f.sym+'|'+(f.dir||''); if(seen.has(key)){ const o=out.find(x=>x.sym===f.sym&&(x.dir||'')===(f.dir||'')); if(o&&LEVEL_W[f.level]>LEVEL_W[o.level])o.level=f.level; return; } seen.add(key); out.push(f); };
+function buildFindings(slot,opts){
+  slot=slot||'B'; opts=opts||{}; const out=[];
+  // v2.1.1: 키에 region·검사·출처를 포함(좌/우 SLR이 한 건으로 합쳐지던 문제) +
+  // 레벨 승격 시 문장·수치까지 함께 교체(ok 문장에 bad 칩이 붙던 모순 제거).
+  const add=f=>{
+    const key=f.region+'|'+f.sym+'|'+(f.test||'')+'|'+(f.src||'');
+    const i=out.findIndex(x=>x._k===key);
+    if(i>=0){ if(LEVEL_W[f.level]>LEVEL_W[out[i].level]) out[i]=Object.assign(f,{_k:key}); return; }
+    out.push(Object.assign(f,{_k:key}));
+  };
   // 1) 정량 지표
   const agg=aggregateRelevant(slot);
   Object.entries(F_METRIC).forEach(([k,d])=>{
@@ -9401,21 +9481,40 @@ function buildFindings(slot){
   });
   // 2) 체크리스트 (선택된 옵션 중 warn/bad)
   Object.entries(F_CHECK).forEach(([id,d])=>{
+    if(d.trainerOnly&&!opts.trainer)return; // v2.1.1: 통증·압통 소견은 트레이너 화면에서만
     const c=CHK[id+'_'+slot]; if(!c||!c.sels)return;
     const item=Object.values(TEST_CHECKLIST).flat().find(i=>i.id===id); if(!item)return;
     Object.entries(c.sels).forEach(([oi,cc])=>{
       if(cc!=='warn'&&cc!=='bad')return;
-      const opt=item.opts[+oi]||''; let ex=d.ex, sym=d.sym;
-      if(d.varus&&/varum|O다리|내반/i.test(opt)){ ex='knee_varus'; sym='O다리 경향(무릎 내반)'; }
-      else if(d.varus&&/valgum|X다리|외반/i.test(opt)){ ex='knee_valgus'; sym='X다리 경향(무릎 외반)'; }
-      add({id:'c_'+id+'_'+oi, region:d.region, sym, level:cc, src:'check', sentence:`${item.label}: ${opt}`, tight:d.tight, weak:d.weak, ex, name:item.label});
+      const opt=item.opts[+oi]||'';
+      // v2.1.1: 같은 항목이라도 옵션에 따라 소견·근육 방향이 반대다(예: 요추 전만 증가 vs 감소).
+      // d.opt[인덱스]로 덮어쓰고, null이면 근육·운동 매핑에서 제외한다.
+      const ov=d.opt?d.opt[+oi]:undefined;
+      if(ov===null)return;
+      const dd=ov?Object.assign({},d,ov):d;
+      let ex=dd.ex, sym=dd.sym;
+      if(dd.varus&&/varum|O다리|내반/i.test(opt)){ ex='knee_varus'; sym='O다리 경향(무릎 내반)'; }
+      else if(dd.varus&&/valgum|X다리|외반/i.test(opt)){ ex='knee_valgus'; sym='X다리 경향(무릎 외반)'; }
+      add({id:'c_'+id+'_'+oi, region:dd.region, sym, level:cc, src:'check', sentence:`${item.label}: ${opt}`, tight:dd.tight, weak:dd.weak, ex, name:item.label, test:id});
     });
   });
   // 3) 동작 분석 (녹화 전체 지표)
-  TESTS.forEach(t=>{ const m=SHOTS[t.id]?.[slot]?.motion; if(!m||!m.metrics)return;
-    m.metrics.forEach(x=>{ if(x.level!=='warn'&&x.level!=='bad')return;
-      const d=F_MOTION.find(f=>f.m.test(x.label)); if(!d)return;
-      add({id:'v_'+t.id+'_'+x.label, region:'motion', sym:d.sym, level:x.level, src:'motion', sentence:`${t.title.replace(/\s*\(영상.*\)/,'')} — ${x.label} ${x.val}${x.unit||''}`, tight:d.tight, weak:d.weak, ex:d.ex, name:x.label, test:t.id});
+  TESTS.forEach(t=>{
+    const s=SHOTS[t.id]?.[slot]; if(!s)return;
+    const m=s.motion;
+    if(m&&m.metrics){
+      m.metrics.forEach(x=>{ if(x.level!=='warn'&&x.level!=='bad')return;
+        const d=F_MOTION.find(f=>f.m.test(x.label)); if(!d)return;
+        add({id:'v_'+t.id+'_'+x.label, region:'motion', sym:d.sym, level:x.level, src:'motion', sentence:`${t.title.replace(/\s*\(영상.*\)/,'')} — ${x.label} ${x.val}${x.unit||''}`, tight:d.tight, weak:d.weak, ex:d.ex, name:x.label, test:t.id});
+      });
+      return;
+    }
+    // v2.1.1: 동작 검사를 영상이 아닌 사진으로 찍은 경우(복원·업로드) — 정적 프레임 보상 분석으로 폴백
+    if(!isDynamicTest(t.id)||!s.pose||!s.canvas)return;
+    let comps=[]; try{ comps=analyzeComp(t.id,s.pose,s.canvas.width,s.canvas.height); }catch(e){}
+    comps.forEach(cp=>{ if(cp.level!=='warn'&&cp.level!=='bad')return;
+      const d=F_MOTION.find(f=>f.m.test(cp.label)); if(!d)return;
+      add({id:'p_'+t.id+'_'+cp.label, region:'motion', sym:d.sym, level:cp.level, src:'motion', sentence:`${t.title.replace(/\s*\(영상.*\)/,'')} — ${cp.label}`, tight:d.tight, weak:d.weak, ex:d.ex, name:cp.label, test:t.id});
     });
   });
   out.sort((a,b)=>(REGION_META[a.region].order-REGION_META[b.region].order)||(LEVEL_W[b.level]-LEVEL_W[a.level]));
@@ -9447,7 +9546,16 @@ function postureType(fs){
   const score={};
   fs.filter(f=>f.level!=='ok').forEach(f=>{ const tn=TYPE_NAMES.find(x=>x.t.test(f.sym)); if(!tn)return; score[tn.n]=(score[tn.n]||0)+LEVEL_W[f.level]; });
   const top=Object.entries(score).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0].replace(/형$/,''));
-  if(!top.length)return {name:'균형형',desc:'주요 정렬·유연성 지표가 기준 범위 안에 있어요. 지금 상태를 유지하는 운동이 맞아요.'};
+  if(!top.length){
+    // v2.1.1: 유형 정규식에 안 걸리는 소견만 있을 때 '균형형'이라 말하면 아래 소견·플랜과 정면 충돌한다.
+    const act=fs.filter(f=>f.level!=='ok');
+    if(act.length){
+      const r={}; act.forEach(f=>r[f.region]=(r[f.region]||0)+LEVEL_W[f.level]);
+      const top1=Object.entries(r).sort((a,b)=>b[1]-a[1])[0][0];
+      return {name:(REGION_META[top1]?.label||'전신')+' 집중 관리형', desc:''};
+    }
+    return {name:'균형형',desc:'주요 정렬·유연성 지표가 기준 범위 안에 있어요. 지금 상태를 유지하는 운동이 맞아요.'};
+  }
   const name=top.join('·')+'형';
   const DESC={'거북목':'머리가 어깨보다 앞에 있어 목·어깨 근육이 늘 긴장해요.','라운드숄더':'어깨가 앞으로 말려 가슴은 짧아지고 등 근육은 약해지기 쉬워요.','골반 틀어짐':'골반 좌우 높이가 달라 허리 한쪽과 엉덩이 옆 근육의 균형이 깨져 있어요.','좌우 비대칭':'어깨·머리·몸통이 한쪽으로 기울어 좌우 근육 사용이 다르게 굳어 있어요.','골반 전방경사':'골반이 앞으로 기울어 허리가 과하게 젖혀지고 엉덩이·복근이 잘 안 쓰여요.','유연성 부족':'뒤쪽 근육(햄스트링·등)이 짧아 숙이기·다리 올리기가 제한돼요.','무릎 모임':'앉을 때 무릎이 안쪽으로 모여 무릎·발목에 부담이 가요.','O다리 경향':'무릎이 바깥으로 벌어져 무릎 안쪽에 부담이 가요.'};
   return {name, desc:top.map(t=>DESC[t]||'').filter(Boolean).join(' ')};
@@ -9580,6 +9688,9 @@ function _ic(n){
     check:'<polyline points="20 6 9 17 4 12"/>'};
   return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
 }
+// v2.1.1: 결과 탭이 열린 채 데이터가 바뀌면(복원·입력·초기화) 자동 갱신
+let _rsT=null;
+function rsRefresh(){ clearTimeout(_rsT); _rsT=setTimeout(()=>{ if(currentPhase==='result'){ try{renderResult()}catch(e){} } },250); }
 // 결과 화면 렌더 — showPhase('result') 시 호출
 function renderResult(){
   const root=document.getElementById('rsRoot'); if(!root)return;
@@ -9613,11 +9724,15 @@ function renderResult(){
   // 부위별 소견 카드 (정면 → 측면 → 후면 → 동작 → 수기)
   const byR=findingsByRegion(fs);
   const regions=Object.keys(REGION_META).sort((a,b)=>REGION_META[a].order-REGION_META[b].order);
+  const _usedTh=new Set(); // v2.1.1: 동적 검사가 부위·동작 섹션에 중복 렌더되던 문제
   document.getElementById('rsRegions').innerHTML=regions.map(r=>{
     const list=byR[r]||[]; const meta=REGION_META[r];
-    const tests=meta.tests.length?meta.tests:(r==='motion'?TESTS.filter(t=>isDynamicTest(t.id)).map(t=>t.id):[]);
-    const thumbs=tests.map(id=>{ const s=SHOTS[id]?.B; if(!s?.canvas||!s?.img)return ''; let th=''; try{th=compress(s.canvas,240)}catch(e){} if(!th)return '';
-      const t=TESTS.find(x=>x.id===id); return `<figure class="rs-th"><img src="${th}" alt=""><figcaption>${_esc((t?.title||id).replace(/\s*[-—(].*$/,''))}</figcaption></figure>`; }).join('');
+    const tests=(meta.tests.length?meta.tests:(r==='motion'?TESTS.filter(t=>isDynamicTest(t.id)).map(t=>t.id):[])).filter(id=>!_usedTh.has(id)&&_usedTh.add(id));
+    const thumbs=tests.map(id=>{ const s=SHOTS[id]?.B; if(!s?.canvas||!s?.img)return '';
+      let th=''; try{ th=s._thumb240||(s._thumb240=compress(s.canvas,240)); }catch(e){} // v2.1.1: 탭 전환마다 재인코딩하던 것 메모이즈
+      if(!th)return '';
+      const t=TESTS.find(x=>x.id===id);
+      return `<figure class="rs-th"><img src="${th}" alt=""><figcaption>${_esc((t?.title||id).split(/\s*[(（]/)[0].trim())}</figcaption></figure>`; }).join('');
     if(!list.length&&!thumbs)return '';
     const okCount=list.filter(f=>f.level==='ok').length, issues=list.filter(f=>f.level!=='ok');
     return `<section class="rep-sec rs-region"><div class="rep-sec-hd rs-region-hd"><span>${meta.label}</span><span class="rs-region-sum">${issues.length?`${issues.filter(f=>f.level==='bad').length?_lvChip('bad')+' '+issues.filter(f=>f.level==='bad').length+' ':''}${issues.filter(f=>f.level==='warn').length?_lvChip('warn')+' '+issues.filter(f=>f.level==='warn').length:''}`:(list.length?_lvChip('ok')+' 모두 정상':'')}</span></div>
@@ -9701,7 +9816,10 @@ async function buildShareCard(name,trainer){
   const photoH=460, colW=(CW-pad*2-24)/2;
   const cells=pick?[{lab:'BEFORE',src:pick.B?.canvas},{lab:'AFTER',src:pick.A?.canvas}].filter(x=>x.src):[];
   const single=cells.length===1;
-  cells.forEach((cell,i)=>{ const w=single?(CW-pad*2):colW, x=pad+i*(colW+24), sw=cell.src.width,sh=cell.src.height, ratio=Math.min(w/sw,photoH/sh), dw=sw*ratio,dh=sh*ratio;
+  cells.forEach((cell,i)=>{ const sw=cell.src.width,sh=cell.src.height,
+    w=single?Math.min(CW-pad*2,Math.round(photoH*sw/sh)):colW,
+    x=single?Math.round((CW-w)/2):pad+i*(colW+24),
+    ratio=Math.min(w/sw,photoH/sh), dw=sw*ratio,dh=sh*ratio;
     _rr(c,x,y,w,photoH,20); c.save(); c.clip(); c.fillStyle='#0d1420'; c.fillRect(x,y,w,photoH); c.drawImage(cell.src,x+(w-dw)/2,y+(photoH-dh)/2,dw,dh); c.restore();
     _rr(c,x+16,y+16,118,40,20); c.fillStyle=cell.lab==='BEFORE'?'rgba(190,20,20,.9)':'rgba(15,70,200,.9)'; c.fill(); c.fillStyle='#fff'; c.font=`800 20px ${F}`; c.textAlign='center'; c.textBaseline='middle'; c.fillText(cell.lab,x+75,y+36); c.textAlign='left'; c.textBaseline='top'; });
   y+=(cells.length?photoH+28:0);
@@ -9732,7 +9850,7 @@ let _cueLevel='',_cueOkSpoken=false;
 // level: 'bad'|'warn'|'ok', issue: _poseQuality의 첫 이슈 문구
 function camCue(level,issue){
   const box=document.querySelector('#camOv .gbox'); if(box){ box.classList.remove('q-bad','q-warn','q-ok'); box.classList.add('q-'+level); }
-  if(level==='ok'){ if(!_cueOkSpoken){ speak('좋아요, 그대로 계세요'); _cueOkSpoken=true; } }
+  if(level==='ok'){ if(!_cueOkSpoken){ speak('좋아요, 그대로 계세요',{force:true}); _cueOkSpoken=true; } }
   else { _cueOkSpoken=false;
     let say=''; const s=issue||'';
     if(/가이드 안|전신/.test(s))say='전신이 다 보이게 조금 뒤로 가주세요';
@@ -9758,20 +9876,44 @@ function showOnboardingIfNeeded(cb){
       <li><b>몸 라인이 보이는 옷</b> · 맨발 또는 얇은 양말, 머리는 묶기</li>
       <li><b>화면 안내를 따르면</b> 자세가 맞을 때 자동으로 찍히고, 동작 검사는 3회 반복 후 자동 종료</li>
     </ul>
-    <label class="onb-consent"><input type="checkbox" id="onbConsent"><span><b>수집 항목</b> 신체 사진·영상·측정 수치 · <b>목적</b> 체형 분석과 운동 안내 · <b>처리</b> 자세 인식은 이 기기 안에서 이루어지고, <b>AI 정밀 검증·클라우드 저장·AI 리포트를 사용할 때만</b> 암호화된 서버로 전송됩니다 · <b>보유</b> 기기/클라우드에서 삭제할 때까지, 회원 요청 시 즉시 삭제 · <b>거부</b> 동의하지 않으면 촬영 기능을 쓸 수 없습니다. 위 내용을 회원에게 안내하고 동의를 받았습니다. <span class="onb-req">(필수)</span></span></label>
+    <label class="onb-consent"><input type="checkbox" id="onbConsent"><span><b>[필수] 촬영·기기 내 분석</b> — <b>항목</b> 신체 사진·영상·측정 수치·키·나이·성별 · <b>목적</b> 체형 분석과 운동 안내 · <b>처리</b> 자세 인식은 이 기기 안에서만 · <b>보유</b> 기기에서 삭제할 때까지(최대 1년), 회원 요청 시 즉시 삭제 · <b>거부</b> 동의하지 않을 권리가 있으며, 거부하면 촬영 기능을 쓸 수 없습니다. 위 내용을 회원에게 안내하고 동의를 받았습니다. <span class="onb-req">(필수)</span></span></label>
+    <label class="onb-opt"><input type="checkbox" id="onbCloud"><span><b>[선택] 국외 이전 · AI 분석·클라우드 저장</b> — <b>이전받는 자</b> Cloudflare, Inc.(미국·저장 및 중계), Anthropic PBC(미국·AI 분석) · <b>항목</b> 신체 사진·측정 수치 · <b>방법</b> 촬영·저장 시 HTTPS 전송 · <b>목적</b> 관절 인식 교차 검증, AI 리포트 생성, 기기 간 세션 동기화 · <b>보유</b> 각 사업자 정책에 따름. 동의하지 않아도 촬영·분석·리포트는 그대로 이용할 수 있습니다.</span></label>
     <label class="onb-opt"><input type="checkbox" id="onbVoice" ${VOICE_ON?'checked':''}><span>촬영 중 음성 안내 사용 (자세 교정 멘트·카운트다운·반복 횟수)</span></label>
+    <div class="onb-withdraw">동의 철회·열람·삭제 요청은 담당 트레이너 또는 스튜디오 데스크로 알려주세요.</div>
     <button class="rs-btn primary onb-go" id="onbGo" disabled>시작하기</button>
   </div>`;
   document.body.appendChild(ov);
   const ck=ov.querySelector('#onbConsent'), go=ov.querySelector('#onbGo');
   ck.onchange=()=>{ go.disabled=!ck.checked; };
-  go.onclick=()=>{ VOICE_ON=ov.querySelector('#onbVoice').checked; localStorage.setItem('ng_voice',VOICE_ON?'1':'0'); localStorage.setItem('ng_onb_v21','1'); localStorage.setItem('ng_consent_ts',new Date().toISOString()); ov.remove(); cb&&cb(); };
+  go.onclick=()=>{
+    VOICE_ON=ov.querySelector('#onbVoice').checked;
+    const cloudOk=ov.querySelector('#onbCloud').checked; // v2.1.1: 선택 동의 — 국외 이전(AI·클라우드)
+    AI_VERIFY_ON=cloudOk; CLOUD_OK=cloudOk;
+    try{
+      localStorage.setItem('ng_voice',VOICE_ON?'1':'0');
+      localStorage.setItem('ng_ai_verify',cloudOk?'1':'0');
+      localStorage.setItem('ng_cloud_ok',cloudOk?'1':'0');
+      localStorage.setItem('ng_onb_v21','1');
+      localStorage.setItem('ng_consent_ts',new Date().toISOString());
+    }catch(e){}
+    const av=document.getElementById('cAiVerify'); if(av)av.checked=cloudOk;
+    ov.remove(); cb&&cb();
+  };
 }
 
 // ── 퀵 스캔 / 정밀 검사 모드 + 진행률 ──
 const QUICK_SET=['ant','lat','post','ohs_b'];
 let SCAN_MODE=localStorage.getItem('ng_scan_mode')||'full';
-function setScanMode(m){ SCAN_MODE=(m==='quick')?'quick':'full'; localStorage.setItem('ng_scan_mode',SCAN_MODE); applyScanMode(); }
+function setScanMode(m){
+  SCAN_MODE=(m==='quick')?'quick':'full';
+  try{localStorage.setItem('ng_scan_mode',SCAN_MODE)}catch(e){}
+  applyScanMode();
+  // v2.1.1: 모드는 '촬영 목록'만 줄인다 — 이미 찍은 검사 데이터는 지우지 않고 결과에 그대로 반영된다.
+  if(SCAN_MODE==='quick'){
+    const extra=TESTS.filter(t=>!QUICK_SET.includes(t.id)&&(SHOTS[t.id]?.B?.img||SHOTS[t.id]?.A?.img)).length;
+    if(extra)toast(`퀵 스캔 — 이미 촬영한 ${extra}개 검사도 결과에는 그대로 반영됩니다`);
+  }
+}
 function scanTests(){ return TESTS.filter(t=>SCAN_MODE==='full'||QUICK_SET.includes(t.id)); }
 function applyScanMode(){
   const quick=SCAN_MODE==='quick';
@@ -9786,7 +9928,8 @@ function refreshProgress(){
     const done=list.filter(t=>t.manual?Object.keys(CHK).some(k=>k.endsWith('_'+slot)&&(TEST_CHECKLIST[t.id]||[]).some(i=>k===i.id+'_'+slot)):!!SHOTS[t.id]?.[slot]?.img).length;
     const el=document.getElementById('prog_'+slot); if(!el)return;
     const pct=list.length?Math.round(done/list.length*100):0;
-    el.querySelector('.prog-txt').textContent=`${done} / ${list.length} 완료${SCAN_MODE==='quick'?' · 퀵 스캔':''}`;
+    const extra=SCAN_MODE==='quick'?TESTS.filter(t=>!QUICK_SET.includes(t.id)&&SHOTS[t.id]?.[slot]?.img).length:0;
+    el.querySelector('.prog-txt').textContent=`${done} / ${list.length} 완료${SCAN_MODE==='quick'?' · 퀵 스캔'+(extra?` (+${extra} 추가 촬영됨)`:''):''}`;
     el.querySelector('.prog-bar i').style.width=pct+'%';
     el.classList.toggle('done',done>=list.length&&list.length>0);
   });
@@ -9800,7 +9943,7 @@ function renderTalkTrack(){
   const byR=findingsByRegion(fs); const name=_memberName();
   const step=(n,t,b)=>`<div class="tt-step"><div class="tt-n">${n}</div><div><div class="tt-t">${t}</div><div class="tt-b">${b}</div></div></div>`;
   let n=1, html='';
-  html+=step(n++,'점수부터 한 문장',`"${name}님 체형 점수는 <b>${s.total}점(${scoreLabel(s.total)})</b>이고, 유형은 <b>${type.name}</b>이에요. ${type.desc||''}"`);
+  html+=step(n++,'점수부터 한 문장',`"${_esc(name)}님 체형 점수는 <b>${s.total}점(${scoreLabel(s.total)})</b>이고, 유형은 <b>${type.name}</b>이에요. ${type.desc||''}"`);
   ['front','side','back','motion'].forEach(r=>{ const list=(byR[r]||[]).filter(f=>f.level!=='ok'); if(!list.length)return;
     html+=step(n++,`${REGION_META[r].label} 사진 보며`,list.slice(0,3).map(f=>`"${f.sentence}" → <b>${f.sym}</b>${f.level==='bad'?' (관리 필요)':''}`).join('<br>'));
   });
