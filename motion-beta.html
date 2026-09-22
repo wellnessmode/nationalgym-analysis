@@ -9381,6 +9381,7 @@ const F_MOTION=[
   {m:/최대 거상각/,    sym:'햄스트링 타이트',       tight:['hamstring'],            weak:[],                         ex:null},
   {m:/반대 다리 들림/, sym:'다리 올릴 때 골반 보상',tight:['hip_flexor'],           weak:['abs'],                    ex:'lumbar_hyperlordosis'},
   {m:/무릎 거상/,      sym:'무릎 들기 높이 부족',   tight:['hamstring'],            weak:['hip_flexor','abs'],       ex:null},
+  {m:/스쿼트 깊이/,    sym:'스쿼트 깊이 부족',      tight:['gastroc','hip_flexor'], weak:['glute_max','quad'],       ex:'lumbar_hyperlordosis'},
   {m:/상체 보상/,      sym:'한발 서기 상체 흔들림', tight:['ql'],                   weak:['glute_med','abs'],        ex:'pelvic_tilt'},
 ];
 const REGION_META={front:{label:'정면',order:1,tests:['ant','sku','sku_r']},side:{label:'측면',order:2,tests:['lat','ohs_l','trunk_l']},back:{label:'후면',order:3,tests:['post','sh_flex_l','sh_flex_r','ohs_b','trunk_b']},motion:{label:'동작',order:4,tests:[]},manual:{label:'수기 검사',order:5,tests:[]}};
